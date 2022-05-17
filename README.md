@@ -1,4 +1,26 @@
-For build please run:
+
+Grpc client use example:
+```golang
+package main
+
+import (
+	"github.com/onmetal/dpservice-go-library/pkg/client"
+)
+
+func main(){
+    grpcClient, closer, err := client.New(server)
+    if err != nil {
+        panic(err)
+    }
+	defer closer.Close()
+	
+	res := grpcClient.SomeGrpcCall(...)
+```
+
+
+
+
+For build CLI client please run:
 ```bash
 make build
 ```
