@@ -1,25 +1,3 @@
-
-Grpc client use example:
-```golang
-package main
-
-import (
-	"github.com/onmetal/dpservice-go-library/pkg/client"
-)
-
-func main(){
-    grpcClient, closer, err := client.New(server)
-    if err != nil {
-        panic(err)
-    }
-	defer closer.Close()
-	
-	res := grpcClient.SomeGrpcCall(...)
-```
-
-
-
-
 For build CLI client please run:
 ```bash
 make build
@@ -27,7 +5,7 @@ make build
 
 ```bash
 Usage:
-  dpservice-go-library [command]
+  dpservice-cli [command]
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
@@ -37,8 +15,8 @@ Available Commands:
   vip         
 
 Flags:
-  -h, --help            help for dpservice-go-library
+  -h, --help            help for dpservice-cli
       --server string    (default "localhost:1337")
 
-Use "dpservice-go-library [command] --help" for more information about a command.
+Use "dpservice-cli [command] --help" for more information about a command.
 ```
