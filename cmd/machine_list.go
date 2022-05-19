@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/dpservice-go-library/pkg/dpdkproto"
+	"github.com/onmetal/net-dpservice-go/proto"
 
 	"time"
 

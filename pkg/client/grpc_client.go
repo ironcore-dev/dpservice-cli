@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"github.com/onmetal/dpservice-go-library/pkg/dpdkproto"
+	"github.com/onmetal/net-dpservice-go/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"

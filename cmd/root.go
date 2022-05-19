@@ -1,16 +1,15 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
+	"context"
 	"fmt"
-	client2 "github.com/onmetal/dpservice-go-library/pkg/client"
-	"github.com/onmetal/dpservice-go-library/pkg/dpdkproto"
+	"github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"os"
+	"time"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -39,10 +38,15 @@ func getDpClient(cmd *cobra.Command) (dpdkproto.DPDKonmetalClient, io.Closer) {
 		os.Exit(1)
 	}
 
-	client, closer, err := client2.New(server)
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, server, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		fmt.Println("Err:", err)
 		os.Exit(1)
 	}
-	return client, closer
+	client := dpdkproto.NewDPDKonmetalClient(conn)
+
+	return client, conn
 }
