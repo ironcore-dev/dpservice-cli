@@ -1,3 +1,6 @@
+Go based client for [net-dpservice](https://github.com/onmetal/net-dpservice).
+
+
 For build CLI client please run:
 ```bash
 make build
