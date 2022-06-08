@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/onmetal/net-dpservice-go/proto"
-	"net"
 	"os"
 	"time"
 
@@ -21,12 +20,12 @@ var addRouteCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		ipv4, err := cmd.Flags().GetIP("ipv4")
+		ipv4, err := cmd.Flags().GetString("ipv4")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		ipv6, err := cmd.Flags().GetIP("ipv6")
+		ipv6, err := cmd.Flags().GetString("ipv6")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -42,7 +41,7 @@ var addRouteCmd = &cobra.Command{
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		t_ipv6, err := cmd.Flags().GetIP("t_ipv6")
+		t_ipv6, err := cmd.Flags().GetString("t_ipv6")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -64,12 +63,12 @@ var addRouteCmd = &cobra.Command{
 			PrefixLength: length,
 		}
 
-		if ipv4.String() != "" {
+		if ipv4 != "" {
 			prefix.IpVersion = dpdkproto.IPVersion_IPv4
-			prefix.Address = ipv4
+			prefix.Address = []byte(ipv4)
 		} else {
 			prefix.IpVersion = dpdkproto.IPVersion_IPv6
-			prefix.Address = ipv6
+			prefix.Address = []byte(ipv6)
 		}
 		req := &dpdkproto.VNIRouteMsg{
 			Vni: &dpdkproto.VNIMsg{Vni: vni},
@@ -78,7 +77,7 @@ var addRouteCmd = &cobra.Command{
 				Weight:         weight,
 				Prefix:         prefix,
 				NexthopVNI:     t_vni,
-				NexthopAddress: t_ipv6,
+				NexthopAddress: []byte(t_ipv6),
 			},
 		}
 
@@ -95,12 +94,12 @@ func init() {
 
 	addRouteCmd.Flags().Uint32("vni", 0, "")
 	addRouteCmd.Flags().Uint32("length", 0, "")
-	addRouteCmd.Flags().IP("ipv4", net.IP{}, "")
-	addRouteCmd.Flags().IP("ipv6", net.IP{}, "")
+	addRouteCmd.Flags().String("ipv4", "", "")
+	addRouteCmd.Flags().String("ipv6", "", "")
 
 	addRouteCmd.Flags().Uint32("weight", 100, "")
-	addRouteCmd.Flags().IP("t_vni", net.IP{}, "")
-	addRouteCmd.Flags().IP("t_ipv6", net.IP{}, "")
+	addRouteCmd.Flags().String("t_vni", "", "")
+	addRouteCmd.Flags().String("t_ipv6", "", "")
 
 	_ = addRouteCmd.MarkFlagRequired("vni")
 	_ = addRouteCmd.MarkFlagRequired("length")

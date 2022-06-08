@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
-	"net"
 	"os"
 	"time"
 )
@@ -20,12 +19,12 @@ var addMachineCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		ipv4, err := cmd.Flags().GetIP("ipv4")
-		if err != nil {
+		ipv4, err := cmd.Flags().GetString("ipv4")
+		if err != nil && cmd.Flags().HasFlags() {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		ipv6, err := cmd.Flags().GetIP("ipv6")
+		ipv6, err := cmd.Flags().GetString("ipv6")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -47,17 +46,17 @@ var addMachineCmd = &cobra.Command{
 			MachineID:   []byte(machinId),
 			Vni:         vni,
 		}
-		if ipv4 != nil {
+		if ipv4 != "" {
 			req.Ipv4Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv4,
-				PrimaryAddress: []byte(ipv4.String()),
+				PrimaryAddress: []byte(ipv4),
 			}
 		}
 
-		if ipv6 != nil {
+		if ipv6 != "" {
 			req.Ipv6Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv6,
-				PrimaryAddress: []byte(ipv6.String()),
+				PrimaryAddress: []byte(ipv6),
 			}
 		}
 
@@ -75,8 +74,8 @@ func init() {
 
 	addMachineCmd.Flags().Uint32("vni", 0, "")
 	addMachineCmd.Flags().StringP("machine_id", "m", "", "")
-	addMachineCmd.Flags().IP("ipv4", net.IP{}, "")
-	addMachineCmd.Flags().IP("ipv6", net.IP{}, "")
+	addMachineCmd.Flags().String("ipv4", "", "")
+	addMachineCmd.Flags().String("ipv6", "", "")
 
 	_ = addMachineCmd.MarkFlagRequired("vni")
 	_ = addMachineCmd.MarkFlagRequired("machine_id")
