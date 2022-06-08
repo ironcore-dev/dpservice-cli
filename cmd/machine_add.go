@@ -45,15 +45,20 @@ var addMachineCmd = &cobra.Command{
 		req := &dpdkproto.AddMachineRequest{
 			MachineType: dpdkproto.MachineType_VirtualMachine,
 			MachineID:   []byte(machinId),
-			Vni:         vni + 12,
-			Ipv4Config: &dpdkproto.IPConfig{
+			Vni:         vni,
+		}
+		if ipv4.String() != "" {
+			req.Ipv4Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv4,
 				PrimaryAddress: []byte(ipv4.String()),
-			},
-			Ipv6Config: &dpdkproto.IPConfig{
+			}
+		}
+
+		if ipv6.String() != "" {
+			req.Ipv6Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv6,
 				PrimaryAddress: []byte(ipv6.String()),
-			},
+			}
 		}
 
 		msg, err := client.AddMachine(ctx, req)
@@ -69,7 +74,7 @@ func init() {
 	machineCmd.AddCommand(addMachineCmd)
 
 	addMachineCmd.Flags().Uint32("vni", 0, "")
-	addMachineCmd.Flags().String("machine_id", "", "")
+	addMachineCmd.Flags().StringP("machine_id", "m", "", "")
 	addMachineCmd.Flags().IP("ipv4", net.IP{}, "")
 	addMachineCmd.Flags().IP("ipv6", net.IP{}, "")
 

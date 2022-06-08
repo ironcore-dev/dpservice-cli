@@ -41,5 +41,5 @@ var delMachineCmd = &cobra.Command{
 
 func init() {
 	machineCmd.AddCommand(delMachineCmd)
-	delMachineCmd.Flags().String("machine_id", "", "")
+	delMachineCmd.Flags().StringP("machine_id", "m", "", "")
 }
