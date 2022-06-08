@@ -47,14 +47,14 @@ var addMachineCmd = &cobra.Command{
 			MachineID:   []byte(machinId),
 			Vni:         vni,
 		}
-		if ipv4.String() != "" {
+		if ipv4 != nil {
 			req.Ipv4Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv4,
 				PrimaryAddress: []byte(ipv4.String()),
 			}
 		}
 
-		if ipv6.String() != "" {
+		if ipv6 != nil {
 			req.Ipv6Config = &dpdkproto.IPConfig{
 				IpVersion:      dpdkproto.IPVersion_IPv6,
 				PrimaryAddress: []byte(ipv6.String()),
