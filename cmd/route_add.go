@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
 	"os"
 	"time"
+
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 
 	"github.com/spf13/cobra"
 )
@@ -98,7 +99,7 @@ func init() {
 	addRouteCmd.Flags().String("ipv6", "", "")
 
 	addRouteCmd.Flags().Uint32("weight", 100, "")
-	addRouteCmd.Flags().String("t_vni", "", "")
+	addRouteCmd.Flags().Uint32("t_vni", 100, "")
 	addRouteCmd.Flags().String("t_ipv6", "", "")
 
 	_ = addRouteCmd.MarkFlagRequired("vni")
