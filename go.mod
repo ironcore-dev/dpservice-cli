@@ -3,7 +3,7 @@ module github.com/onmetal/dpservice-go-library
 go 1.17
 
 require (
-	github.com/onmetal/net-dpservice-go v0.1.0
+	github.com/onmetal/net-dpservice-go v0.1.1
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.2
 )
