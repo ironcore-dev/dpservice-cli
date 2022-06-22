@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/onmetal/net-dpservice-go/proto"
-	"net"
+	// "net"
 	"os"
 	"time"
 
@@ -21,12 +21,7 @@ var addVipCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		ipv4, err := cmd.Flags().GetIP("ipv4")
-		if err != nil {
-			fmt.Println("Err:", err)
-			os.Exit(1)
-		}
-		ipv6, err := cmd.Flags().GetIP("ipv6")
+		ipv4, err := cmd.Flags().GetString("ipv4")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -34,13 +29,10 @@ var addVipCmd = &cobra.Command{
 
 		vipIp := &dpdkproto.MachineVIPIP{}
 
-		if ipv4.String() != "" {
+		if ipv4 != "" {
 			vipIp.IpVersion = dpdkproto.IPVersion_IPv4
-			vipIp.Address = ipv4
-		} else {
-			vipIp.IpVersion = dpdkproto.IPVersion_IPv6
-			vipIp.Address = ipv6
-		}
+			vipIp.Address = []byte(ipv4)
+		} 
 
 		machinId, err := cmd.Flags().GetString("machine_id")
 		if err != nil {
@@ -57,7 +49,7 @@ var addVipCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("AddMachineVIP", msg, req)
+		fmt.Println("AddMachineVIP, status: %d", msg, req, msg.Error)
 	},
 }
 
@@ -65,8 +57,7 @@ func init() {
 	vipCmd.AddCommand(addVipCmd)
 
 	addVipCmd.Flags().String("machine_id", "", "")
-	addVipCmd.Flags().IP("ipv4", net.IP{}, "")
-	addVipCmd.Flags().IP("ipv6", net.IP{}, "")
+	addVipCmd.Flags().String("ipv4", "", "")
 
 	_ = addVipCmd.MarkFlagRequired("machine_id")
 }
