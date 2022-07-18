@@ -1,6 +1,6 @@
 module github.com/onmetal/dpservice-go-library
 
-go 1.17
+go 1.18
 
 require (
 	github.com/onmetal/net-dpservice-go v0.1.1
