@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/onmetal/net-dpservice-go/proto"
+	"net/netip"
 	"os"
 	"time"
 
@@ -37,23 +38,23 @@ var delPrefixCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		length, err := cmd.Flags().GetUint32("length")
+		prefix := &dpdkproto.Prefix{}
+		var ipPrefix netip.Prefix
+		if ipv4 != "" {
+			ipPrefix, err = netip.ParsePrefix(ipv4)
+			prefix.IpVersion = dpdkproto.IPVersion_IPv4
+		} else {
+			ipPrefix, err = netip.ParsePrefix(ipv6)
+			prefix.IpVersion = dpdkproto.IPVersion_IPv6
+		}
+
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
 
-		prefix := &dpdkproto.Prefix{
-			PrefixLength: length,
-		}
-
-		if ipv4 != "" {
-			prefix.IpVersion = dpdkproto.IPVersion_IPv4
-			prefix.Address = []byte(ipv4)
-		} else {
-			prefix.IpVersion = dpdkproto.IPVersion_IPv6
-			prefix.Address = []byte(ipv6)
-		}
+		prefix.Address = []byte(ipPrefix.String())
+		prefix.PrefixLength = uint32(ipPrefix.Bits())
 
 		req := &dpdkproto.MachinePrefixMsg{
 			MachineId: &dpdkproto.MachineIDMsg{
@@ -73,9 +74,9 @@ var delPrefixCmd = &cobra.Command{
 
 func init() {
 	prefixCmd.AddCommand(delPrefixCmd)
-	delPrefixCmd.Flags().Uint32("length", 0, "")
-	delPrefixCmd.Flags().String("ipv4", "", "")
+	delPrefixCmd.Flags().String("ipv4", "", "192.168.1.1/32")
 	delPrefixCmd.Flags().String("ipv6", "", "")
 
-	_ = delPrefixCmd.MarkFlagRequired("length")
+	delPrefixCmd.Flags().StringP("machine_id", "m", "", "")
+	_ = delPrefixCmd.MarkFlagRequired("machine_id")
 }

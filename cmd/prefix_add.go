@@ -75,7 +75,7 @@ func init() {
 	prefixCmd.AddCommand(addPrefixCmd)
 
 	addPrefixCmd.Flags().StringP("machine_id", "m", "", "")
-	addPrefixCmd.Flags().String("ipv4", "", "")
+	addPrefixCmd.Flags().String("ipv4", "", "192.168.1.1/32")
 	addPrefixCmd.Flags().String("ipv6", "", "")
 
 	_ = addPrefixCmd.MarkFlagRequired("machine_id")
