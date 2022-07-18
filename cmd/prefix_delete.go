@@ -53,7 +53,7 @@ var delPrefixCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		prefix.Address = []byte(ipPrefix.String())
+		prefix.Address = []byte(ipPrefix.Addr().String())
 		prefix.PrefixLength = uint32(ipPrefix.Bits())
 
 		req := &dpdkproto.MachinePrefixMsg{
