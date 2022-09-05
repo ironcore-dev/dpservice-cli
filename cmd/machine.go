@@ -6,7 +6,7 @@ import (
 
 // MachineCmd represents the machine command
 var machineCmd = &cobra.Command{
-	Use: "machine",
+	Use: "interface",
 }
 
 func init() {

@@ -3,10 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
 	"os"
 	"time"
 
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 )
 
@@ -20,26 +20,26 @@ var listVipCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		machinId, err := cmd.Flags().GetString("machine_id")
+		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
 
-		req := &dpdkproto.MachineIDMsg{
-			MachineID: []byte(machinId),
+		req := &dpdkproto.InterfaceIDMsg{
+			InterfaceID: []byte(machinId),
 		}
 
-		msg, err := client.GetMachineVIP(ctx, req)
+		msg, err := client.GetInterfaceVIP(ctx, req)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("GetMachineVIP", msg, req)
+		fmt.Println("GetInterfaceVIP", msg, req)
 	},
 }
 
 func init() {
 	vipCmd.AddCommand(listVipCmd)
-	listVipCmd.Flags().String("machine_id", "", "")
-	_ = listVipCmd.MarkFlagRequired("machine_id")
+	listVipCmd.Flags().String("interface_id", "", "")
+	_ = listVipCmd.MarkFlagRequired("interface_id")
 }

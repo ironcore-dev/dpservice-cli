@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
-	"github.com/spf13/cobra"
 	"os"
 	"time"
+
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
+	"github.com/spf13/cobra"
 )
 
 // delRouteCmd represents the del command
@@ -19,26 +20,26 @@ var delVipCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		machinId, err := cmd.Flags().GetString("machine_id")
+		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
 
-		req := &dpdkproto.MachineIDMsg{
-			MachineID: []byte(machinId),
+		req := &dpdkproto.InterfaceIDMsg{
+			InterfaceID: []byte(machinId),
 		}
 
-		msg, err := client.DelMachineVIP(ctx, req)
+		msg, err := client.DeleteInterfaceVIP(ctx, req)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("DelMachineVIP", msg, req)
+		fmt.Println("DelInterfaceVIP", msg, req)
 	},
 }
 
 func init() {
 	vipCmd.AddCommand(delVipCmd)
-	delVipCmd.Flags().String("machine_id", "", "")
-	_ = delVipCmd.MarkFlagRequired("machine_id")
+	delVipCmd.Flags().String("interface_id", "", "")
+	_ = delVipCmd.MarkFlagRequired("interface_id")
 }
