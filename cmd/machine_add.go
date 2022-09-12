@@ -36,6 +36,12 @@ var addInterfaceCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		pci_name, err := cmd.Flags().GetString("pci_name")
+		if err != nil {
+			fmt.Println("Err:", err)
+			os.Exit(1)
+		}
+
 		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
@@ -45,6 +51,7 @@ var addInterfaceCmd = &cobra.Command{
 		req := &dpdkproto.CreateInterfaceRequest{
 			InterfaceType: dpdkproto.InterfaceType_VirtualInterface,
 			InterfaceID:   []byte(machinId),
+			DeviceName:    pci_name,
 			Vni:           vni,
 		}
 		if ipv4 != "" {
@@ -77,7 +84,9 @@ func init() {
 	addInterfaceCmd.Flags().StringP("interface_id", "i", "", "")
 	addInterfaceCmd.Flags().String("ipv4", "", "")
 	addInterfaceCmd.Flags().String("ipv6", "", "")
+	addInterfaceCmd.Flags().String("pci_name", "", "")
 
+	_ = addInterfaceCmd.MarkFlagRequired("pci_name")
 	_ = addInterfaceCmd.MarkFlagRequired("vni")
 	_ = addInterfaceCmd.MarkFlagRequired("interface_id")
 }
