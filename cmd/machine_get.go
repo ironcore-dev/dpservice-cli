@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// delInterfaceCmd represents the machine del command
-var delInterfaceCmd = &cobra.Command{
-	Use: "del",
+// getInterfaceCmd represents the interface get command
+var getInterfaceCmd = &cobra.Command{
+	Use: "get",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, closer := getDpClient(cmd)
 		defer closer.Close()
@@ -31,16 +31,16 @@ var delInterfaceCmd = &cobra.Command{
 			InterfaceID: []byte(machinId),
 		}
 
-		msg, err := client.DeleteInterface(ctx, req)
+		msg, err := client.GetInterface(ctx, req)
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		fmt.Println("DeleteInterface", msg)
+		fmt.Println(msg.String())
 	},
 }
 
 func init() {
-	machineCmd.AddCommand(delInterfaceCmd)
-	delInterfaceCmd.Flags().StringP("interface_id", "i", "", "")
+	machineCmd.AddCommand(getInterfaceCmd)
+	getInterfaceCmd.Flags().StringP("interface_id", "i", "", "")
 }

@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
 	"net/netip"
 	"os"
 	"time"
+
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +22,7 @@ var delPrefixCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		machinId, err := cmd.Flags().GetString("machine_id")
+		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -56,19 +57,19 @@ var delPrefixCmd = &cobra.Command{
 		prefix.Address = []byte(ipPrefix.Addr().String())
 		prefix.PrefixLength = uint32(ipPrefix.Bits())
 
-		req := &dpdkproto.MachinePrefixMsg{
-			MachineId: &dpdkproto.MachineIDMsg{
-				MachineID: []byte(machinId),
+		req := &dpdkproto.InterfacePrefixMsg{
+			InterfaceID: &dpdkproto.InterfaceIDMsg{
+				InterfaceID: []byte(machinId),
 			},
 			Prefix: prefix,
 		}
 
-		msg, err := client.DeleteMachinePrefix(ctx, req)
+		msg, err := client.DeleteInterfacePrefix(ctx, req)
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		fmt.Println("DeleteMachinePrefix", msg)
+		fmt.Println("DeleteInterfacePrefix", msg)
 	},
 }
 
@@ -77,6 +78,6 @@ func init() {
 	delPrefixCmd.Flags().String("ipv4", "", "192.168.1.1/32")
 	delPrefixCmd.Flags().String("ipv6", "", "")
 
-	delPrefixCmd.Flags().StringP("machine_id", "m", "", "")
-	_ = delPrefixCmd.MarkFlagRequired("machine_id")
+	delPrefixCmd.Flags().StringP("interface_id", "i", "", "")
+	_ = delPrefixCmd.MarkFlagRequired("interface_id")
 }

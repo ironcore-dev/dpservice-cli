@@ -2,4 +2,4 @@ all: build
 
 # Build binary
 build:
-	go build -o bin/dscleint main.go
+	go build -o bin/dsclient main.go

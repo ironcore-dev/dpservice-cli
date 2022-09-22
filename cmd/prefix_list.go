@@ -3,11 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
 	"os"
 
 	"time"
 
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 )
 
@@ -21,17 +21,17 @@ var listPrefixCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		machinId, err := cmd.Flags().GetString("machine_id")
+		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
 
-		req := &dpdkproto.MachineIDMsg{
-			MachineID: []byte(machinId),
+		req := &dpdkproto.InterfaceIDMsg{
+			InterfaceID: []byte(machinId),
 		}
 
-		msg, err := client.ListMachinePrefixes(ctx, req)
+		msg, err := client.ListInterfacePrefixes(ctx, req)
 		if err != nil {
 			panic(err)
 		}
@@ -44,6 +44,6 @@ var listPrefixCmd = &cobra.Command{
 func init() {
 	prefixCmd.AddCommand(listPrefixCmd)
 
-	listPrefixCmd.Flags().StringP("machine_id", "m", "", "")
-	_ = listPrefixCmd.MarkFlagRequired("machine_id")
+	listPrefixCmd.Flags().StringP("interface_id", "i", "", "")
+	_ = listPrefixCmd.MarkFlagRequired("interface_id")
 }

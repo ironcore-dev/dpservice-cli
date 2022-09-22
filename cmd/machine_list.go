@@ -3,15 +3,16 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/net-dpservice-go/proto"
+
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 
 	"time"
 
 	"github.com/spf13/cobra"
 )
 
-// listMachineCmd represents the machine list command
-var listMachineCmd = &cobra.Command{
+// listInterfaceCmd represents the machine list command
+var listInterfaceCmd = &cobra.Command{
 	Use: "list",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, closer := getDpClient(cmd)
@@ -20,16 +21,16 @@ var listMachineCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		msg, err := client.ListMachines(ctx, &dpdkproto.Empty{})
+		msg, err := client.ListInterfaces(ctx, &dpdkproto.Empty{})
 		if err != nil {
 			panic(err)
 		}
-		for _, m := range msg.GetMachines() {
+		for _, m := range msg.GetInterfaces() {
 			fmt.Println(m.String())
 		}
 	},
 }
 
 func init() {
-	machineCmd.AddCommand(listMachineCmd)
+	machineCmd.AddCommand(listInterfaceCmd)
 }

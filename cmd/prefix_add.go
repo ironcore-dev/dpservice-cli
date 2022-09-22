@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
-	"github.com/spf13/cobra"
 	"net/netip"
 	"os"
 	"time"
+
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
+	"github.com/spf13/cobra"
 )
 
 // addPrefixCmd represents the prefix add command
@@ -20,7 +21,7 @@ var addPrefixCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		machinId, err := cmd.Flags().GetString("machine_id")
+		machinId, err := cmd.Flags().GetString("interface_id")
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
@@ -54,19 +55,19 @@ var addPrefixCmd = &cobra.Command{
 
 		prefix.Address = []byte(ipPrefix.Addr().String())
 		prefix.PrefixLength = uint32(ipPrefix.Bits())
-		reg := &dpdkproto.MachinePrefixMsg{
-			MachineId: &dpdkproto.MachineIDMsg{
-				MachineID: []byte(machinId),
+		reg := &dpdkproto.InterfacePrefixMsg{
+			InterfaceID: &dpdkproto.InterfaceIDMsg{
+				InterfaceID: []byte(machinId),
 			},
 			Prefix: prefix,
 		}
 
-		msg, err := client.AddMachinePrefix(ctx, reg)
+		msg, err := client.AddInterfacePrefix(ctx, reg)
 		if err != nil {
 			fmt.Println("Err:", err)
 			os.Exit(1)
 		}
-		fmt.Println("AddMachinePrefix", msg)
+		fmt.Println("AddInterfacePrefix", msg)
 
 	},
 }
@@ -74,9 +75,9 @@ var addPrefixCmd = &cobra.Command{
 func init() {
 	prefixCmd.AddCommand(addPrefixCmd)
 
-	addPrefixCmd.Flags().StringP("machine_id", "m", "", "")
+	addPrefixCmd.Flags().StringP("interface_id", "i", "", "")
 	addPrefixCmd.Flags().String("ipv4", "", "192.168.1.1/32")
 	addPrefixCmd.Flags().String("ipv6", "", "")
 
-	_ = addPrefixCmd.MarkFlagRequired("machine_id")
+	_ = addPrefixCmd.MarkFlagRequired("interface_id")
 }
