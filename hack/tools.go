@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2021 OnMetal authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package tools
+
+//go:build tools
+// +build tools
+
+package tools
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/onmetal/dpservice-go-library/cmd"
+	// Use addlicense for adding license headers.
+	_ "github.com/google/addlicense"
 )
-
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
-	}
-}

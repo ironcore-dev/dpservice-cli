@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package io_test
 
 import (
-	"fmt"
-	"os"
+	"testing"
 
-	"github.com/onmetal/dpservice-go-library/cmd"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
-	}
+func TestIo(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Io Suite")
 }

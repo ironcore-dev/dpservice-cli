@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package api
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/onmetal/dpservice-go-library/cmd"
+	"github.com/onmetal/dpservice-go-library/dpdk/runtime"
 )
 
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+var DefaultScheme = runtime.NewScheme()
+
+func init() {
+	if err := DefaultScheme.Add(
+		&Interface{},
+		&InterfaceList{},
+		&Prefix{},
+		&PrefixList{},
+		&Route{},
+		&RouteList{},
+		&VirtualIP{},
+	); err != nil {
+		panic(err)
 	}
 }
