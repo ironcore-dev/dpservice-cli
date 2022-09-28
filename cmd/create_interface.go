@@ -35,7 +35,7 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "interface <id>",
 		Short:   "Create an interface",
-		Aliases: []string{"iface"},
+		Aliases: InterfaceAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceID := args[0]
@@ -88,7 +88,7 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

@@ -15,17 +15,39 @@
 package api
 
 import (
+	"fmt"
 	"net/netip"
 	"reflect"
 )
 
+type Object interface {
+	GetKind() string
+	GetName() string
+}
+
+type List interface {
+	GetItems() []Object
+}
+
 type TypeMeta struct {
-	Kind string
+	Kind string `json:"kind"`
+}
+
+func (m *TypeMeta) GetKind() string {
+	return m.Kind
 }
 
 type RouteList struct {
 	TypeMeta `json:",inline"`
 	Items    []Route `json:"items"`
+}
+
+func (l *RouteList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
 }
 
 type Route struct {
@@ -38,6 +60,10 @@ type RouteMeta struct {
 	VNI     uint32       `json:"vni"`
 	Prefix  netip.Prefix `json:"prefix"`
 	NextHop RouteNextHop `json:"nextHop"`
+}
+
+func (m *RouteMeta) GetName() string {
+	return fmt.Sprintf("%s-%d:%s", m.Prefix, m.NextHop.VNI, m.NextHop.IP)
 }
 
 type RouteSpec struct {
@@ -53,6 +79,14 @@ type PrefixList struct {
 	Items    []Prefix `json:"items"`
 }
 
+func (l *PrefixList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
+}
+
 type Prefix struct {
 	TypeMeta   `json:",inline"`
 	PrefixMeta `json:"metadata"`
@@ -62,6 +96,10 @@ type Prefix struct {
 type PrefixMeta struct {
 	InterfaceID string       `json:"interfaceID"`
 	Prefix      netip.Prefix `json:"prefix"`
+}
+
+func (m *PrefixMeta) GetName() string {
+	return m.Prefix.String()
 }
 
 type PrefixSpec struct {
@@ -78,6 +116,10 @@ type VirtualIPMeta struct {
 	IP          netip.Addr `json:"ip"`
 }
 
+func (m *VirtualIPMeta) GetName() string {
+	return m.IP.String()
+}
+
 type VirtualIPSpec struct {
 }
 
@@ -90,6 +132,10 @@ type Interface struct {
 
 type InterfaceMeta struct {
 	ID string `json:"id"`
+}
+
+func (m *InterfaceMeta) GetName() string {
+	return m.ID
 }
 
 type InterfaceSpec struct {
@@ -105,6 +151,14 @@ type InterfaceStatus struct {
 type InterfaceList struct {
 	TypeMeta `json:",inline"`
 	Items    []Interface `json:"items"`
+}
+
+func (l *InterfaceList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
 }
 
 var (

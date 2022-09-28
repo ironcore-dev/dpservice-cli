@@ -32,7 +32,7 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	cmd := &cobra.Command{
 		Use:     "interface",
 		Short:   "Get or list interface(s)",
-		Aliases: []string{"iface"},
+		Aliases: InterfaceAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args
 			return RunGetInterface(
@@ -79,7 +79,7 @@ func RunGetInterface(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

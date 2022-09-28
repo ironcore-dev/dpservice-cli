@@ -31,7 +31,7 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "route <prefix> <next-hop-vni> <next-hop-ip> [<prefix-n> <next-hop-ip-n> <next-hop-ip-n>...]",
 		Short:   "Delete a route",
-		Aliases: []string{"rt"},
+		Aliases: RouteAliases,
 		Args:    MultipleOfArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			keys, err := ParseRouteKeyArgs(args)

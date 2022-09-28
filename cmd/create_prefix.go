@@ -35,9 +35,10 @@ func CreatePrefix(
 	)
 
 	cmd := &cobra.Command{
-		Use:   "prefix <prefix>",
-		Short: "Create a prefix",
-		Args:  cobra.ExactArgs(1),
+		Use:     "prefix <prefix>",
+		Short:   "Create a prefix",
+		Args:    cobra.ExactArgs(1),
+		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefix, err := netip.ParsePrefix(args[0])
 			if err != nil {
@@ -95,7 +96,7 @@ func RunCreatePrefix(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

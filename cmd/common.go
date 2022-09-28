@@ -97,7 +97,7 @@ func (o *RendererOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.Pretty, "pretty", o.Pretty, "Whether to render pretty output.")
 }
 
-func (o *RendererOptions) NewRenderer(w io.Writer) (renderer.Renderer, error) {
+func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.Renderer, error) {
 	// TODO: Factor out instantiation of registry & make it more modular.
 	registry := renderer.NewRegistry()
 
@@ -113,11 +113,28 @@ func (o *RendererOptions) NewRenderer(w io.Writer) (renderer.Renderer, error) {
 		return nil, err
 	}
 
-	return registry.New(o.Output, w)
+	if err := registry.Register("name", func(w io.Writer) renderer.Renderer {
+		return renderer.NewName(w, operation)
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := registry.Register("table", func(w io.Writer) renderer.Renderer {
+		return renderer.NewTable(w, renderer.DefaultTableConverter)
+	}); err != nil {
+		return nil, err
+	}
+
+	output := o.Output
+	if output == "" {
+		output = "table"
+	}
+
+	return registry.New(output, w)
 }
 
 type RendererFactory interface {
-	NewRenderer(w io.Writer) (renderer.Renderer, error)
+	NewRenderer(operation string, w io.Writer) (renderer.Renderer, error)
 }
 
 type SourcesOptions struct {
@@ -194,3 +211,10 @@ func ParsePrefixArgs(args []string) ([]netip.Prefix, error) {
 	}
 	return prefixes, nil
 }
+
+var (
+	InterfaceAliases = []string{"interfaces", "iface", "ifaces"}
+	PrefixAliases    = []string{"prefixes", "prfx", "prfxs"}
+	RouteAliases     = []string{"routes", "rt", "rts"}
+	VirtualIPAliases = []string{"virtualips", "vip", "vips"}
+)

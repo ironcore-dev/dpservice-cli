@@ -32,7 +32,7 @@ func GetRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFacto
 	cmd := &cobra.Command{
 		Use:     "route [<prefix> <next-hop-vni> <next-hop-ip>...]",
 		Short:   "Get or list route(s)",
-		Aliases: []string{"rt"},
+		Aliases: RouteAliases,
 		Args:    MultipleOfArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			keys, err := ParseRouteKeyArgs(args)
@@ -91,7 +91,7 @@ func RunGetRoute(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

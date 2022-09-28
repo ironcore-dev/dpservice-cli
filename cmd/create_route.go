@@ -35,7 +35,7 @@ func CreateRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFa
 	cmd := &cobra.Command{
 		Use:     "route <prefix> <next-hop-vni> <next-hop-ip>",
 		Short:   "Create a route",
-		Aliases: []string{"rt"},
+		Aliases: RouteAliases,
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefix, err := netip.ParsePrefix(args[0])
@@ -108,7 +108,7 @@ func RunCreateRoute(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

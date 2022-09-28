@@ -31,8 +31,9 @@ func GetPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFact
 	)
 
 	cmd := &cobra.Command{
-		Use:   "prefix [<prefix>...]",
-		Short: "Get or list prefix(es)",
+		Use:     "prefix [<prefix>...]",
+		Short:   "Get or list prefix(es)",
+		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefixes, err := ParsePrefixArgs(args)
 			if err != nil {
@@ -90,7 +91,7 @@ func RunGetPrefix(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

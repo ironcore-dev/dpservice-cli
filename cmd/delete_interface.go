@@ -31,7 +31,7 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "interface <id> [<ids> ...]",
 		Short:   "Delete interface(s)",
-		Aliases: []string{"iface"},
+		Aliases: InterfaceAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args

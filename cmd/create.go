@@ -26,7 +26,7 @@ import (
 )
 
 func Create(dpdkClientFactory DPDKClientFactory) *cobra.Command {
-	rendererOptions := &RendererOptions{}
+	rendererOptions := &RendererOptions{Output: "name"}
 	sourcesOptions := &SourcesOptions{}
 
 	cmd := &cobra.Command{
@@ -77,7 +77,7 @@ func RunCreate(
 
 	dc := dynamic.NewFromStructured(client)
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

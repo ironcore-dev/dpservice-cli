@@ -34,7 +34,7 @@ func CreateVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "virtualip <ip>",
 		Short:   "Create a virtual ip",
-		Aliases: []string{"vip"},
+		Aliases: VirtualIPAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ip, err := netip.ParseAddr(args[0])
@@ -93,7 +93,7 @@ func RunCreateVirtualIP(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

@@ -69,14 +69,14 @@ func (c *client) ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
 		return nil, err
 	}
 
-	var ifaces []api.Interface
-	for _, dpdkIface := range res.GetInterfaces() {
+	ifaces := make([]api.Interface, len(res.GetInterfaces()))
+	for i, dpdkIface := range res.GetInterfaces() {
 		iface, err := api.ProtoInterfaceToInterface(dpdkIface)
 		if err != nil {
 			return nil, err
 		}
 
-		ifaces = append(ifaces, *iface)
+		ifaces[i] = *iface
 	}
 
 	return &api.InterfaceList{
@@ -183,14 +183,14 @@ func (c *client) ListPrefixes(ctx context.Context, interfaceID string) (*api.Pre
 		return nil, err
 	}
 
-	var prefixes []api.Prefix
-	for _, dpdkPrefix := range res.GetPrefixes() {
+	prefixes := make([]api.Prefix, len(res.GetPrefixes()))
+	for i, dpdkPrefix := range res.GetPrefixes() {
 		prefix, err := api.ProtoPrefixToPrefix(interfaceID, dpdkPrefix)
 		if err != nil {
 			return nil, err
 		}
 
-		prefixes = append(prefixes, *prefix)
+		prefixes[i] = *prefix
 	}
 
 	return &api.PrefixList{
@@ -300,14 +300,14 @@ func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, er
 		return nil, err
 	}
 
-	var routes []api.Route
-	for _, dpdkRoute := range res.GetRoutes() {
+	routes := make([]api.Route, len(res.GetRoutes()))
+	for i, dpdkRoute := range res.GetRoutes() {
 		route, err := api.ProtoRouteToRoute(vni, dpdkRoute)
 		if err != nil {
 			return nil, err
 		}
 
-		routes = append(routes, *route)
+		routes[i] = *route
 	}
 
 	return &api.RouteList{

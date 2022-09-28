@@ -30,9 +30,10 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "prefix <prefix> [<prefixes>...]",
-		Short: "Delete a prefix",
-		Args:  cobra.MinimumNArgs(1),
+		Use:     "prefix <prefix> [<prefixes>...]",
+		Short:   "Delete a prefix",
+		Aliases: PrefixAliases,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefixes, err := ParsePrefixArgs(args)
 			if err != nil {

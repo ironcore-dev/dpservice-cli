@@ -32,7 +32,7 @@ func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	cmd := &cobra.Command{
 		Use:     "virtualip [<interface-ids>...]",
 		Short:   "Get or list virtualip(s)",
-		Aliases: []string{"vip"},
+		Aliases: VirtualIPAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args
 			return RunGetVirtualIP(
@@ -79,7 +79,7 @@ func RunGetVirtualIP(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer(os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}

@@ -17,6 +17,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/onmetal/dpservice-go-library/dpdk/api"
 	"github.com/onmetal/dpservice-go-library/dpdk/client/dynamic"
@@ -26,6 +27,7 @@ import (
 
 func Delete(factory DPDKClientFactory) *cobra.Command {
 	sourcesOptions := &SourcesOptions{}
+	rendererOptions := &RendererOptions{Output: "name"}
 
 	cmd := &cobra.Command{
 		Use:     "delete",
@@ -33,7 +35,7 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			return RunDelete(ctx, factory, sourcesOptions)
+			return RunDelete(ctx, factory, rendererOptions, sourcesOptions)
 		},
 	}
 
@@ -57,6 +59,7 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 func RunDelete(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
+	rendererFactory RendererFactory,
 	sourcesReaderFactory SourcesReaderFactory,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -68,6 +71,11 @@ func RunDelete(
 			fmt.Printf("Error cleaning up client: %v\n", err)
 		}
 	}()
+
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
 
 	dc := dynamic.NewFromStructured(client)
 
@@ -88,7 +96,9 @@ func RunDelete(
 			fmt.Printf("Error deleting %T %s: %v\n", obj, key, err)
 		}
 
-		fmt.Printf("Deleted %T %s\n", obj, key)
+		if err := renderer.Render(obj); err != nil {
+			return fmt.Errorf("error rendering %T: %w", obj, err)
+		}
 	}
 
 	return nil

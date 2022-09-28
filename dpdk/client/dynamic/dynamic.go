@@ -25,6 +25,7 @@ import (
 
 type ObjectKey interface {
 	fmt.Stringer
+	Name() string
 }
 
 type InterfaceKey struct {
@@ -32,6 +33,10 @@ type InterfaceKey struct {
 }
 
 func (k InterfaceKey) String() string {
+	return k.ID
+}
+
+func (k InterfaceKey) Name() string {
 	return k.ID
 }
 
@@ -44,11 +49,19 @@ func (k PrefixKey) String() string {
 	return fmt.Sprintf("%s/%s", k.InterfaceID, k.Prefix)
 }
 
+func (k PrefixKey) Name() string {
+	return k.Prefix.String()
+}
+
 type VirtualIPKey struct {
 	InterfaceID string
 }
 
 func (k VirtualIPKey) String() string {
+	return k.InterfaceID
+}
+
+func (k VirtualIPKey) Name() string {
 	return k.InterfaceID
 }
 
@@ -63,9 +76,17 @@ func (k RouteKey) String() string {
 	return fmt.Sprintf("%d:%s-%d:%s", k.VNI, k.Prefix, k.NextHopVNI, k.NextHopIP)
 }
 
+func (k RouteKey) Name() string {
+	return fmt.Sprintf("%s-%d:%s", k.Prefix, k.NextHopVNI, k.NextHopIP)
+}
+
 type emptyKey struct{}
 
 func (emptyKey) String() string {
+	return ""
+}
+
+func (emptyKey) Name() string {
 	return ""
 }
 
