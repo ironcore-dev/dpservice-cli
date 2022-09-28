@@ -12,18 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cmd
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/onmetal/dpservice-go-library/cmd"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+func Command() *cobra.Command {
+	dpdkClientOptions := &DPDKClientOptions{}
+
+	cmd := &cobra.Command{
+		Use:  "dpservice-cli",
+		Args: cobra.NoArgs,
+		RunE: SubcommandRequired,
 	}
+
+	dpdkClientOptions.AddFlags(cmd.PersistentFlags())
+
+	cmd.AddCommand(
+		Create(dpdkClientOptions),
+		Get(dpdkClientOptions),
+		Delete(dpdkClientOptions),
+	)
+
+	return cmd
 }

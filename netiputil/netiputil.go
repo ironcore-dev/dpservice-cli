@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package netiputil
 
-import (
-	"fmt"
-	"os"
+import "net/netip"
 
-	"github.com/onmetal/dpservice-go-library/cmd"
-)
-
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+func FindIPv4(ips []netip.Addr) netip.Addr {
+	for _, ip := range ips {
+		if ip.Is4() {
+			return ip
+		}
 	}
+	return netip.Addr{}
+}
+
+func FindIPv6(ips []netip.Addr) netip.Addr {
+	for _, ip := range ips {
+		if ip.Is6() {
+			return ip
+		}
+	}
+	return netip.Addr{}
 }

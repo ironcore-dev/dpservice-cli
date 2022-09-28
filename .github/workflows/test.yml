@@ -1,0 +1,20 @@
+name: test
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  checks:
+    name: run
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+      - run: ./hack/setup-git-redirect.sh
+        env:
+          GITHUB_PAT: ${{ secrets.BOT_PAT }}
+      - run: make test

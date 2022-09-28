@@ -12,18 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package io
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/onmetal/dpservice-go-library/cmd"
+	"bytes"
+	"io"
 )
 
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+type CheckpointReader struct {
+	offset int
+	src    io.Reader
+	buf    bytes.Buffer
+}
+
+func NewCheckpointReader(src io.Reader) *CheckpointReader {
+	return &CheckpointReader{
+		src: src,
 	}
+}
+
+func (r *CheckpointReader) Read(p []byte) (n int, err error) {
+	n, err = io.MultiReader(bytes.NewReader(r.buf.Bytes()[r.offset:]), io.TeeReader(r.src, &r.buf)).Read(p)
+	r.offset += n
+	return n, err
+}
+
+func (r *CheckpointReader) Checkpoint() {
+	r.buf.Reset()
+	r.offset = 0
+}
+
+func (r *CheckpointReader) Unread() (n int, err error) {
+	n = r.offset
+	r.offset = 0
+	return n, nil
 }

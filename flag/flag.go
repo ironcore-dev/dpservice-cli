@@ -12,18 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package flag
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/onmetal/dpservice-go-library/cmd"
+	"bytes"
+	"encoding/csv"
+	"strings"
 )
 
-func main() {
-	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+func readAsCSV(val string) ([]string, error) {
+	if val == "" {
+		return []string{}, nil
 	}
+	stringReader := strings.NewReader(val)
+	csvReader := csv.NewReader(stringReader)
+	return csvReader.Read()
+}
+
+func writeAsCSV(vals []string) (string, error) {
+	b := &bytes.Buffer{}
+	w := csv.NewWriter(b)
+	err := w.Write(vals)
+	if err != nil {
+		return "", err
+	}
+	w.Flush()
+	return strings.TrimSuffix(b.String(), "\n"), nil
 }
