@@ -21,6 +21,49 @@ import (
 	proto "github.com/onmetal/net-dpservice-go/proto"
 )
 
+func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID string) (*LoadBalancer, error) {
+
+	var underlayRoute netip.Addr
+	if underlayRouteString := string(dpdkLB.GetUnderlayRoute()); underlayRouteString != "" {
+		var err error
+		underlayRoute, err = netip.ParseAddr(string(dpdkLB.GetUnderlayRoute()))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing underlay ip: %w", err)
+		}
+	}
+	var lbip netip.Addr
+	if lbipString := string(dpdkLB.GetLbVipIP().Address); lbipString != "" {
+		var err error
+		lbip, err = netip.ParseAddr(string(dpdkLB.GetLbVipIP().Address))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing lb ip: %w", err)
+		}
+	}
+	var ports = make([]uint32, len(dpdkLB.Lbports))
+	for _, port := range dpdkLB.Lbports {
+		ports = append(ports, port.Port)
+	}
+
+	return &LoadBalancer{
+		TypeMeta: TypeMeta{
+			Kind: LoadBalancerKind,
+		},
+		LoadBalancerMeta: LoadBalancerMeta{
+			ID: lbID,
+		},
+		Spec: LoadBalancerSpec{
+			VNI:           dpdkLB.Vni,
+			LbVipIP:       lbip,
+			Lbports:       ports,
+			UnderlayRoute: underlayRoute,
+		},
+		Status: LoadBalancerStatus{
+			Error:   dpdkLB.Status.Error,
+			Message: dpdkLB.Status.Message,
+		},
+	}, nil
+}
+
 func ProtoInterfaceToInterface(dpdkIface *proto.Interface) (*Interface, error) {
 	var ips []netip.Addr
 

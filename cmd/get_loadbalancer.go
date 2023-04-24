@@ -24,22 +24,22 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func GetLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts GetVirtualIPOptions
+		opts GetLoadBalancerOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip [<interface-ids>...]",
-		Short:   "Get or list virtualip(s)",
-		Aliases: VirtualIPAliases,
+		Use:     "loadbalancer",
+		Short:   "Get or list loadbalancer(s)",
+		Aliases: LoadBalancerAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunGetVirtualIP(
+			loadbalancerIDs := args
+			return RunGetLoadBalancer(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
+				loadbalancerIDs,
 				opts,
 			)
 		},
@@ -52,22 +52,22 @@ func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	return cmd
 }
 
-type GetVirtualIPOptions struct {
+type GetLoadBalancerOptions struct {
 }
 
-func (o *GetVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *GetLoadBalancerOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
-func (o *GetVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *GetLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunGetVirtualIP(
+func RunGetLoadBalancer(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
-	opts GetVirtualIPOptions,
+	loadbalancerIDs []string,
+	opts GetLoadBalancerOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -84,18 +84,19 @@ func RunGetVirtualIP(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		return fmt.Errorf("listing virtual ips is not implemented")
+	if len(loadbalancerIDs) == 0 {
+		// TODO implement list lbs
+		return fmt.Errorf("list loadbalancers not implemented")
 	}
 
-	for _, interfaceID := range interfaceIDs {
-		virtualIP, err := client.GetVirtualIP(ctx, interfaceID)
+	for _, loadbalancerID := range loadbalancerIDs {
+		lb, err := client.GetLoadBalancer(ctx, loadbalancerID)
 		if err != nil {
-			fmt.Printf("Error getting virtual ip for interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error getting loadbalancer: %w", err)
 		}
 
-		if err := renderer.Render(virtualIP); err != nil {
-			return fmt.Errorf("error rendering virtual ip: %w", err)
+		if err := renderer.Render(lb); err != nil {
+			return fmt.Errorf("error rendering loadbalancer %s: %w", loadbalancerID, err)
 		}
 	}
 	return nil

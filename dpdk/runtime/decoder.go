@@ -20,7 +20,7 @@ import (
 	"io"
 
 	yaml2 "github.com/ghodss/yaml"
-	dpsvcio "github.com/onmetal/dpservice-go-library/io"
+	dpsvcio "github.com/onmetal/dpservice-cli/io"
 	"gopkg.in/yaml.v2"
 )
 

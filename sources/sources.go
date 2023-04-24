@@ -21,8 +21,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
-	runtime2 "github.com/onmetal/dpservice-go-library/dpdk/runtime"
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	runtime2 "github.com/onmetal/dpservice-cli/dpdk/runtime"
 )
 
 type Iterator struct {

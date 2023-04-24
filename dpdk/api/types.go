@@ -123,6 +123,46 @@ func (m *VirtualIPMeta) GetName() string {
 type VirtualIPSpec struct {
 }
 
+type LoadBalancer struct {
+	TypeMeta         `json:",inline"`
+	LoadBalancerMeta `json:"metadata"`
+	Spec             LoadBalancerSpec   `json:"spec"`
+	Status           LoadBalancerStatus `json:"status"`
+}
+
+type LoadBalancerMeta struct {
+	ID string `json:"id"`
+}
+
+func (m *LoadBalancerMeta) GetName() string {
+	return m.ID
+}
+
+type LoadBalancerSpec struct {
+	VNI           uint32     `json:"vni"`
+	LbVipIP       netip.Addr `json:"lbVipIP"`
+	Lbports       []uint32   `json:"lbports"`
+	UnderlayRoute netip.Addr `json:"underlayRoute"`
+}
+
+type LoadBalancerStatus struct {
+	Error   int32  `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type LoadBalancerList struct {
+	TypeMeta `json:",inline"`
+	Items    []LoadBalancer `json:"items"`
+}
+
+func (l *LoadBalancerList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
+}
+
 type Interface struct {
 	TypeMeta      `json:",inline"`
 	InterfaceMeta `json:"metadata"`
@@ -162,11 +202,14 @@ func (l *InterfaceList) GetItems() []Object {
 }
 
 var (
-	InterfaceKind     = reflect.TypeOf(Interface{}).Name()
-	InterfaceListKind = reflect.TypeOf(InterfaceList{}).Name()
-	PrefixKind        = reflect.TypeOf(Prefix{}).Name()
-	PrefixListKind    = reflect.TypeOf(PrefixList{}).Name()
-	VirtualIPKind     = reflect.TypeOf(VirtualIP{}).Name()
-	RouteKind         = reflect.TypeOf(Route{}).Name()
-	RouteListKind     = reflect.TypeOf(RouteList{}).Name()
+	LoadBalancerKind     = reflect.TypeOf(Interface{}).Name()
+	InterfaceKind        = reflect.TypeOf(Interface{}).Name()
+	InterfaceListKind    = reflect.TypeOf(InterfaceList{}).Name()
+	LoadbalancerKind     = reflect.TypeOf(Interface{}).Name()
+	LoadbalancerListKind = reflect.TypeOf(InterfaceList{}).Name()
+	PrefixKind           = reflect.TypeOf(Prefix{}).Name()
+	PrefixListKind       = reflect.TypeOf(PrefixList{}).Name()
+	VirtualIPKind        = reflect.TypeOf(VirtualIP{}).Name()
+	RouteKind            = reflect.TypeOf(Route{}).Name()
+	RouteListKind        = reflect.TypeOf(RouteList{}).Name()
 )

@@ -15,7 +15,7 @@
 package api
 
 import (
-	"github.com/onmetal/dpservice-go-library/dpdk/runtime"
+	"github.com/onmetal/dpservice-cli/dpdk/runtime"
 )
 
 var DefaultScheme = runtime.NewScheme()

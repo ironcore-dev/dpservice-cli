@@ -19,13 +19,15 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
-	apierrors "github.com/onmetal/dpservice-go-library/dpdk/api/errors"
-	"github.com/onmetal/dpservice-go-library/netiputil"
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	apierrors "github.com/onmetal/dpservice-cli/dpdk/api/errors"
+	"github.com/onmetal/dpservice-cli/netiputil"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 )
 
 type Client interface {
+	GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error)
+
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
 	CreateInterface(ctx context.Context, iface *api.Interface) (*api.Interface, error)
@@ -50,6 +52,18 @@ type client struct {
 
 func NewClient(protoClient dpdkproto.DPDKonmetalClient) Client {
 	return &client{protoClient}
+}
+
+func (c *client) GetLoadBalancer(ctx context.Context, name string) (*api.LoadBalancer, error) {
+	res, err := c.DPDKonmetalClient.GetLoadBalancer(ctx, &dpdkproto.GetLoadBalancerRequest{LoadBalancerID: []byte(name)})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+	lb, err := api.ProtoLoadBalancerToLoadBalancer(res, name)
+	return lb, err
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

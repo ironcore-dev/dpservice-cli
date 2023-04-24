@@ -23,7 +23,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 )
 
 type Renderer interface {
@@ -147,6 +147,8 @@ var DefaultTableConverter = defaultTableConverter{}
 
 func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 	switch obj := v.(type) {
+	case *api.LoadBalancer:
+		return t.loadbalancerTable(*obj)
 	case *api.Interface:
 		return t.interfaceTable([]api.Interface{*obj})
 	case *api.InterfaceList:
@@ -164,6 +166,20 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
+}
+
+func (t defaultTableConverter) loadbalancerTable(lbs api.LoadBalancer) (*TableData, error) {
+	headers := []any{"ID", "VNI", "LbVipIP", "Lbports", "UnderlayRoute"}
+
+	columns := make([][]any, 1)
+	//for i, lb := range lbs {
+	columns[0] = []any{lbs.ID, lbs.Spec.VNI, lbs.Spec.LbVipIP, lbs.Spec.Lbports, lbs.Spec.UnderlayRoute}
+	//}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
 }
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {

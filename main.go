@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-go-library/cmd"
+	"github.com/onmetal/dpservice-cli/cmd"
 )
 
 func main() {

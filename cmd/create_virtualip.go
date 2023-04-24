@@ -20,8 +20,8 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

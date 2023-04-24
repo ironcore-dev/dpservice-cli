@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
-	"github.com/onmetal/dpservice-go-library/dpdk/client/dynamic"
-	"github.com/onmetal/dpservice-go-library/sources"
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
+	"github.com/onmetal/dpservice-cli/sources"
 	"github.com/spf13/cobra"
 )
 

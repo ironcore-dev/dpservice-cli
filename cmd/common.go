@@ -23,9 +23,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/client"
-	"github.com/onmetal/dpservice-go-library/renderer"
-	"github.com/onmetal/dpservice-go-library/sources"
+	"github.com/onmetal/dpservice-cli/dpdk/client"
+	"github.com/onmetal/dpservice-cli/renderer"
+	"github.com/onmetal/dpservice-cli/sources"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -187,7 +187,7 @@ func ParseRouteKeyArgs(args []string) ([]RouteKey, error) {
 		return nil, fmt.Errorf("expected args to be a multiple of 3 but got %d", len(args))
 	}
 
-	keys := make([]RouteKey, len(args)%3)
+	keys := make([]RouteKey, len(args)/3)
 	for i := 0; i < len(args); i += 3 {
 		key, err := ParseRouteKey(args[i], args[i+1], args[i+2])
 		if err != nil {
@@ -213,8 +213,9 @@ func ParsePrefixArgs(args []string) ([]netip.Prefix, error) {
 }
 
 var (
-	InterfaceAliases = []string{"interfaces", "iface", "ifaces"}
-	PrefixAliases    = []string{"prefixes", "prfx", "prfxs"}
-	RouteAliases     = []string{"routes", "rt", "rts"}
-	VirtualIPAliases = []string{"virtualips", "vip", "vips"}
+	InterfaceAliases    = []string{"interfaces", "iface", "ifaces"}
+	PrefixAliases       = []string{"prefixes", "prfx", "prfxs"}
+	RouteAliases        = []string{"routes", "rt", "rts"}
+	VirtualIPAliases    = []string{"virtualips", "vip", "vips"}
+	LoadBalancerAliases = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
 )
