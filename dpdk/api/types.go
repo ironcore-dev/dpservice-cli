@@ -123,6 +123,7 @@ func (m *VirtualIPMeta) GetName() string {
 type VirtualIPSpec struct {
 }
 
+// Loadbalancer section
 type LoadBalancer struct {
 	TypeMeta         `json:",inline"`
 	LoadBalancerMeta `json:"metadata"`
@@ -141,13 +142,23 @@ func (m *LoadBalancerMeta) GetName() string {
 type LoadBalancerSpec struct {
 	VNI           uint32     `json:"vni"`
 	LbVipIP       netip.Addr `json:"lbVipIP"`
-	Lbports       []uint32   `json:"lbports"`
+	Lbports       []LBPort   `json:"lbports"`
 	UnderlayRoute netip.Addr `json:"underlayRoute"`
 }
 
 type LoadBalancerStatus struct {
 	Error   int32  `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+type LBIP struct {
+	IpVersion bool   `json:"ipVersion"`
+	Address   []byte `json:"address"`
+}
+
+type LBPort struct {
+	Protocol uint32 `json:"protocol"`
+	Port     uint32 `json:"port"`
 }
 
 type LoadBalancerList struct {
@@ -163,6 +174,7 @@ func (l *LoadBalancerList) GetItems() []Object {
 	return res
 }
 
+// Interface section
 type Interface struct {
 	TypeMeta      `json:",inline"`
 	InterfaceMeta `json:"metadata"`
@@ -202,11 +214,10 @@ func (l *InterfaceList) GetItems() []Object {
 }
 
 var (
-	LoadBalancerKind     = reflect.TypeOf(Interface{}).Name()
 	InterfaceKind        = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind    = reflect.TypeOf(InterfaceList{}).Name()
-	LoadbalancerKind     = reflect.TypeOf(Interface{}).Name()
-	LoadbalancerListKind = reflect.TypeOf(InterfaceList{}).Name()
+	LoadBalancerKind     = reflect.TypeOf(LoadBalancer{}).Name()
+	LoadBalancerListKind = reflect.TypeOf(LoadBalancerList{}).Name()
 	PrefixKind           = reflect.TypeOf(Prefix{}).Name()
 	PrefixListKind       = reflect.TypeOf(PrefixList{}).Name()
 	VirtualIPKind        = reflect.TypeOf(VirtualIP{}).Name()

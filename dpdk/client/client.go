@@ -27,6 +27,7 @@ import (
 
 type Client interface {
 	GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error)
+	CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (*api.LoadBalancer, error)
 
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
@@ -54,16 +55,52 @@ func NewClient(protoClient dpdkproto.DPDKonmetalClient) Client {
 	return &client{protoClient}
 }
 
-func (c *client) GetLoadBalancer(ctx context.Context, name string) (*api.LoadBalancer, error) {
-	res, err := c.DPDKonmetalClient.GetLoadBalancer(ctx, &dpdkproto.GetLoadBalancerRequest{LoadBalancerID: []byte(name)})
+func (c *client) GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error) {
+	res, err := c.DPDKonmetalClient.GetLoadBalancer(ctx, &dpdkproto.GetLoadBalancerRequest{LoadBalancerID: []byte(id)})
 	if err != nil {
 		return nil, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
-	lb, err := api.ProtoLoadBalancerToLoadBalancer(res, name)
+	lb, err := api.ProtoLoadBalancerToLoadBalancer(res, id)
 	return lb, err
+}
+
+func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (*api.LoadBalancer, error) {
+	var lbPorts = make([]*dpdkproto.LBPort, 0)
+	for _, p := range lb.Spec.Lbports {
+		lbPort := &dpdkproto.LBPort{Port: p.Port, Protocol: dpdkproto.Protocol(p.Protocol)}
+		lbPorts = append(lbPorts, lbPort)
+	}
+	res, err := c.DPDKonmetalClient.CreateLoadBalancer(ctx, &dpdkproto.CreateLoadBalancerRequest{
+		LoadBalancerID: []byte(lb.LoadBalancerMeta.ID),
+		Vni:            lb.Spec.VNI,
+		LbVipIP:        api.LbipToProtoLbip(lb.Spec.LbVipIP),
+		Lbports:        lbPorts,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+	lb.Spec.UnderlayRoute = underlayRoute
+
+	return &api.LoadBalancer{
+		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
+		LoadBalancerMeta: lb.LoadBalancerMeta,
+		Spec:             lb.Spec,
+		Status: api.LoadBalancerStatus{
+			Error:   res.Status.Error,
+			Message: res.Status.Message,
+		},
+	}, nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

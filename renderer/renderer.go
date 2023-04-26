@@ -19,11 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 )
 
 type Renderer interface {
@@ -172,9 +174,13 @@ func (t defaultTableConverter) loadbalancerTable(lbs api.LoadBalancer) (*TableDa
 	headers := []any{"ID", "VNI", "LbVipIP", "Lbports", "UnderlayRoute"}
 
 	columns := make([][]any, 1)
-	//for i, lb := range lbs {
-	columns[0] = []any{lbs.ID, lbs.Spec.VNI, lbs.Spec.LbVipIP, lbs.Spec.Lbports, lbs.Spec.UnderlayRoute}
-	//}
+
+	var ports = make([]string, 0, len(lbs.Spec.Lbports))
+	for _, port := range lbs.Spec.Lbports {
+		p := dpdkproto.Protocol_name[int32(port.Protocol)] + "/" + strconv.Itoa(int(port.Port))
+		ports = append(ports, p)
+	}
+	columns[0] = []any{lbs.ID, lbs.Spec.VNI, lbs.Spec.LbVipIP, ports, lbs.Spec.UnderlayRoute}
 
 	return &TableData{
 		Headers: headers,

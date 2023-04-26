@@ -47,6 +47,7 @@ func Create(dpdkClientFactory DPDKClientFactory) *cobra.Command {
 		CreatePrefix(dpdkClientFactory, rendererOptions),
 		CreateRoute(dpdkClientFactory, rendererOptions),
 		CreateVirtualIP(dpdkClientFactory, rendererOptions),
+		CreateLoadBalancer(dpdkClientFactory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Creates one of %v", CommandNames(subcommands))

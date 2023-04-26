@@ -29,6 +29,7 @@ func init() {
 		&Route{},
 		&RouteList{},
 		&VirtualIP{},
+		&LoadBalancer{},
 	); err != nil {
 		panic(err)
 	}

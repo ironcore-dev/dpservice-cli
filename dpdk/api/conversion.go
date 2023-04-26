@@ -17,7 +17,10 @@ package api
 import (
 	"fmt"
 	"net/netip"
+	"strconv"
+	"strings"
 
+	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	proto "github.com/onmetal/net-dpservice-go/proto"
 )
 
@@ -39,9 +42,12 @@ func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID
 			return nil, fmt.Errorf("error parsing lb ip: %w", err)
 		}
 	}
-	var ports = make([]uint32, len(dpdkLB.Lbports))
+	var ports = make([]LBPort, 0)
+	var p LBPort
 	for _, port := range dpdkLB.Lbports {
-		ports = append(ports, port.Port)
+		p.Protocol = uint32(port.Protocol)
+		p.Port = port.Port
+		ports = append(ports, p)
 	}
 
 	return &LoadBalancer{
@@ -62,6 +68,21 @@ func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID
 			Message: dpdkLB.Status.Message,
 		},
 	}, nil
+}
+
+func LbipToProtoLbip(lbip netip.Addr) *proto.LBIP {
+	return &proto.LBIP{IpVersion: NetIPAddrToProtoIPVersion(lbip), Address: []byte(lbip.String())}
+}
+
+func StringLbportToLbport(lbport string) (LBPort, error) {
+	p := strings.Split(lbport, "/")
+	protocolName := p[0]
+	protocol := dpdkproto.Protocol_value[protocolName]
+	port, err := strconv.Atoi(p[1])
+	if err != nil {
+		return LBPort{}, fmt.Errorf("error parsing port number: %w", err)
+	}
+	return LBPort{Protocol: uint32(protocol), Port: uint32(port)}, nil
 }
 
 func ProtoInterfaceToInterface(dpdkIface *proto.Interface) (*Interface, error) {

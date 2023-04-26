@@ -30,7 +30,7 @@ func GetLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer",
+		Use:     "loadbalancer <ID>",
 		Short:   "Get or list loadbalancer(s)",
 		Aliases: LoadBalancerAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -85,7 +85,6 @@ func RunGetLoadBalancer(
 	}
 
 	if len(loadbalancerIDs) == 0 {
-		// TODO implement list lbs
 		return fmt.Errorf("list loadbalancers not implemented")
 	}
 
