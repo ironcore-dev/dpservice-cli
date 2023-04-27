@@ -33,8 +33,9 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer <id> --vni <vni> --vip <vip> --lbports [ports]",
+		Use:     "loadbalancer <id>",
 		Short:   "Create a loadbalancer",
+		Example: "dpservice-cli create lb 4 --vni 100 --vip 10.20.30.40 --lbports TCP/443,UDP/53",
 		Aliases: LoadBalancerAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,10 +65,8 @@ type CreateLoadBalancerOptions struct {
 
 func (o *CreateLoadBalancerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the loadbalancer to.")
-	//fs.IP("vip", net.IP(o.LbVipIP.AsSlice()), "VIP to assign to the loadbalancer.")
 	flag.AddrVar(fs, &o.LbVipIP, "vip", o.LbVipIP, "VIP to assign to the loadbalancer.")
 	fs.StringSliceVar(&o.Lbports, "lbports", o.Lbports, "LB ports to assign to the loadbalancer")
-
 }
 
 func (o *CreateLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -95,11 +94,11 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	var ports = make([]api.LBPort, 0)
+	var ports = make([]api.LBPort, 0, len(opts.Lbports))
 	for _, p := range opts.Lbports {
 		port, err := api.StringLbportToLbport(p)
 		if err != nil {
-			return err
+			return fmt.Errorf("error converting port: %w", err)
 		}
 		ports = append(ports, port)
 	}
@@ -114,7 +113,6 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 			Lbports: ports,
 		},
 	})
-	fmt.Println(lb)
 	if err != nil {
 		return fmt.Errorf("error creating loadbalancer: %w", err)
 	}

@@ -28,6 +28,7 @@ import (
 type Client interface {
 	GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error)
 	CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (*api.LoadBalancer, error)
+	DeleteLoadBalancer(ctx context.Context, id string) error
 
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
@@ -68,7 +69,7 @@ func (c *client) GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalan
 }
 
 func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (*api.LoadBalancer, error) {
-	var lbPorts = make([]*dpdkproto.LBPort, 0)
+	var lbPorts = make([]*dpdkproto.LBPort, 0, len(lb.Spec.Lbports))
 	for _, p := range lb.Spec.Lbports {
 		lbPort := &dpdkproto.LBPort{Port: p.Port, Protocol: dpdkproto.Protocol(p.Protocol)}
 		lbPorts = append(lbPorts, lbPort)
@@ -101,6 +102,17 @@ func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (
 			Message: res.Status.Message,
 		},
 	}, nil
+}
+
+func (c *client) DeleteLoadBalancer(ctx context.Context, id string) error {
+	res, err := c.DPDKonmetalClient.DeleteLoadBalancer(ctx, &dpdkproto.DeleteLoadBalancerRequest{LoadBalancerID: []byte(id)})
+	if err != nil {
+		return err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+	return nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

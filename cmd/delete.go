@@ -46,6 +46,7 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 		DeletePrefix(factory),
 		DeleteRoute(factory),
 		DeleteVirtualIP(factory),
+		DeleteLoadBalancer(factory),
 	}
 
 	cmd.Short = fmt.Sprintf("Deletes one of %v", CommandNames(subcommands))

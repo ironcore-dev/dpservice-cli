@@ -42,12 +42,12 @@ func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID
 			return nil, fmt.Errorf("error parsing lb ip: %w", err)
 		}
 	}
-	var ports = make([]LBPort, 0)
+	var lbports = make([]LBPort, 0, len(dpdkLB.Lbports))
 	var p LBPort
-	for _, port := range dpdkLB.Lbports {
-		p.Protocol = uint32(port.Protocol)
-		p.Port = port.Port
-		ports = append(ports, p)
+	for _, lbport := range dpdkLB.Lbports {
+		p.Protocol = uint32(lbport.Protocol)
+		p.Port = lbport.Port
+		lbports = append(lbports, p)
 	}
 
 	return &LoadBalancer{
@@ -60,7 +60,7 @@ func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID
 		Spec: LoadBalancerSpec{
 			VNI:           dpdkLB.Vni,
 			LbVipIP:       lbip,
-			Lbports:       ports,
+			Lbports:       lbports,
 			UnderlayRoute: underlayRoute,
 		},
 		Status: LoadBalancerStatus{
