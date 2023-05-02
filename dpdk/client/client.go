@@ -30,6 +30,8 @@ type Client interface {
 	CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (*api.LoadBalancer, error)
 	DeleteLoadBalancer(ctx context.Context, id string) error
 
+	ListLoadBalancerPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error)
+
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
 	CreateInterface(ctx context.Context, iface *api.Interface) (*api.Interface, error)
@@ -113,6 +115,30 @@ func (c *client) DeleteLoadBalancer(ctx context.Context, id string) error {
 		return apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return nil
+}
+
+func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error) {
+	res, err := c.DPDKonmetalClient.ListInterfaceLoadBalancerPrefixes(ctx, &dpdkproto.ListInterfaceLoadBalancerPrefixesRequest{
+		InterfaceID: []byte(interfaceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	prefixes := make([]api.Prefix, len(res.GetPrefixes()))
+	for i, dpdkPrefix := range res.GetPrefixes() {
+		prefix, err := api.ProtoPrefixToPrefix(interfaceID, api.ProtoLBPrefixToProtoPrefix(*dpdkPrefix))
+		if err != nil {
+			return nil, err
+		}
+
+		prefixes[i] = *prefix
+	}
+
+	return &api.PrefixList{
+		TypeMeta: api.TypeMeta{Kind: api.PrefixListKind},
+		Items:    prefixes,
+	}, nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

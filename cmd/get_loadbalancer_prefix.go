@@ -18,29 +18,35 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
+func GetLoadBalancerPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts DeletePrefixOptions
+		opts GetPrefixOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "prefix <prefix> [<prefixes>...]",
-		Short:   "Delete a prefix",
-		Aliases: PrefixAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Use:     "lbprefix [<prefix>...]",
+		Short:   "Get or list loadbalancer prefix(es)",
+		Aliases: LoadBalancerPrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefixes, err := ParsePrefixArgs(args)
 			if err != nil {
 				return err
 			}
 
-			return RunDeletePrefix(cmd.Context(), factory, prefixes, opts)
+			return RunGetLoadBalancerPrefix(
+				cmd.Context(),
+				dpdkClientFactory,
+				rendererFactory,
+				prefixes,
+				opts,
+			)
 		},
 	}
 
@@ -51,15 +57,15 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 	return cmd
 }
 
-type DeletePrefixOptions struct {
+type GetLoadBalancerPrefixOptions struct {
 	InterfaceID string
 }
 
-func (o *DeletePrefixOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *GetLoadBalancerPrefixOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the prefix.")
 }
 
-func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *GetLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	for _, name := range []string{"interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
@@ -68,10 +74,16 @@ func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, prefixes []netip.Prefix, opts DeletePrefixOptions) error {
+func RunGetLoadBalancerPrefix(
+	ctx context.Context,
+	factory DPDKClientFactory,
+	rendererFactory RendererFactory,
+	prefixes []netip.Prefix,
+	opts GetPrefixOptions,
+) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error deleting dpdk client: %w", err)
+		return fmt.Errorf("error creating client: %w", err)
 	}
 	defer func() {
 		if err := cleanup(); err != nil {
@@ -79,11 +91,22 @@ func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, prefixes []
 		}
 	}()
 
-	for _, prefix := range prefixes {
-		if err := client.DeletePrefix(ctx, opts.InterfaceID, prefix); err != nil {
-			fmt.Printf("Error deleting prefix %s/%v: %v\n", opts.InterfaceID, prefix, err)
-		}
-		fmt.Printf("Deleted prefix %s/%v\n", opts.InterfaceID, prefix)
+	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
 	}
-	return nil
+
+	if len(prefixes) == 0 {
+		prefixList, err := client.ListLoadBalancerPrefixes(ctx, opts.InterfaceID)
+		if err != nil {
+			return fmt.Errorf("error listing loadbalancer prefixes: %w", err)
+		}
+
+		if err := renderer.Render(prefixList); err != nil {
+			return fmt.Errorf("error rendering list: %w", err)
+		}
+		return nil
+	}
+
+	return fmt.Errorf("getting individual loadbalancer prefixes is not implemented")
 }

@@ -213,9 +213,10 @@ func ParsePrefixArgs(args []string) ([]netip.Prefix, error) {
 }
 
 var (
-	InterfaceAliases    = []string{"interfaces", "iface", "ifaces"}
-	PrefixAliases       = []string{"prefixes", "prfx", "prfxs"}
-	RouteAliases        = []string{"routes", "rt", "rts"}
-	VirtualIPAliases    = []string{"virtualips", "vip", "vips"}
-	LoadBalancerAliases = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
+	InterfaceAliases          = []string{"interfaces", "iface", "ifaces"}
+	PrefixAliases             = []string{"prefixes", "prfx", "prfxs"}
+	RouteAliases              = []string{"routes", "rt", "rts"}
+	VirtualIPAliases          = []string{"virtualips", "vip", "vips"}
+	LoadBalancerAliases       = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
+	LoadBalancerPrefixAliases = []string{"loadbalancer-prefixes", "lbprfx", "lbprfxs"}
 )

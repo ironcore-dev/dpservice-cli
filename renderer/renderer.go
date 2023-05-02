@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"strconv"
 	"strings"
 
@@ -203,11 +204,11 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 }
 
 func (t defaultTableConverter) prefixTable(prefixes []api.Prefix) (*TableData, error) {
-	headers := []any{"Prefix"}
+	headers := []any{"Prefix", "UnderlayRoute"}
 
 	columns := make([][]any, len(prefixes))
 	for i, prefix := range prefixes {
-		columns[i] = []any{prefix.Prefix}
+		columns[i] = []any{prefix.Prefix, net.ParseIP(string(prefix.Spec.UnderlayRoute))}
 	}
 
 	return &TableData{

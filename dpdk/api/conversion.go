@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	proto "github.com/onmetal/net-dpservice-go/proto"
 )
 
@@ -77,7 +76,7 @@ func LbipToProtoLbip(lbip netip.Addr) *proto.LBIP {
 func StringLbportToLbport(lbport string) (LBPort, error) {
 	p := strings.Split(lbport, "/")
 	protocolName := p[0]
-	protocol := dpdkproto.Protocol_value[protocolName]
+	protocol := proto.Protocol_value[protocolName]
 	port, err := strconv.Atoi(p[1])
 	if err != nil {
 		return LBPort{}, fmt.Errorf("error parsing port number: %w", err)
@@ -192,7 +191,7 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 			InterfaceID: interfaceID,
 			Prefix:      prefix,
 		},
-		Spec: PrefixSpec{},
+		Spec: PrefixSpec{UnderlayRoute: dpdkPrefix.UnderlayRoute},
 	}, nil
 }
 
@@ -223,4 +222,13 @@ func ProtoRouteToRoute(vni uint32, dpdkRoute *proto.Route) (*Route, error) {
 		},
 		Spec: RouteSpec{},
 	}, nil
+}
+
+func ProtoLBPrefixToProtoPrefix(lbprefix proto.LBPrefix) *proto.Prefix {
+	return &proto.Prefix{
+		IpVersion:     lbprefix.IpVersion,
+		Address:       lbprefix.Address,
+		PrefixLength:  lbprefix.PrefixLength,
+		UnderlayRoute: lbprefix.UnderlayRoute,
+	}
 }

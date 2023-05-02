@@ -103,6 +103,7 @@ func (m *PrefixMeta) GetName() string {
 }
 
 type PrefixSpec struct {
+	UnderlayRoute []byte `json:"underplayRoute"`
 }
 
 type VirtualIP struct {
@@ -123,7 +124,7 @@ func (m *VirtualIPMeta) GetName() string {
 type VirtualIPSpec struct {
 }
 
-// Loadbalancer section
+// LoadBalancer section
 type LoadBalancer struct {
 	TypeMeta         `json:",inline"`
 	LoadBalancerMeta `json:"metadata"`
@@ -173,6 +174,8 @@ func (l *LoadBalancerList) GetItems() []Object {
 	}
 	return res
 }
+
+// InterfaceLoadBalancerPrefix section
 
 // Interface section
 type Interface struct {
