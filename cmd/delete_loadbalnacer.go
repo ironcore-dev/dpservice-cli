@@ -69,7 +69,7 @@ func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, loadb
 
 	for _, loadbalancerID := range loadbalancerIDs {
 		if err := client.DeleteLoadBalancer(ctx, loadbalancerID); err != nil {
-			return fmt.Errorf("Error deleting loadbalancer %s: %v\n", loadbalancerID, err)
+			return fmt.Errorf("error deleting loadbalancer %s: %v", loadbalancerID, err)
 		}
 
 		fmt.Println("Deleted loadbalancer", loadbalancerID)

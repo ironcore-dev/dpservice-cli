@@ -13,7 +13,7 @@
             //"program": "${fileDirname}",
             //"args": ["create", "loadbalancer", "7", "--lbports", "389", "--vip", "10.3.4.5", "--vni", "100"]
             //"args": ["get", "route", "0.0.0.0/24", "0", "fc00:2::64:0:1", "--vni", "100"]
-            "args": ["get", "lbprefix", "--interface-id", "vm1"]
+            "args": ["create", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
         }
     ]
 }

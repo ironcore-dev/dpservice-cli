@@ -31,6 +31,8 @@ type Client interface {
 	DeleteLoadBalancer(ctx context.Context, id string) error
 
 	ListLoadBalancerPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error)
+	CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error)
+	DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) error
 
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
@@ -139,6 +141,50 @@ func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID strin
 		TypeMeta: api.TypeMeta{Kind: api.PrefixListKind},
 		Items:    prefixes,
 	}, nil
+}
+
+func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error) {
+	res, err := c.DPDKonmetalClient.CreateInterfaceLoadBalancerPrefix(ctx, &dpdkproto.CreateInterfaceLoadBalancerPrefixRequest{
+		InterfaceID: &dpdkproto.InterfaceIDMsg{
+			InterfaceID: []byte(prefix.InterfaceID),
+		},
+		Prefix: &dpdkproto.Prefix{
+			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Prefix.Addr()),
+			Address:      []byte(prefix.Prefix.Addr().String()),
+			PrefixLength: uint32(prefix.Prefix.Bits()),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+	return &api.Prefix{
+		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
+		PrefixMeta: prefix.PrefixMeta,
+		Spec:       prefix.Spec,
+	}, nil
+}
+
+func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) error {
+	res, err := c.DPDKonmetalClient.DeleteInterfaceLoadBalancerPrefix(ctx, &dpdkproto.DeleteInterfaceLoadBalancerPrefixRequest{
+		InterfaceID: &dpdkproto.InterfaceIDMsg{
+			InterfaceID: []byte(interfaceID),
+		},
+		Prefix: &dpdkproto.Prefix{
+			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Addr()),
+			Address:      []byte(prefix.Addr().String()),
+			PrefixLength: uint32(prefix.Bits()),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+	return nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {
@@ -306,8 +352,9 @@ func (c *client) CreatePrefix(ctx context.Context, prefix *api.Prefix) (*api.Pre
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
 	return &api.Prefix{
-		TypeMeta: api.TypeMeta{Kind: api.PrefixKind},
-		Spec:     prefix.Spec,
+		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
+		PrefixMeta: prefix.PrefixMeta,
+		Spec:       prefix.Spec,
 	}, nil
 }
 
