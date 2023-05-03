@@ -34,6 +34,9 @@ type Client interface {
 	CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error)
 	DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) error
 
+	GetLoadBalancerTargets(ctx context.Context, interfaceID string) (*api.LoadBalancerTargetList, error)
+	CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error)
+
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
 	CreateInterface(ctx context.Context, iface *api.Interface) (*api.Interface, error)
@@ -185,6 +188,52 @@ func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID strin
 		return apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return nil
+}
+
+func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID string) (*api.LoadBalancerTargetList, error) {
+	res, err := c.DPDKonmetalClient.GetLoadBalancerTargets(ctx, &dpdkproto.GetLoadBalancerTargetsRequest{
+		LoadBalancerID: []byte(loadBalancerID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+
+	lbtargets := make([]api.LoadBalancerTarget, len(res.GetTargetIPs()))
+	for i, dpdkLBtarget := range res.GetTargetIPs() {
+		var lbtarget api.LoadBalancerTarget
+		lbtarget.TypeMeta.Kind = api.LoadBalancerTargetKind
+		lbtarget.Spec.TargetIP = *api.ProtoLbipToLbip(*dpdkLBtarget)
+		lbtarget.LoadBalancerTargetMeta.ID = loadBalancerID
+
+		lbtargets[i] = lbtarget
+	}
+
+	return &api.LoadBalancerTargetList{
+		TypeMeta: api.TypeMeta{Kind: api.LoadBalancerTargetListKind},
+		Items:    lbtargets,
+	}, nil
+}
+
+func (c *client) CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error) {
+	res, err := c.DPDKonmetalClient.AddLoadBalancerTarget(ctx, &dpdkproto.AddLoadBalancerTargetRequest{
+		LoadBalancerID: []byte(lbtarget.LoadBalancerTargetMeta.ID),
+		TargetIP:       api.LbipToProtoLbip(lbtarget.Spec.TargetIP.Address),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+
+	return &api.LoadBalancerTarget{
+		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
+		LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
+		Spec:                   lbtarget.Spec,
+	}, nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

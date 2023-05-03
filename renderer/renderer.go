@@ -151,7 +151,11 @@ var DefaultTableConverter = defaultTableConverter{}
 func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 	switch obj := v.(type) {
 	case *api.LoadBalancer:
-		return t.loadbalancerTable(*obj)
+		return t.loadBalancerTable(*obj)
+	case *api.LoadBalancerTarget:
+		return t.loadBalancerTargetTable([]api.LoadBalancerTarget{*obj})
+	case *api.LoadBalancerTargetList:
+		return t.loadBalancerTargetTable(obj.Items)
 	case *api.Interface:
 		return t.interfaceTable([]api.Interface{*obj})
 	case *api.InterfaceList:
@@ -171,7 +175,7 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 	}
 }
 
-func (t defaultTableConverter) loadbalancerTable(lbs api.LoadBalancer) (*TableData, error) {
+func (t defaultTableConverter) loadBalancerTable(lbs api.LoadBalancer) (*TableData, error) {
 	headers := []any{"ID", "VNI", "LbVipIP", "Lbports", "UnderlayRoute"}
 
 	columns := make([][]any, 1)
@@ -182,6 +186,24 @@ func (t defaultTableConverter) loadbalancerTable(lbs api.LoadBalancer) (*TableDa
 		ports = append(ports, p)
 	}
 	columns[0] = []any{lbs.ID, lbs.Spec.VNI, lbs.Spec.LbVipIP, ports, lbs.Spec.UnderlayRoute}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalancerTarget) (*TableData, error) {
+	headers := []any{"LoadBalancerID", "IpVersion", "Address"}
+
+	columns := make([][]any, len(lbtargets))
+	for i, lbtarget := range lbtargets {
+		columns[i] = []any{
+			lbtarget.LoadBalancerTargetMeta.ID,
+			lbtarget.Spec.TargetIP.IpVersion,
+			lbtarget.Spec.TargetIP.Address,
+		}
+	}
 
 	return &TableData{
 		Headers: headers,
