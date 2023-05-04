@@ -54,6 +54,8 @@ type Client interface {
 	ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, error)
 	CreateRoute(ctx context.Context, route *api.Route) (*api.Route, error)
 	DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefix, nextHopVNI uint32, nextHopIP netip.Addr) error
+
+	CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
 }
 
 type client struct {
@@ -492,6 +494,7 @@ func (c *client) DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefi
 	}
 	return nil
 }
+
 func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, error) {
 	res, err := c.DPDKonmetalClient.ListRoutes(ctx, &dpdkproto.VNIMsg{
 		Vni: vni,
@@ -513,5 +516,39 @@ func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, er
 	return &api.RouteList{
 		TypeMeta: api.TypeMeta{Kind: api.RouteListKind},
 		Items:    routes,
+	}, nil
+}
+
+func (c *client) CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
+	res, err := c.DPDKonmetalClient.AddNAT(ctx, &dpdkproto.AddNATRequest{
+		InterfaceID: []byte(nat.NatMeta.InterfaceID),
+		NatVIPIP: &dpdkproto.NATIP{
+			IpVersion: api.NetIPAddrToProtoIPVersion(nat.Spec.NatVIPIP),
+			Address:   []byte(nat.Spec.NatVIPIP.String()),
+		},
+		MinPort: nat.Spec.MinPort,
+		MaxPort: nat.Spec.MaxPort,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+	nat.Spec.UnderlayRoute = underlayRoute
+
+	return &api.Nat{
+		TypeMeta: api.TypeMeta{Kind: api.NatKind},
+		NatMeta:  nat.NatMeta,
+		Spec:     nat.Spec,
+		Status: api.NatStatus{
+			Error:   res.Status.Error,
+			Message: res.Status.Message,
+		},
 	}, nil
 }

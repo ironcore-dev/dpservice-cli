@@ -30,6 +30,7 @@ func init() {
 		&RouteList{},
 		&VirtualIP{},
 		&LoadBalancer{},
+		&Nat{},
 	); err != nil {
 		panic(err)
 	}

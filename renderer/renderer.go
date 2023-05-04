@@ -170,6 +170,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.routeTable(obj.Items)
 	case *api.VirtualIP:
 		return t.virtualIPTable([]api.VirtualIP{*obj})
+	case *api.Nat:
+		return t.natTable([]api.Nat{*obj})
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -259,6 +261,20 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 	columns := make([][]any, len(virtualIPs))
 	for i, virtualIP := range virtualIPs {
 		columns[i] = []any{virtualIP.IP}
+	}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
+	headers := []any{"interfaceID", "NatIP", "minPort", "maxPort", "underlayRoute"}
+
+	columns := make([][]any, len(nats))
+	for i, nat := range nats {
+		columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 	}
 
 	return &TableData{

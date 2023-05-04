@@ -237,6 +237,34 @@ func (l *InterfaceList) GetItems() []Object {
 	return res
 }
 
+// NAT section
+type Nat struct {
+	TypeMeta `json:",inline"`
+	NatMeta  `json:"metadata"`
+	Spec     NatSpec   `json:"spec"`
+	Status   NatStatus `json:"status"`
+}
+
+type NatMeta struct {
+	InterfaceID string `json:"id"`
+}
+
+func (m *NatMeta) GetName() string {
+	return m.InterfaceID
+}
+
+type NatSpec struct {
+	NatVIPIP      netip.Addr `json:"natVIPIP"`
+	MinPort       uint32     `json:"device"`
+	MaxPort       uint32     `json:"ips"`
+	UnderlayRoute netip.Addr `json:"underplayRoute"`
+}
+
+type NatStatus struct {
+	Error   int32  `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 var (
 	InterfaceKind              = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind          = reflect.TypeOf(InterfaceList{}).Name()
@@ -248,4 +276,5 @@ var (
 	VirtualIPKind              = reflect.TypeOf(VirtualIP{}).Name()
 	RouteKind                  = reflect.TypeOf(Route{}).Name()
 	RouteListKind              = reflect.TypeOf(RouteList{}).Name()
+	NatKind                    = reflect.TypeOf(Nat{}).Name()
 )
