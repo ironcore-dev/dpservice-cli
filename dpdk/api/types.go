@@ -246,7 +246,7 @@ type Nat struct {
 }
 
 type NatMeta struct {
-	InterfaceID string `json:"id"`
+	InterfaceID string `json:"interfaceID"`
 }
 
 func (m *NatMeta) GetName() string {
@@ -255,9 +255,9 @@ func (m *NatMeta) GetName() string {
 
 type NatSpec struct {
 	NatVIPIP      netip.Addr `json:"natVIPIP"`
-	MinPort       uint32     `json:"device"`
-	MaxPort       uint32     `json:"ips"`
-	UnderlayRoute netip.Addr `json:"underplayRoute"`
+	MinPort       uint32     `json:"minPort"`
+	MaxPort       uint32     `json:"maxPort"`
+	UnderlayRoute netip.Addr `json:"underlayRoute"`
 }
 
 type NatStatus struct {

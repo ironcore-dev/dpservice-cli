@@ -55,6 +55,7 @@ type Client interface {
 	CreateRoute(ctx context.Context, route *api.Route) (*api.Route, error)
 	DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefix, nextHopVNI uint32, nextHopIP netip.Addr) error
 
+	GetNat(ctx context.Context, interfaceID string) (*api.Nat, error)
 	CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
 }
 
@@ -517,6 +518,18 @@ func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, er
 		TypeMeta: api.TypeMeta{Kind: api.RouteListKind},
 		Items:    routes,
 	}, nil
+}
+
+func (c *client) GetNat(ctx context.Context, interfaceID string) (*api.Nat, error) {
+	res, err := c.DPDKonmetalClient.GetNAT(ctx, &dpdkproto.GetNATRequest{InterfaceID: []byte(interfaceID)})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+	nat, err := api.ProtoNatToNat(res, interfaceID)
+	return nat, err
 }
 
 func (c *client) CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {

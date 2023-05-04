@@ -252,3 +252,41 @@ func ProtoLBPrefixToProtoPrefix(lbprefix proto.LBPrefix) *proto.Prefix {
 		UnderlayRoute: lbprefix.UnderlayRoute,
 	}
 }
+
+func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, error) {
+	var underlayRoute netip.Addr
+	if underlayRouteString := string(dpdkNat.GetUnderlayRoute()); underlayRouteString != "" {
+		var err error
+		underlayRoute, err = netip.ParseAddr(string(dpdkNat.GetUnderlayRoute()))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing underlay ip: %w", err)
+		}
+	}
+	var natvipip netip.Addr
+	if natvipipString := string(dpdkNat.GetNatVIPIP().Address); natvipipString != "" {
+		var err error
+		natvipip, err = netip.ParseAddr(string(dpdkNat.GetNatVIPIP().Address))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing lb ip: %w", err)
+		}
+	}
+
+	return &Nat{
+		TypeMeta: TypeMeta{
+			Kind: NatKind,
+		},
+		NatMeta: NatMeta{
+			InterfaceID: interfaceID,
+		},
+		Spec: NatSpec{
+			NatVIPIP:      natvipip,
+			MinPort:       dpdkNat.MinPort,
+			MaxPort:       dpdkNat.MaxPort,
+			UnderlayRoute: underlayRoute,
+		},
+		Status: NatStatus{
+			Error:   dpdkNat.Status.Error,
+			Message: dpdkNat.Status.Message,
+		},
+	}, nil
+}
