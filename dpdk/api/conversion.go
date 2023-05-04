@@ -87,7 +87,15 @@ func ProtoLbipToLbip(protolbip proto.LBIP) *LBIP {
 
 func StringLbportToLbport(lbport string) (LBPort, error) {
 	p := strings.Split(lbport, "/")
-	protocolName := p[0]
+	protocolName := strings.ToLower(p[0])
+	switch protocolName {
+	case "icmp", "tcp", "udp", "sctp":
+		protocolName = strings.ToUpper(protocolName)
+	case "icmpv6":
+		protocolName = "ICMPv6"
+	default:
+		return LBPort{}, fmt.Errorf("unsupported protocol")
+	}
 	protocol := proto.Protocol_value[protocolName]
 	port, err := strconv.Atoi(p[1])
 	if err != nil {

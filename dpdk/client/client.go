@@ -36,6 +36,7 @@ type Client interface {
 
 	GetLoadBalancerTargets(ctx context.Context, interfaceID string) (*api.LoadBalancerTargetList, error)
 	CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error)
+	DeleteLoadBalancerTarget(ctx context.Context, id string, targetIP netip.Addr) error
 
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
 	ListInterfaces(ctx context.Context) (*api.InterfaceList, error)
@@ -234,6 +235,20 @@ func (c *client) CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.Loa
 		LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
 		Spec:                   lbtarget.Spec,
 	}, nil
+}
+
+func (c *client) DeleteLoadBalancerTarget(ctx context.Context, id string, targetIP netip.Addr) error {
+	res, err := c.DPDKonmetalClient.DeleteLoadBalancerTarget(ctx, &dpdkproto.DeleteLoadBalancerTargetRequest{
+		LoadBalancerID: []byte(id),
+		TargetIP:       api.LbipToProtoLbip(targetIP),
+	})
+	if err != nil {
+		return err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+	return nil
 }
 
 func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {

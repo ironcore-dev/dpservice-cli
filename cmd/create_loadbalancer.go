@@ -35,7 +35,7 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	cmd := &cobra.Command{
 		Use:     "loadbalancer <id>",
 		Short:   "Create a loadbalancer",
-		Example: "dpservice-cli create lb 4 --vni 100 --vip 10.20.30.40 --lbports TCP/443,UDP/53",
+		Example: "dpservice-cli create lb 4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
 		Aliases: LoadBalancerAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

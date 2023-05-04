@@ -35,8 +35,9 @@ func CreateLoadBalancerTarget(
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget <id> [flags]",
+		Use:     "lbtarget <targetIP> [flags]",
 		Short:   "Create a loadbalancer target",
+		Example: "dpservice-cli create lbtarget ff80::5 --lb-id 2",
 		Args:    cobra.ExactArgs(1),
 		Aliases: LoadBalancerTargetAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
