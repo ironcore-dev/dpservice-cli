@@ -94,7 +94,7 @@ func RunCreateNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rend
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	lb, err := client.CreateNat(ctx, &api.Nat{
+	nat, err := client.CreateNat(ctx, &api.Nat{
 		NatMeta: api.NatMeta{
 			InterfaceID: interfaceID,
 		},
@@ -108,7 +108,7 @@ func RunCreateNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rend
 		return fmt.Errorf("error creating nat: %w", err)
 	}
 
-	if err := renderer.Render(lb); err != nil {
+	if err := renderer.Render(nat); err != nil {
 		return fmt.Errorf("error rendering nat: %w", err)
 	}
 	return nil

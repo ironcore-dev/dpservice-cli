@@ -91,7 +91,7 @@ func RunGetNat(
 	for _, interfaceID := range interfaceIDs {
 		nat, err := client.GetNat(ctx, interfaceID)
 		if err != nil {
-			fmt.Printf("Error getting nat for interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error getting nat for interface %s: %v", interfaceID, err)
 		}
 
 		if err := renderer.Render(nat); err != nil {

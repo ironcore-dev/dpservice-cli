@@ -57,6 +57,7 @@ type Client interface {
 
 	GetNat(ctx context.Context, interfaceID string) (*api.Nat, error)
 	CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
+	DeleteNat(ctx context.Context, interfaceID string) error
 }
 
 type client struct {
@@ -564,4 +565,17 @@ func (c *client) CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) 
 			Message: res.Status.Message,
 		},
 	}, nil
+}
+
+func (c *client) DeleteNat(ctx context.Context, interfaceID string) error {
+	res, err := c.DPDKonmetalClient.DeleteNAT(ctx, &dpdkproto.DeleteNATRequest{
+		InterfaceID: []byte(interfaceID),
+	})
+	if err != nil {
+		return err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+	return nil
 }
