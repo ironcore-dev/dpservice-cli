@@ -221,4 +221,5 @@ var (
 	LoadBalancerPrefixAliases = []string{"loadbalancer-prefixes", "lbprfx", "lbprfxs"}
 	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts"}
 	NatAliases                = []string{"translation"}
+	NeighborNatAliases        = []string{"nnat", "ngbnat", "neighnat"}
 )

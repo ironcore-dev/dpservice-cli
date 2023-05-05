@@ -30,7 +30,10 @@ func init() {
 		&RouteList{},
 		&VirtualIP{},
 		&LoadBalancer{},
+		&LoadBalancerTarget{},
+		&LoadBalancerTargetList{},
 		&Nat{},
+		&NeighborNat{},
 	); err != nil {
 		panic(err)
 	}

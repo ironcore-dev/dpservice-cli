@@ -267,7 +267,7 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 		var err error
 		natvipip, err = netip.ParseAddr(string(dpdkNat.GetNatVIPIP().Address))
 		if err != nil {
-			return nil, fmt.Errorf("error parsing lb ip: %w", err)
+			return nil, fmt.Errorf("error parsing nat ip: %w", err)
 		}
 	}
 

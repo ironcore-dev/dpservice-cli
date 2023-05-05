@@ -265,6 +265,33 @@ type NatStatus struct {
 	Message string `json:"message,omitempty"`
 }
 
+type NeighborNat struct {
+	TypeMeta        `json:",inline"`
+	NeighborNatMeta `json:"metadata"`
+	Spec            NeighborNatSpec   `json:"spec"`
+	Status          NeighborNatStatus `json:"status"`
+}
+
+type NeighborNatMeta struct {
+	NatVIPIP netip.Addr `json:"natVIPIP"`
+}
+
+func (m *NeighborNatMeta) GetName() string {
+	return m.NatVIPIP.String()
+}
+
+type NeighborNatSpec struct {
+	Vni           uint32     `json:"vni"`
+	MinPort       uint32     `json:"minPort"`
+	MaxPort       uint32     `json:"maxPort"`
+	UnderlayRoute netip.Addr `json:"underlayRoute"`
+}
+
+type NeighborNatStatus struct {
+	Error   int32  `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 var (
 	InterfaceKind              = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind          = reflect.TypeOf(InterfaceList{}).Name()
@@ -277,4 +304,5 @@ var (
 	RouteKind                  = reflect.TypeOf(Route{}).Name()
 	RouteListKind              = reflect.TypeOf(RouteList{}).Name()
 	NatKind                    = reflect.TypeOf(Nat{}).Name()
+	NeighborNatKind            = reflect.TypeOf(NeighborNat{}).Name()
 )

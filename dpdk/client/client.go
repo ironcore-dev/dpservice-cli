@@ -58,6 +58,8 @@ type Client interface {
 	GetNat(ctx context.Context, interfaceID string) (*api.Nat, error)
 	CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
 	DeleteNat(ctx context.Context, interfaceID string) error
+
+	CreateNeighborNat(ctx context.Context, nat *api.NeighborNat) error
 }
 
 type client struct {
@@ -578,4 +580,26 @@ func (c *client) DeleteNat(ctx context.Context, interfaceID string) error {
 		return apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return nil
+}
+
+func (c *client) CreateNeighborNat(ctx context.Context, nNat *api.NeighborNat) error {
+
+	res, err := c.DPDKonmetalClient.AddNeighborNAT(ctx, &dpdkproto.AddNeighborNATRequest{
+		NatVIPIP: &dpdkproto.NATIP{
+			IpVersion: api.NetIPAddrToProtoIPVersion(nNat.NeighborNatMeta.NatVIPIP),
+			Address:   []byte(nNat.NeighborNatMeta.NatVIPIP.String()),
+		},
+		Vni:           nNat.Spec.Vni,
+		MinPort:       nNat.Spec.MinPort,
+		MaxPort:       nNat.Spec.MaxPort,
+		UnderlayRoute: []byte(nNat.Spec.UnderlayRoute.String()),
+	})
+	if err != nil {
+		return err
+	}
+
+	if res.Error == 0 {
+		return nil
+	}
+	return fmt.Errorf("%d", res.Error)
 }
