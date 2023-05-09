@@ -305,6 +305,49 @@ type NeighborNatStatus struct {
 	Message string `json:"message,omitempty"`
 }
 
+// FirewallRule section
+type FirewallRule struct {
+	TypeMeta         `json:",inline"`
+	FirewallRuleMeta `json:"metadata"`
+	Spec             FirewallRuleSpec   `json:"spec"`
+	Status           FirewallRuleStatus `json:"status"`
+}
+
+type FirewallRuleMeta struct {
+	RuleID string `json:"ruleID"`
+}
+
+func (m *FirewallRuleMeta) GetName() string {
+	return m.RuleID
+}
+
+type FirewallRuleSpec struct {
+	TrafficDirection  uint8      `json:"trafficeDirection"`
+	FirewallAction    uint8      `json:"firewallAction"`
+	Priority          uint32     `json:"priority"`
+	SourcePrefix      netip.Addr `json:"sourcePrefix"`
+	DestinationPrefix netip.Addr `json:"destinationPrefix"`
+	//ProtocolFilter    proto.ProtocolFilter `json:"protocolFilter"`
+}
+
+type FirewallRuleStatus struct {
+	Error   int32  `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type FirewallRuleList struct {
+	TypeMeta `json:",inline"`
+	Items    []FirewallRule `json:"items"`
+}
+
+func (l *FirewallRuleList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
+}
+
 var (
 	InterfaceKind              = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind          = reflect.TypeOf(InterfaceList{}).Name()
@@ -319,4 +362,6 @@ var (
 	NatKind                    = reflect.TypeOf(Nat{}).Name()
 	NatListKind                = reflect.TypeOf(NatList{}).Name()
 	NeighborNatKind            = reflect.TypeOf(NeighborNat{}).Name()
+	FirewallRuleKind           = reflect.TypeOf(FirewallRule{}).Name()
+	FirewallRuleListKind       = reflect.TypeOf(FirewallRuleList{}).Name()
 )
