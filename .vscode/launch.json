@@ -15,7 +15,7 @@
             //"args": ["get", "route", "0.0.0.0/24", "0", "fc00:2::64:0:1", "--vni", "100"]
             //"args": ["create", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
             //"args": ["create", "lbtarget", "ff80::1", "--lb-id", "1"]
-            "args": ["get", "lbtarget", "1"]
+            "args": ["get", "natinfo", "10.20.30.40", "--nat-type=2"]
         }
     ]
 }

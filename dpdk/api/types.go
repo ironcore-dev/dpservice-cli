@@ -265,6 +265,19 @@ type NatStatus struct {
 	Message string `json:"message,omitempty"`
 }
 
+type NatList struct {
+	TypeMeta `json:",inline"`
+	Items    []Nat `json:"items"`
+}
+
+func (l *NatList) GetItems() []Object {
+	res := make([]Object, len(l.Items))
+	for i := range l.Items {
+		res[i] = &l.Items[i]
+	}
+	return res
+}
+
 type NeighborNat struct {
 	TypeMeta        `json:",inline"`
 	NeighborNatMeta `json:"metadata"`
@@ -304,5 +317,6 @@ var (
 	RouteKind                  = reflect.TypeOf(Route{}).Name()
 	RouteListKind              = reflect.TypeOf(RouteList{}).Name()
 	NatKind                    = reflect.TypeOf(Nat{}).Name()
+	NatListKind                = reflect.TypeOf(NatList{}).Name()
 	NeighborNatKind            = reflect.TypeOf(NeighborNat{}).Name()
 )

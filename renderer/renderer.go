@@ -172,6 +172,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.virtualIPTable([]api.VirtualIP{*obj})
 	case *api.Nat:
 		return t.natTable([]api.Nat{*obj})
+	case *api.NatList:
+		return t.natTable(obj.Items)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}

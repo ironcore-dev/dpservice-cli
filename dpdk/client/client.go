@@ -60,6 +60,7 @@ type Client interface {
 	DeleteNat(ctx context.Context, interfaceID string) error
 
 	CreateNeighborNat(ctx context.Context, nat *api.NeighborNat) error
+	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error)
 }
 
 type client struct {
@@ -602,4 +603,46 @@ func (c *client) CreateNeighborNat(ctx context.Context, nNat *api.NeighborNat) e
 		return nil
 	}
 	return fmt.Errorf("%d", res.Error)
+}
+
+func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error) {
+	res, err := c.DPDKonmetalClient.GetNATInfo(ctx, &dpdkproto.GetNATInfoRequest{
+		NatVIPIP: &dpdkproto.NATIP{IpVersion: api.NetIPAddrToProtoIPVersion(natVIPIP),
+			Address: []byte(natVIPIP.String()),
+		},
+		NatInfoType: dpdkproto.NATInfoType(natType),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var nats = make([]api.Nat, len(res.NatInfoEntries))
+	var nat api.Nat
+	for i, natInfoEntry := range res.GetNatInfoEntries() {
+
+		var underlayRoute, vipIP netip.Addr
+		if res.NatInfoType == 2 {
+			underlayRoute, err = netip.ParseAddr(string(natInfoEntry.GetUnderlayRoute()))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing underlay route: %w", err)
+			}
+			nat.Spec.UnderlayRoute = underlayRoute
+		} else if res.NatInfoType == 1 {
+			vipIP, err = netip.ParseAddr(string(natInfoEntry.GetAddress()))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing vip ip: %w", err)
+			}
+			nat.Spec.NatVIPIP = vipIP
+		}
+		nat.InterfaceID = res.NatInfoType.String() + " " + res.NatVIPIP.String()
+		nat.Kind = api.NatKind
+		nat.Spec.MinPort = natInfoEntry.MinPort
+		nat.Spec.MaxPort = natInfoEntry.MaxPort
+
+		nats[i] = nat
+	}
+	return &api.NatList{
+		TypeMeta: api.TypeMeta{Kind: api.NatListKind},
+		Items:    nats,
+	}, nil
 }

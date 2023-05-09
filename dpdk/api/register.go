@@ -33,6 +33,7 @@ func init() {
 		&LoadBalancerTarget{},
 		&LoadBalancerTargetList{},
 		&Nat{},
+		&NatList{},
 		&NeighborNat{},
 	); err != nil {
 		panic(err)
