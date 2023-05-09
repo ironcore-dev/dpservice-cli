@@ -52,6 +52,7 @@ func Create(dpdkClientFactory DPDKClientFactory) *cobra.Command {
 		CreateLoadBalancerTarget(dpdkClientFactory, rendererOptions),
 		CreateNat(dpdkClientFactory, rendererOptions),
 		CreateNeighborNat(dpdkClientFactory, rendererOptions),
+		CreateFirewallRule(dpdkClientFactory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Creates one of %v", CommandNames(subcommands))

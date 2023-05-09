@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net/netip"
 	"reflect"
+
+	proto "github.com/onmetal/net-dpservice-go/proto"
 )
 
 type Object interface {
@@ -314,20 +316,22 @@ type FirewallRule struct {
 }
 
 type FirewallRuleMeta struct {
-	RuleID string `json:"ruleID"`
+	InterfaceID string `json:"interfaceID"`
+	RuleID      string `json:"ruleID"`
 }
 
 func (m *FirewallRuleMeta) GetName() string {
-	return m.RuleID
+	return m.InterfaceID + "/" + m.RuleID
 }
 
 type FirewallRuleSpec struct {
-	TrafficDirection  uint8      `json:"trafficeDirection"`
-	FirewallAction    uint8      `json:"firewallAction"`
-	Priority          uint32     `json:"priority"`
-	SourcePrefix      netip.Addr `json:"sourcePrefix"`
-	DestinationPrefix netip.Addr `json:"destinationPrefix"`
-	//ProtocolFilter    proto.ProtocolFilter `json:"protocolFilter"`
+	TrafficDirection  uint8                `json:"trafficeDirection"`
+	FirewallAction    uint8                `json:"firewallAction"`
+	Priority          uint32               `json:"priority"`
+	IpVersion         uint8                `json:"ipVersion"`
+	SourcePrefix      netip.Prefix         `json:"sourcePrefix"`
+	DestinationPrefix netip.Prefix         `json:"destinationPrefix"`
+	ProtocolFilter    proto.ProtocolFilter `json:"protocolFilter"`
 }
 
 type FirewallRuleStatus struct {

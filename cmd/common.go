@@ -222,4 +222,5 @@ var (
 	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts"}
 	NatAliases                = []string{"translation"}
 	NeighborNatAliases        = []string{"nnat", "ngbnat", "neighnat"}
+	FirewallRuleAliases       = []string{"fwrule", "fw-rule", "firewallrule"}
 )

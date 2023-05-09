@@ -35,6 +35,7 @@ func init() {
 		&Nat{},
 		&NatList{},
 		&NeighborNat{},
+		&FirewallRule{},
 	); err != nil {
 		panic(err)
 	}

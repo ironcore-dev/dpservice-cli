@@ -174,6 +174,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.natTable([]api.Nat{*obj})
 	case *api.NatList:
 		return t.natTable(obj.Items)
+	case *api.FirewallRule:
+		return t.fwruleTable([]api.FirewallRule{*obj})
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -277,6 +279,21 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
 		columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+	}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
+	// TODO add all fields
+	headers := []any{"interfaceID", "ruleID", "src", "dst", "action"}
+
+	columns := make([][]any, len(fwrules))
+	for i, fwrule := range fwrules {
+		columns[i] = []any{fwrule.FirewallRuleMeta.InterfaceID, fwrule.FirewallRuleMeta.RuleID, fwrule.Spec.SourcePrefix, fwrule.Spec.DestinationPrefix, fwrule.Spec.FirewallAction}
 	}
 
 	return &TableData{

@@ -62,6 +62,8 @@ type Client interface {
 	CreateNeighborNat(ctx context.Context, nat *api.NeighborNat) error
 	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error)
 	DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error
+
+	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 }
 
 type client struct {
@@ -665,4 +667,36 @@ func (c *client) DeleteNeighborNat(ctx context.Context, neigbhorNat api.Neighbor
 		return apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return nil
+}
+
+func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error) {
+	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
+		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
+		Rule: &dpdkproto.FirewallRule{
+			RuleID:    []byte(fwRule.FirewallRuleMeta.RuleID),
+			Direction: dpdkproto.TrafficDirection(fwRule.Spec.TrafficDirection),
+			Action:    dpdkproto.FirewallAction(fwRule.Spec.FirewallAction),
+			Priority:  fwRule.Spec.Priority,
+			IpVersion: dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+			SourcePrefix: &dpdkproto.Prefix{
+				IpVersion:    dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+				Address:      []byte(fwRule.Spec.SourcePrefix.Addr().String()),
+				PrefixLength: uint32(fwRule.Spec.SourcePrefix.Bits()),
+			},
+			DestinationPrefix: &dpdkproto.Prefix{
+				IpVersion:    dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+				Address:      []byte(fwRule.Spec.DestinationPrefix.Addr().String()),
+				PrefixLength: uint32(fwRule.Spec.DestinationPrefix.Bits()),
+			},
+			ProtocolFilter: &fwRule.Spec.ProtocolFilter,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Status.Error == 0 {
+		return nil, err
+	}
+	return &api.FirewallRule{FirewallRuleMeta: api.FirewallRuleMeta{RuleID: string(res.RuleID), InterfaceID: fwRule.InterfaceID}}, nil
 }
