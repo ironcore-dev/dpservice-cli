@@ -94,7 +94,8 @@ func (o *CreateFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *CreateFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"rule-id", "direction", "action", "ipv", "src", "dst"} {
+	// TODO if protocol is not specified it should match all protocols
+	for _, name := range []string{"rule-id", "direction", "action", "ipv", "src", "dst", "protocol"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -126,6 +127,8 @@ func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 	if err != nil {
 		return fmt.Errorf("error parsing dst prefix: %w", err)
 	}
+
+	// TODO add cases if icmp type or code is -1
 	var protocolFilter dpdkproto.ProtocolFilter
 	switch opts.ProtocolFilter {
 	case "icmp":
@@ -133,16 +136,32 @@ func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 			IcmpType: opts.IcmpType,
 			IcmpCode: opts.IcmpCode}}
 	case "tcp":
+		if opts.SrcPortLower == -1 {
+			opts.SrcPortLower = 1
+			opts.SrcPortUpper = 65535
+		}
+		if opts.DstPortLower == -1 {
+			opts.DstPortLower = 1
+			opts.DstPortUpper = 65535
+		}
 		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Tcp{Tcp: &dpdkproto.TCPFilter{
 			SrcPortLower: opts.SrcPortLower,
-			SrcPortUpper: opts.DstPortUpper,
+			SrcPortUpper: opts.SrcPortUpper,
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}
 	case "udp":
+		if opts.SrcPortLower == -1 {
+			opts.SrcPortLower = 1
+			opts.SrcPortUpper = 65535
+		}
+		if opts.DstPortLower == -1 {
+			opts.DstPortLower = 1
+			opts.DstPortUpper = 65535
+		}
 		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Udp{Udp: &dpdkproto.UDPFilter{
 			SrcPortLower: opts.SrcPortLower,
-			SrcPortUpper: opts.DstPortUpper,
+			SrcPortUpper: opts.SrcPortUpper,
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}

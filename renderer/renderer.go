@@ -176,6 +176,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.natTable(obj.Items)
 	case *api.FirewallRule:
 		return t.fwruleTable([]api.FirewallRule{*obj})
+	case *api.FirewallRuleList:
+		return t.fwruleTable(obj.Items)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -289,11 +291,20 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 
 func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
 	// TODO add all fields
-	headers := []any{"interfaceID", "ruleID", "src", "dst", "action"}
+	headers := []any{"interfaceID", "ruleID", "direction", "src", "dst", "action", "protocol", "priority"}
 
 	columns := make([][]any, len(fwrules))
 	for i, fwrule := range fwrules {
-		columns[i] = []any{fwrule.FirewallRuleMeta.InterfaceID, fwrule.FirewallRuleMeta.RuleID, fwrule.Spec.SourcePrefix, fwrule.Spec.DestinationPrefix, fwrule.Spec.FirewallAction}
+		columns[i] = []any{
+			fwrule.FirewallRuleMeta.InterfaceID,
+			fwrule.FirewallRuleMeta.RuleID,
+			dpdkproto.TrafficDirection(fwrule.Spec.TrafficDirection).String(),
+			fwrule.Spec.SourcePrefix,
+			fwrule.Spec.DestinationPrefix,
+			dpdkproto.FirewallAction(fwrule.Spec.FirewallAction).String(),
+			fwrule.Spec.ProtocolFilter.String(),
+			fwrule.Spec.Priority,
+		}
 	}
 
 	return &TableData{

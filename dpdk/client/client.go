@@ -64,6 +64,7 @@ type Client interface {
 	DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error
 
 	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
+	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 }
 
 type client struct {
@@ -602,7 +603,7 @@ func (c *client) CreateNeighborNat(ctx context.Context, nNat *api.NeighborNat) e
 		return err
 	}
 
-	if res.Error == 0 {
+	if res.Error != 0 {
 		return nil
 	}
 	return fmt.Errorf("%d", res.Error)
@@ -695,8 +696,28 @@ func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRul
 		return nil, err
 	}
 
-	if res.Status.Error == 0 {
+	if res.Status.Error != 0 {
 		return nil, err
 	}
 	return &api.FirewallRule{FirewallRuleMeta: api.FirewallRuleMeta{RuleID: string(res.RuleID), InterfaceID: fwRule.InterfaceID}}, nil
+}
+
+func (c *client) GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error) {
+	res, err := c.DPDKonmetalClient.GetFirewallRule(ctx, &dpdkproto.GetFirewallRuleRequest{
+		InterfaceID: []byte(interfaceID),
+		RuleID:      []byte(ruleID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+	}
+
+	fwrule, err := api.ProtoFwRuleToFwRule(res, interfaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return fwrule, err
 }

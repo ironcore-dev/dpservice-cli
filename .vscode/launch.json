@@ -15,7 +15,10 @@
             //"args": ["get", "route", "0.0.0.0/24", "0", "fc00:2::64:0:1", "--vni", "100"]
             //"args": ["create", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
             //"args": ["create", "lbtarget", "ff80::1", "--lb-id", "1"]
-            "args": ["get", "natinfo", "10.20.30.40", "--nat-type=2"]
+            //"args": ["get", "natinfo", "10.20.30.40", "--nat-type=2"]
+            //"args": ["get", "fwrule", "vm1", "--rule-id=4"]
+            "args": ["create", "fwrule", "vm1", "--action=1", "--direction=1", "--dst=5.5.5.0/24", "--ipv=0",
+             "--priority=100", "--rule-id=9", "--src=1.1.1.1/32", "--protocol=tcp"]
         }
     ]
 }
