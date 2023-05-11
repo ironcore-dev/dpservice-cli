@@ -34,9 +34,9 @@ func CreateFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	)
 
 	cmd := &cobra.Command{
-		Use:   "firewallrule <interfaceID> [flags]",
-		Short: "Create a FirewallRule",
-		//Example: "dpservice-cli create nat vm1 --natip=10.20.30.40 --minport=30000 --maxport=30100",
+		Use:     "firewallrule <interfaceID> [flags]",
+		Short:   "Create a FirewallRule",
+		Example: "dpservice-cli create fwrule vm1 --action 1 --direction 1 --dst 5.5.5.0/24 --ipv 0 --priority 100 --rule-id 12 --src 1.1.1.1/32 --protocol tcp --srcPortLower 1 --srcPortUpper 1000 --dstPortLower 500 --dstPortUpper 600",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

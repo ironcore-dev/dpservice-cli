@@ -65,6 +65,7 @@ type Client interface {
 
 	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
+	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error
 }
 
 type client struct {
@@ -702,7 +703,7 @@ func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRul
 	return &api.FirewallRule{FirewallRuleMeta: api.FirewallRuleMeta{RuleID: string(res.RuleID), InterfaceID: fwRule.InterfaceID}}, nil
 }
 
-func (c *client) GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error) {
+func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID string) (*api.FirewallRule, error) {
 	res, err := c.DPDKonmetalClient.GetFirewallRule(ctx, &dpdkproto.GetFirewallRuleRequest{
 		InterfaceID: []byte(interfaceID),
 		RuleID:      []byte(ruleID),
@@ -720,4 +721,18 @@ func (c *client) GetFirewallRule(ctx context.Context, interfaceID string, ruleID
 	}
 
 	return fwrule, err
+}
+
+func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error {
+	res, err := c.DPDKonmetalClient.DeleteFirewallRule(ctx, &dpdkproto.DeleteFirewallRuleRequest{
+		InterfaceID: []byte(interfaceID),
+		RuleID:      []byte(ruleID),
+	})
+	if err != nil {
+		return err
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return apierrors.NewStatusError(errorCode, res.GetMessage())
+	}
+	return nil
 }
