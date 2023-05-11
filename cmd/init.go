@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
@@ -35,8 +34,8 @@ func Init(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init <underlayIPv6Prefix> [flags]",
 		Short:   "Initial set up of the DPDK app",
-		Long:    "To add multiple values to flags, use \",\" (comma) between values",
-		Example: "dpservice-cli init ff80::1/64 --pfnames=a,b,c --uplink-ports=e,f,g",
+		Long:    "To add multiple values use flag multiple times",
+		Example: "dpservice-cli init ff80::1/64 --pfnames=a --pfnames=b --uplink-ports=c --uplink-ports=d",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			prefix, err := netip.ParsePrefix(args[0])
@@ -60,13 +59,13 @@ func Init(factory DPDKClientFactory) *cobra.Command {
 }
 
 type InitOptions struct {
-	UplinkPorts string
-	PfNames     string
+	UplinkPorts []string
+	PfNames     []string
 }
 
 func (o *InitOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.UplinkPorts, "uplink-ports", o.UplinkPorts, "Linux name of the NICs that are connected to the Leaf Switches.")
-	fs.StringVar(&o.PfNames, "pfnames", o.PfNames, "Linux name of the Physical Functions, that Virtual Functions will be derived from.")
+	fs.StringSliceVar(&o.UplinkPorts, "uplink-ports", o.UplinkPorts, "Linux name of the NICs that are connected to the Leaf Switches.")
+	fs.StringSliceVar(&o.PfNames, "pfnames", o.PfNames, "Linux name of the Physical Functions, that Virtual Functions will be derived from.")
 }
 
 func (o *InitOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -102,17 +101,14 @@ func RunInit(
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
 	}
 
-	uplinkPorts := strings.Split(opts.UplinkPorts, ",")
-	pfNames := strings.Split(opts.PfNames, ",")
-
 	err = client.Init(ctx, dpdkproto.InitConfig{
 		UnderlayIPv6Prefix: &dpdkproto.Prefix{
 			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Addr()),
 			Address:      []byte(prefix.Addr().String()),
 			PrefixLength: uint32(prefix.Bits()),
 		},
-		UplinkPorts: uplinkPorts,
-		PfNames:     pfNames,
+		UplinkPorts: opts.UplinkPorts,
+		PfNames:     opts.PfNames,
 	})
 	if err != nil {
 		return fmt.Errorf("error: %w", err)

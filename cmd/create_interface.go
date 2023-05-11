@@ -35,6 +35,7 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "interface <id>",
 		Short:   "Create an interface",
+		Example: "dpservice-cli create interface vm4 --ips=10.200.1.4 --ips=2000:200:1::4 --vni=200 --device=net_tap5",
 		Aliases: InterfaceAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

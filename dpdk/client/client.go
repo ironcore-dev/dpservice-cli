@@ -466,7 +466,7 @@ func (c *client) CreateRoute(ctx context.Context, route *api.Route) (*api.Route,
 			Weight:    100,
 			Prefix: &dpdkproto.Prefix{
 				IpVersion:    api.NetIPAddrToProtoIPVersion(route.Prefix.Addr()),
-				Address:      []byte(route.Prefix.String()),
+				Address:      []byte(route.Prefix.Addr().String()),
 				PrefixLength: uint32(route.Prefix.Bits()),
 			},
 			NexthopVNI:     route.NextHop.VNI,

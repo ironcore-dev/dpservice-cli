@@ -34,6 +34,7 @@ func CreateVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "virtualip <ip>",
 		Short:   "Create a virtual ip",
+		Example: "dpservice-cli create virtualip 20.20.20.20 --interface-id=vm1",
 		Aliases: VirtualIPAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

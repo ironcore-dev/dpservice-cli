@@ -35,6 +35,7 @@ func CreateRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFa
 	cmd := &cobra.Command{
 		Use:     "route <prefix> <next-hop-vni> <next-hop-ip>",
 		Short:   "Create a route",
+		Example: "dpservice-cli create route 10.100.3.0/24 0 fc00:2::64:0:1 --vni=100",
 		Aliases: RouteAliases,
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

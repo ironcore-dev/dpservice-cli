@@ -91,7 +91,7 @@ func RunGetVirtualIP(
 	for _, interfaceID := range interfaceIDs {
 		virtualIP, err := client.GetVirtualIP(ctx, interfaceID)
 		if err != nil {
-			fmt.Printf("Error getting virtual ip for interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error getting virtual ip for interface %s: %v", interfaceID, err)
 		}
 
 		if err := renderer.Render(virtualIP); err != nil {

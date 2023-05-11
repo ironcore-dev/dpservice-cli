@@ -37,6 +37,7 @@ func CreatePrefix(
 	cmd := &cobra.Command{
 		Use:     "prefix <prefix>",
 		Short:   "Create a prefix",
+		Example: "dpservice-cli create prefix 10.20.30.0/24 --interface-id=vm1",
 		Args:    cobra.ExactArgs(1),
 		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
