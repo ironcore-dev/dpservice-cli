@@ -291,14 +291,14 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 	}, nil
 }
 
-func ProtoFwRuleToFwRule(dpdkFwRule *proto.GetFirewallRuleResponse, interfaceID string) (*FirewallRule, error) {
+func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*FirewallRule, error) {
 
-	srcPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.Rule.SourcePrefix)
+	srcPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.SourcePrefix)
 	if err != nil {
 		return nil, fmt.Errorf("error converting prefix: %w", err)
 	}
 
-	dstPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.Rule.DestinationPrefix)
+	dstPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.DestinationPrefix)
 	if err != nil {
 		return nil, fmt.Errorf("error converting prefix: %w", err)
 	}
@@ -307,20 +307,16 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.GetFirewallRuleResponse, interfaceID 
 		TypeMeta: TypeMeta{Kind: FirewallRuleKind},
 		FirewallRuleMeta: FirewallRuleMeta{
 			InterfaceID: interfaceID,
-			RuleID:      string(dpdkFwRule.Rule.RuleID),
+			RuleID:      string(dpdkFwRule.RuleID),
 		},
 		Spec: FirewallRuleSpec{
-			TrafficDirection:  uint8(dpdkFwRule.Rule.Direction),
-			FirewallAction:    uint8(dpdkFwRule.Rule.Action),
-			Priority:          dpdkFwRule.Rule.Priority,
-			IpVersion:         uint8(dpdkFwRule.Rule.IpVersion),
+			TrafficDirection:  uint8(dpdkFwRule.Direction),
+			FirewallAction:    uint8(dpdkFwRule.Action),
+			Priority:          dpdkFwRule.Priority,
+			IpVersion:         uint8(dpdkFwRule.IpVersion),
 			SourcePrefix:      srcPrefix.Prefix,
 			DestinationPrefix: dstPrefix.Prefix,
-			ProtocolFilter:    *dpdkFwRule.Rule.ProtocolFilter,
-		},
-		Status: FirewallRuleStatus{
-			Error:   dpdkFwRule.Status.Error,
-			Message: dpdkFwRule.Status.Message,
+			ProtocolFilter:    *dpdkFwRule.ProtocolFilter,
 		},
 	}, nil
 }

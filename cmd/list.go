@@ -15,26 +15,31 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
-func Command() *cobra.Command {
-	dpdkClientOptions := &DPDKClientOptions{}
+func List(factory DPDKClientFactory) *cobra.Command {
+	rendererOptions := &RendererOptions{}
 
 	cmd := &cobra.Command{
-		Use:  "dpservice-cli",
+		Use:  "list",
 		Args: cobra.NoArgs,
 		RunE: SubcommandRequired,
 	}
 
-	dpdkClientOptions.AddFlags(cmd.PersistentFlags())
+	rendererOptions.AddFlags(cmd.PersistentFlags())
+
+	subcommands := []*cobra.Command{
+		ListFirewallRules(factory, rendererOptions),
+	}
+
+	cmd.Short = fmt.Sprintf("Lists one of %v", CommandNames(subcommands))
+	cmd.Long = fmt.Sprintf("Lists one of %v", CommandNames(subcommands))
 
 	cmd.AddCommand(
-		Create(dpdkClientOptions),
-		Get(dpdkClientOptions),
-		List(dpdkClientOptions),
-		Delete(dpdkClientOptions),
-		completionCmd,
+		subcommands...,
 	)
 
 	return cmd

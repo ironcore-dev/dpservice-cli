@@ -63,6 +63,7 @@ type Client interface {
 	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error)
 	DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error
 
+	ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error)
 	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error
@@ -671,6 +672,29 @@ func (c *client) DeleteNeighborNat(ctx context.Context, neigbhorNat api.Neighbor
 	return nil
 }
 
+func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error) {
+	res, err := c.DPDKonmetalClient.ListFirewallRules(ctx, &dpdkproto.ListFirewallRulesRequest{
+		InterfaceID: []byte(interfaceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	fwRules := make([]api.FirewallRule, len(res.GetRules()))
+	for i, dpdkFwRule := range res.GetRules() {
+		fwRule, err := api.ProtoFwRuleToFwRule(dpdkFwRule, interfaceID)
+		if err != nil {
+			return nil, err
+		}
+		fwRules[i] = *fwRule
+	}
+
+	return &api.FirewallRuleList{
+		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleListKind},
+		Items:    fwRules,
+	}, nil
+}
+
 func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error) {
 	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
 		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
@@ -715,7 +739,7 @@ func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
 
-	fwrule, err := api.ProtoFwRuleToFwRule(res, interfaceID)
+	fwrule, err := api.ProtoFwRuleToFwRule(res.Rule, interfaceID)
 	if err != nil {
 		return nil, err
 	}

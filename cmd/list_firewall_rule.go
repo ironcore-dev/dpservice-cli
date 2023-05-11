@@ -24,24 +24,22 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func GetFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func ListFirewallRules(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts GetFirewallRuleOptions
+		opts ListFirewallRulesOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "firewallrule <ruleID> <--interface-id>",
-		Short:   "Get firewall rule",
-		Example: "dpservice-cli get fwrule 1 --interface-id=vm1",
+		Use:     "firewallrules <--interface-id>",
+		Short:   "List firewall rules on interface",
+		Example: "dpservice-cli list firewallrules --interface-id=vm1",
 		Aliases: FirewallRuleAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ruleID := args[0]
-			return RunGetFirewallRule(
+			return RunListFirewallRules(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				ruleID,
 				opts,
 			)
 		},
@@ -54,15 +52,15 @@ func GetFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	return cmd
 }
 
-type GetFirewallRuleOptions struct {
+type ListFirewallRulesOptions struct {
 	InterfaceID string
 }
 
-func (o *GetFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID where is firewall rule.")
+func (o *ListFirewallRulesOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID from which to list firewall rules.")
 }
 
-func (o *GetFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *ListFirewallRulesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	for _, name := range []string{"interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
@@ -71,12 +69,11 @@ func (o *GetFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunGetFirewallRule(
+func RunListFirewallRules(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	ruleID string,
-	opts GetFirewallRuleOptions,
+	opts ListFirewallRulesOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -93,13 +90,13 @@ func RunGetFirewallRule(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	fwrule, err := client.GetFirewallRule(ctx, ruleID, opts.InterfaceID)
+	fwrules, err := client.ListFirewallRules(ctx, opts.InterfaceID)
 	if err != nil {
-		return fmt.Errorf("error getting firewall rule: %w", err)
+		return fmt.Errorf("error listing firewall rules: %w", err)
 	}
 
-	if err := renderer.Render(fwrule); err != nil {
-		return fmt.Errorf("error rendering firewall rule %s/%s: %w", ruleID, opts.InterfaceID, err)
+	if err := renderer.Render(fwrules); err != nil {
+		return fmt.Errorf("error rendering firewall rules on interface %s: %w", opts.InterfaceID, err)
 	}
 	return nil
 }
