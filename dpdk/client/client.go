@@ -67,6 +67,8 @@ type Client interface {
 	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error
+
+	Initialized(ctx context.Context) (string, error)
 }
 
 type client struct {
@@ -759,4 +761,12 @@ func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, rul
 		return apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return nil
+}
+
+func (c *client) Initialized(ctx context.Context) (string, error) {
+	res, err := c.DPDKonmetalClient.Initialized(ctx, &dpdkproto.Empty{})
+	if err != nil {
+		return "", err
+	}
+	return res.Uuid, nil
 }
