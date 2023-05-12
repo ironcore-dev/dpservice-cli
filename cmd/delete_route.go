@@ -31,6 +31,7 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "route <prefix> <next-hop-vni> <next-hop-ip> [<prefix-n> <next-hop-ip-n> <next-hop-ip-n>...]",
 		Short:   "Delete a route",
+		Example: "dpservice-cli delete route 10.100.2.0/24 0 fc00:2::64:0:1 --vni=100",
 		Aliases: RouteAliases,
 		Args:    MultipleOfArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -80,7 +81,7 @@ func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, keys []Route
 
 	for _, key := range keys {
 		if err := client.DeleteRoute(ctx, opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP); err != nil {
-			fmt.Printf("Error deleting route %d-%v:%d-%v: %v\n", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP, err)
+			return fmt.Errorf("error deleting route %d-%v:%d-%v: %v", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP, err)
 		}
 		fmt.Printf("Deleted route %d-%v:%d-%v\n", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP)
 	}

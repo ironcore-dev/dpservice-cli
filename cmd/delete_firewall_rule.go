@@ -31,6 +31,7 @@ func DeleteFirewallRule(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "firewallrule [<ruleID> ...] <--interface-id>",
 		Short:   "Delete firewall rule(s)",
+		Example: "dpservice-cli delete firewallrule 1 --interface-id=vm1",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

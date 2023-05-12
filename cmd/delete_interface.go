@@ -29,8 +29,9 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface <id> [<ids> ...]",
+		Use:     "interface <interfaceID> [<interfaceIDs> ...]",
 		Short:   "Delete interface(s)",
+		Example: "dpservice-cli delete interface vm1",
 		Aliases: InterfaceAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

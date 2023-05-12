@@ -32,6 +32,7 @@ func DeleteLoadBalancerPrefix(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "lbprefix <prefix> [<prefixes>...]",
 		Short:   "Delete a loadbalancer prefix",
+		Example: "dpservice-cli delete lbprefix ff80::1/64 --interface-id=vm1",
 		Aliases: LoadBalancerPrefixAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

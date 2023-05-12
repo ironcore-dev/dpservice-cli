@@ -31,6 +31,7 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "virtualip <interface-id> [<interface-ids>...]",
 		Short:   "Delete virtual ip(s)",
+		Example: "dpservice-cli delete virtualip vm1",
 		Aliases: VirtualIPAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -32,6 +32,7 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "prefix <prefix> [<prefixes>...]",
 		Short:   "Delete a prefix",
+		Example: "dpservice-cli delete prefix 10.20.30.0/24 --interface-id=vm1",
 		Aliases: PrefixAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

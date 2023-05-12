@@ -33,6 +33,7 @@ func DeleteNeighborNat(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "neighbornat <NAT IP> [flags]",
 		Short:   "Delete neighbor nat(s)",
+		Example: "dpservice-cli delete neighbornat 10.20.30.40 --vni=100 --minport=30000 --maxport=30100",
 		Aliases: NeighborNatAliases,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -94,10 +95,10 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, natVIP
 		},
 	}
 	if err := client.DeleteNeighborNat(ctx, neigbhorNat); err != nil {
-		fmt.Printf("Error deleting neighbor nat of interface %s: %v\n", natVIPIP, err)
+		return fmt.Errorf("error deleting neighbor nat with ip %s: %v", natVIPIP, err)
 	}
 
-	fmt.Printf("Deleted neighbor nat of interface %s\n", natVIPIP)
+	fmt.Printf("Deleted neighbor NAT with IP %s\n", natVIPIP)
 
 	return nil
 }

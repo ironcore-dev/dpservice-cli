@@ -29,8 +29,9 @@ func DeleteLoadBalancer(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer <id> [<ids> ...]",
+		Use:     "loadbalancer <loadbalancerID> [<loadbalancerIDs> ...]",
 		Short:   "Delete loadbalancer(s)",
+		Example: "dpservice-cli delete loadbalancer 1",
 		Aliases: LoadBalancerAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

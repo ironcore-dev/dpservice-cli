@@ -31,6 +31,7 @@ func DeleteNat(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "nat <interfaceID> [<interfaceIDs>...]",
 		Short:   "Delete nat(s)",
+		Example: "dpservice-cli delete nat vm1",
 		Aliases: NatAliases,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
