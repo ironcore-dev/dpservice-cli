@@ -32,6 +32,8 @@ func ListPrefixes(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	cmd := &cobra.Command{
 		Use:     "prefixes <--interface-id>",
 		Short:   "List prefix(es) on interface.",
+		Example: "dpservice-cli list prefixes --interface-id=vm1",
+		Args:    cobra.ExactArgs(0),
 		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return RunListPrefixes(

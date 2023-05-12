@@ -17,7 +17,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/netip"
 	"os"
 
 	"github.com/onmetal/dpservice-cli/util"
@@ -25,26 +24,23 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func GetPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func ListLoadBalancerPrefixes(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts GetPrefixOptions
+		opts ListLoadBalancerPrefixesOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "prefix [<prefix>...]",
-		Short:   "Get or list prefix(es)",
-		Aliases: PrefixAliases,
+		Use:     "lbprefixes <--interface-id>",
+		Short:   "List loadbalancer prefixes on interface.",
+		Example: "dpservice-cli list lbprefixes --interface-id=vm1",
+		Aliases: LoadBalancerPrefixAliases,
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefixes, err := ParsePrefixArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunGetPrefix(
+			return RunListLoadBalancerPrefixes(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				prefixes,
 				opts,
 			)
 		},
@@ -57,15 +53,15 @@ func GetPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFact
 	return cmd
 }
 
-type GetPrefixOptions struct {
+type ListLoadBalancerPrefixesOptions struct {
 	InterfaceID string
 }
 
-func (o *GetPrefixOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *ListLoadBalancerPrefixesOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the prefix.")
 }
 
-func (o *GetPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *ListLoadBalancerPrefixesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	for _, name := range []string{"interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
@@ -74,12 +70,11 @@ func (o *GetPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunGetPrefix(
+func RunListLoadBalancerPrefixes(
 	ctx context.Context,
 	factory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	prefixes []netip.Prefix,
-	opts GetPrefixOptions,
+	opts ListLoadBalancerPrefixesOptions,
 ) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
@@ -96,17 +91,13 @@ func RunGetPrefix(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(prefixes) == 0 {
-		prefixList, err := client.ListPrefixes(ctx, opts.InterfaceID)
-		if err != nil {
-			return fmt.Errorf("error listing prefixes: %w", err)
-		}
-
-		if err := renderer.Render(prefixList); err != nil {
-			return fmt.Errorf("error rendering list: %w", err)
-		}
-		return nil
+	prefixList, err := client.ListLoadBalancerPrefixes(ctx, opts.InterfaceID)
+	if err != nil {
+		return fmt.Errorf("error listing loadbalancer prefixes: %w", err)
 	}
 
-	return fmt.Errorf("getting individual prefixes is not implemented")
+	if err := renderer.Render(prefixList); err != nil {
+		return fmt.Errorf("error rendering list: %w", err)
+	}
+	return nil
 }

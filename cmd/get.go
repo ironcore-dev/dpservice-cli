@@ -33,19 +33,16 @@ func Get(factory DPDKClientFactory) *cobra.Command {
 
 	subcommands := []*cobra.Command{
 		GetInterface(factory, rendererOptions),
-		GetPrefix(factory, rendererOptions),
-		GetRoute(factory, rendererOptions),
 		GetVirtualIP(factory, rendererOptions),
 		GetLoadBalancer(factory, rendererOptions),
-		GetLoadBalancerPrefix(factory, rendererOptions),
 		GetLoadBalancerTargets(factory, rendererOptions),
 		GetNat(factory, rendererOptions),
 		GetNatInfo(factory, rendererOptions),
 		GetFirewallRule(factory, rendererOptions),
 	}
 
-	cmd.Short = fmt.Sprintf("Gets/Lists one of %v", CommandNames(subcommands))
-	cmd.Long = fmt.Sprintf("Gets/Lists one of %v", CommandNames(subcommands))
+	cmd.Short = fmt.Sprintf("Gets one of %v", CommandNames(subcommands))
+	cmd.Long = fmt.Sprintf("Gets one of %v", CommandNames(subcommands))
 
 	cmd.AddCommand(
 		subcommands...,

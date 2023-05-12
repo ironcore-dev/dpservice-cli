@@ -17,7 +17,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/netip"
 	"os"
 
 	"github.com/onmetal/dpservice-cli/util"
@@ -25,26 +24,23 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func GetLoadBalancerPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func ListRoutes(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts GetPrefixOptions
+		opts ListRoutesOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbprefix [<prefix>...]",
-		Short:   "Get or list loadbalancer prefix(es)",
-		Aliases: LoadBalancerPrefixAliases,
+		Use:     "routes <--vni>",
+		Short:   "List routes of specified VNI",
+		Example: "dpservice-cli list routes --vni=100",
+		Aliases: RouteAliases,
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefixes, err := ParsePrefixArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunGetLoadBalancerPrefix(
+			return RunGetRoute(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				prefixes,
 				opts,
 			)
 		},
@@ -57,16 +53,16 @@ func GetLoadBalancerPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory 
 	return cmd
 }
 
-type GetLoadBalancerPrefixOptions struct {
-	InterfaceID string
+type ListRoutesOptions struct {
+	VNI uint32
 }
 
-func (o *GetLoadBalancerPrefixOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the prefix.")
+func (o *ListRoutesOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to get the routes from.")
 }
 
-func (o *GetLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+func (o *ListRoutesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"vni"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -74,16 +70,15 @@ func (o *GetLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) err
 	return nil
 }
 
-func RunGetLoadBalancerPrefix(
+func RunGetRoute(
 	ctx context.Context,
-	factory DPDKClientFactory,
+	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	prefixes []netip.Prefix,
-	opts GetPrefixOptions,
+	opts ListRoutesOptions,
 ) error {
-	client, cleanup, err := factory.NewClient(ctx)
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error creating client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer func() {
 		if err := cleanup(); err != nil {
@@ -96,17 +91,13 @@ func RunGetLoadBalancerPrefix(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(prefixes) == 0 {
-		prefixList, err := client.ListLoadBalancerPrefixes(ctx, opts.InterfaceID)
-		if err != nil {
-			return fmt.Errorf("error listing loadbalancer prefixes: %w", err)
-		}
-
-		if err := renderer.Render(prefixList); err != nil {
-			return fmt.Errorf("error rendering list: %w", err)
-		}
-		return nil
+	routeList, err := client.ListRoutes(ctx, opts.VNI)
+	if err != nil {
+		return fmt.Errorf("error listing routes: %w", err)
 	}
 
-	return fmt.Errorf("getting individual loadbalancer prefixes is not implemented")
+	if err := renderer.Render(routeList); err != nil {
+		return fmt.Errorf("error rendering list: %w", err)
+	}
+	return nil
 }

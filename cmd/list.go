@@ -35,6 +35,8 @@ func List(factory DPDKClientFactory) *cobra.Command {
 		ListFirewallRules(factory, rendererOptions),
 		ListInterfaces(factory, rendererOptions),
 		ListPrefixes(factory, rendererOptions),
+		ListLoadBalancerPrefixes(factory, rendererOptions),
+		ListRoutes(factory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Lists one of %v", CommandNames(subcommands))
