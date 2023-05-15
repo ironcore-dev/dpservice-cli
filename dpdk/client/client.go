@@ -480,8 +480,9 @@ func (c *client) CreateRoute(ctx context.Context, route *api.Route) (*api.Route,
 		return nil, apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
 	return &api.Route{
-		TypeMeta: api.TypeMeta{Kind: api.RouteKind},
-		Spec:     route.Spec,
+		TypeMeta:  api.TypeMeta{Kind: api.RouteKind},
+		RouteMeta: route.RouteMeta,
+		Spec:      route.Spec,
 	}, nil
 }
 
@@ -493,7 +494,7 @@ func (c *client) DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefi
 			Weight:    100,
 			Prefix: &dpdkproto.Prefix{
 				IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Addr()),
-				Address:      []byte(prefix.String()),
+				Address:      []byte(prefix.Addr().String()),
 				PrefixLength: uint32(prefix.Bits()),
 			},
 			NexthopVNI:     nextHopVNI,
@@ -608,7 +609,7 @@ func (c *client) CreateNeighborNat(ctx context.Context, nNat *api.NeighborNat) e
 		return err
 	}
 
-	if res.Error != 0 {
+	if res.Error == 0 {
 		return nil
 	}
 	return fmt.Errorf("%d", res.Error)
@@ -636,6 +637,11 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType in
 				return nil, fmt.Errorf("error parsing underlay route: %w", err)
 			}
 			nat.Spec.UnderlayRoute = underlayRoute
+			vipIP, err = netip.ParseAddr(string(res.NatVIPIP.Address))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing vip ip: %w", err)
+			}
+			nat.Spec.NatVIPIP = vipIP
 		} else if res.NatInfoType == 1 {
 			vipIP, err = netip.ParseAddr(string(natInfoEntry.GetAddress()))
 			if err != nil {
@@ -643,7 +649,6 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType in
 			}
 			nat.Spec.NatVIPIP = vipIP
 		}
-		nat.InterfaceID = res.NatInfoType.String() + " " + res.NatVIPIP.String()
 		nat.Kind = api.NatKind
 		nat.Spec.MinPort = natInfoEntry.MinPort
 		nat.Spec.MaxPort = natInfoEntry.MaxPort
@@ -727,7 +732,13 @@ func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRul
 	if res.Status.Error != 0 {
 		return nil, err
 	}
-	return &api.FirewallRule{FirewallRuleMeta: api.FirewallRuleMeta{RuleID: string(res.RuleID), InterfaceID: fwRule.InterfaceID}}, nil
+	return &api.FirewallRule{
+		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
+		FirewallRuleMeta: api.FirewallRuleMeta{
+			RuleID:      fwRule.RuleID,
+			InterfaceID: fwRule.InterfaceID,
+		},
+	}, nil
 }
 
 func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID string) (*api.FirewallRule, error) {

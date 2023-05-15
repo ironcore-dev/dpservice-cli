@@ -29,7 +29,7 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip <interface-id> [<interface-ids>...]",
+		Use:     "virtualip <interfaceID> [<interfaceIDs>...]",
 		Short:   "Delete virtual ip(s)",
 		Example: "dpservice-cli delete virtualip vm1",
 		Aliases: VirtualIPAliases,
@@ -70,7 +70,7 @@ func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, interfac
 
 	for _, interfaceID := range interfaceIDs {
 		if err := client.DeleteVirtualIP(ctx, interfaceID); err != nil {
-			fmt.Printf("Error deleting virtual ip of interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error deleting virtual ip of interface %s: %v", interfaceID, err)
 		}
 
 		fmt.Printf("Deleted virtual ip of interface %s\n", interfaceID)

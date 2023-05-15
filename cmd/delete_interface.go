@@ -70,7 +70,7 @@ func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, interfac
 
 	for _, interfaceID := range interfaceIDs {
 		if err := client.DeleteInterface(ctx, interfaceID); err != nil {
-			fmt.Printf("Error deleting interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error deleting interface %s: %v", interfaceID, err)
 		}
 
 		fmt.Println("Deleted interface", interfaceID)

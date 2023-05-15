@@ -77,7 +77,7 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, ruleI
 
 	for _, ruleID := range ruleIDs {
 		if err := client.DeleteFirewallRule(ctx, opts.InrerfaceID, ruleID); err != nil {
-			fmt.Printf("Error deleting firewall rule %s: %v\n", ruleID, err)
+			return fmt.Errorf("error deleting firewall rule %s: %v", ruleID, err)
 		}
 
 		fmt.Println("Deleted firewall rule", ruleID, "on interface", opts.InrerfaceID)

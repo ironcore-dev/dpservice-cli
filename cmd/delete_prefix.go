@@ -82,7 +82,7 @@ func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, prefixes []
 
 	for _, prefix := range prefixes {
 		if err := client.DeletePrefix(ctx, opts.InterfaceID, prefix); err != nil {
-			fmt.Printf("Error deleting prefix %s/%v: %v\n", opts.InterfaceID, prefix, err)
+			return fmt.Errorf("error deleting prefix %s/%v: %v", opts.InterfaceID, prefix, err)
 		}
 		fmt.Printf("Deleted prefix %s/%v\n", opts.InterfaceID, prefix)
 	}

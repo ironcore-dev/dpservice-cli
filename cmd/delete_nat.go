@@ -70,7 +70,7 @@ func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, interfaceIDs [
 
 	for _, interfaceID := range interfaceIDs {
 		if err := client.DeleteNat(ctx, interfaceID); err != nil {
-			fmt.Printf("Error deleting nat of interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error deleting nat of interface %s: %v", interfaceID, err)
 		}
 
 		fmt.Printf("Deleted nat of interface %s\n", interfaceID)

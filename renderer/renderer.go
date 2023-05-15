@@ -290,7 +290,6 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 }
 
 func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
-	// TODO add all fields
 	headers := []any{"interfaceID", "ruleID", "direction", "src", "dst", "action", "protocol", "priority"}
 
 	columns := make([][]any, len(fwrules))

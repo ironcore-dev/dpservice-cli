@@ -93,7 +93,7 @@ func RunGetLoadBalancerTargets(
 	for _, interfaceID := range interfaceIDs {
 		lbtarget, err := client.GetLoadBalancerTargets(ctx, interfaceID)
 		if err != nil {
-			fmt.Printf("Error getting loadbalancer target for interface %s: %v\n", interfaceID, err)
+			return fmt.Errorf("error getting loadbalancer target for interface %s: %v", interfaceID, err)
 		}
 
 		if err := renderer.Render(lbtarget); err != nil {

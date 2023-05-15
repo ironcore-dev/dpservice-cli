@@ -82,7 +82,7 @@ func RunDeleteLoadBalancerPrefix(ctx context.Context, factory DPDKClientFactory,
 
 	for _, prefix := range prefixes {
 		if err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, prefix); err != nil {
-			fmt.Printf("Error deleting loadbalancer prefix %s/%v: %v\n", opts.InterfaceID, prefix, err)
+			return fmt.Errorf("error deleting loadbalancer prefix %s/%v: %v", opts.InterfaceID, prefix, err)
 		}
 		fmt.Printf("Deleted loadbalancer prefix %s/%v\n", opts.InterfaceID, prefix)
 	}

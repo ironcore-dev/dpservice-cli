@@ -37,7 +37,7 @@ func CreateLoadBalancerPrefix(
 	cmd := &cobra.Command{
 		Use:     "lbprefix <prefix> <--interface-id>",
 		Short:   "Create a loadbalancer prefix",
-		Example: "dpservice-cli create lbprefix ff80::1/64 --interface-id=vm1",
+		Example: "dpservice-cli create lbprefix 10.10.10.0/24 --interface-id=vm1",
 		Args:    cobra.ExactArgs(1),
 		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {

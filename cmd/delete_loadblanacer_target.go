@@ -83,7 +83,7 @@ func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory,
 			return fmt.Errorf("not valid IP Address: %w", err)
 		}
 		if err := client.DeleteLoadBalancerTarget(ctx, opts.LoadBalancerID, targetIP); err != nil {
-			fmt.Printf("Error deleting loadbalancer target %s/%v: %v\n", opts.LoadBalancerID, target, err)
+			return fmt.Errorf("error deleting loadbalancer target %s/%v: %v", opts.LoadBalancerID, target, err)
 		}
 		fmt.Printf("Deleted loadbalancer target %s/%v\n", opts.LoadBalancerID, target)
 	}
