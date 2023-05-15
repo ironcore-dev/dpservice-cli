@@ -77,10 +77,7 @@ func RunInit(
 	}()
 
 	uuid, err := client.Initialized(ctx)
-	if err != nil {
-		return fmt.Errorf("error: %w", err)
-	}
-	if uuid != "" {
+	if err == nil && uuid != "" {
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
 	}
 
