@@ -30,9 +30,11 @@ func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip [<interface-ids>...]",
+		Use:     "virtualip [<interfaceIDs>...]",
 		Short:   "Get or list virtualip(s)",
+		Example: "dpservice-cli get virtualip vm1",
 		Aliases: VirtualIPAliases,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args
 			return RunGetVirtualIP(

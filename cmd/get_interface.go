@@ -30,8 +30,9 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface",
+		Use:     "interface [<interfaceIDs>...]",
 		Short:   "Get or list interface(s)",
+		Example: "dpservice-cli get interface vm1 vm2",
 		Aliases: InterfaceAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args

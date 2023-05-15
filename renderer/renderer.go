@@ -262,11 +262,11 @@ func (t defaultTableConverter) routeTable(routes []api.Route) (*TableData, error
 }
 
 func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*TableData, error) {
-	headers := []any{"IP"}
+	headers := []any{"interfaceID", "virtualIP"}
 
 	columns := make([][]any, len(virtualIPs))
 	for i, virtualIP := range virtualIPs {
-		columns[i] = []any{virtualIP.IP}
+		columns[i] = []any{virtualIP.InterfaceID, virtualIP.IP}
 	}
 
 	return &TableData{

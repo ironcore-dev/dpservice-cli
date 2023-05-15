@@ -30,10 +30,11 @@ func GetLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer <ID>",
+		Use:     "loadbalancer [<loadbalancerIDs>...]",
 		Short:   "Get or list loadbalancer(s)",
 		Example: "dpservice-cli get lb 4",
 		Aliases: LoadBalancerAliases,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			loadbalancerIDs := args
 			return RunGetLoadBalancer(

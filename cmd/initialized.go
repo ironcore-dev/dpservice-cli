@@ -23,9 +23,10 @@ import (
 
 func Initialized(factory DPDKClientFactory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "initialized",
-		Short: "Indicates if the DPDK app has been initialized already",
-		Args:  cobra.ExactArgs(0),
+		Use:     "initialized",
+		Short:   "Indicates if the DPDK app has been initialized already",
+		Example: "dpservice-cli initialized",
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			return RunInitialized(

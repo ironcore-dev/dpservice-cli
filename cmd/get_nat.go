@@ -32,7 +32,9 @@ func GetNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory
 	cmd := &cobra.Command{
 		Use:     "nat [<interfaceIDs>...]",
 		Short:   "Get or list nat(s)",
+		Example: "dpservice-cli get nat vm1",
 		Aliases: NatAliases,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args
 			return RunGetNat(

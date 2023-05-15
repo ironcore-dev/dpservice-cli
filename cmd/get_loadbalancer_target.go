@@ -34,6 +34,7 @@ func GetLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactory
 		Short:   "Get or list LoadBalancerTarget(s)",
 		Example: "dpservice-cli get lbtarget 1 2",
 		Aliases: LoadBalancerTargetAliases,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			interfaceIDs := args
 			return RunGetLoadBalancerTargets(

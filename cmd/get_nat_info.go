@@ -31,9 +31,10 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 	)
 
 	cmd := &cobra.Command{
-		Use:   "natinfo <NatIP> <--nat-type>",
-		Short: "List all local machines that are behind this IP",
-		Args:  cobra.ExactArgs(1),
+		Use:     "natinfo <NatIP> <--nat-type>",
+		Short:   "List all local machines that are behind this IP",
+		Example: "dpservice-cli get natinfo 10.20.30.40 --nat-type=1",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			natVIPIP, err := netip.ParseAddr(args[0])
 			if err != nil {
