@@ -17,36 +17,29 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/netip"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
+// func Init is not up to dpdk.proto spec, but is implemented to comply with current dpservice implementation
 func Init(factory DPDKClientFactory) *cobra.Command {
 	var (
 		opts InitOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "init <underlayIPv6Prefix> [flags]",
+		Use:     "init",
 		Short:   "Initial set up of the DPDK app",
-		Long:    "To add multiple values use flag multiple times",
-		Example: "dpservice-cli init ff80::1/64 --pfnames=a --pfnames=b --uplink-ports=c --uplink-ports=d",
-		Args:    cobra.ExactArgs(1),
+		Example: "dpservice-cli init",
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix, err := netip.ParsePrefix(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing prefix: %w", err)
-			}
 
 			return RunInit(
 				cmd.Context(),
 				factory,
-				prefix,
 				opts,
 			)
 		},
@@ -59,28 +52,18 @@ func Init(factory DPDKClientFactory) *cobra.Command {
 }
 
 type InitOptions struct {
-	UplinkPorts []string
-	PfNames     []string
 }
 
 func (o *InitOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringSliceVar(&o.UplinkPorts, "uplink-ports", o.UplinkPorts, "Linux name of the NICs that are connected to the Leaf Switches.")
-	fs.StringSliceVar(&o.PfNames, "pfnames", o.PfNames, "Linux name of the Physical Functions, that Virtual Functions will be derived from.")
 }
 
 func (o *InitOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"uplink-ports", "pfnames"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
 func RunInit(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
-	prefix netip.Prefix,
 	opts InitOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -101,15 +84,7 @@ func RunInit(
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
 	}
 
-	err = client.Init(ctx, dpdkproto.InitConfig{
-		UnderlayIPv6Prefix: &dpdkproto.Prefix{
-			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Addr()),
-			Address:      []byte(prefix.Addr().String()),
-			PrefixLength: uint32(prefix.Bits()),
-		},
-		UplinkPorts: opts.UplinkPorts,
-		PfNames:     opts.PfNames,
-	})
+	err = client.Init(ctx, dpdkproto.InitConfig{})
 	if err != nil {
 		return fmt.Errorf("error: %w", err)
 	}
