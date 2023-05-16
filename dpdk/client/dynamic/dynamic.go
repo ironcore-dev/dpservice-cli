@@ -137,7 +137,7 @@ func (c *client) Create(ctx context.Context, obj any) error {
 		*obj = *res
 		return nil
 	case *api.Prefix:
-		res, err := c.structured.CreatePrefix(ctx, obj)
+		res, err := c.structured.AddPrefix(ctx, obj)
 		if err != nil {
 			return err
 		}
@@ -145,7 +145,7 @@ func (c *client) Create(ctx context.Context, obj any) error {
 		*obj = *res
 		return nil
 	case *api.Route:
-		res, err := c.structured.CreateRoute(ctx, obj)
+		res, err := c.structured.AddRoute(ctx, obj)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (c *client) Create(ctx context.Context, obj any) error {
 		*obj = *res
 		return nil
 	case *api.VirtualIP:
-		res, err := c.structured.CreateVirtualIP(ctx, obj)
+		res, err := c.structured.AddVirtualIP(ctx, obj)
 		if err != nil {
 			return err
 		}

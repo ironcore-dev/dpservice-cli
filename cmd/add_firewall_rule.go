@@ -28,24 +28,23 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func CreateFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts CreateFirewallRuleOptions
+		opts AddFirewallRuleOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "firewallrule <interfaceID> [flags]",
-		Short:   "Create a FirewallRule",
-		Example: "dpservice-cli create fwrule vm1 --action 1 --direction 1 --dst 5.5.5.0/24 --ipv 0 --priority 100 --rule-id 12 --src 1.1.1.1/32 --protocol tcp --srcPortLower 1 --srcPortUpper 1000 --dstPortLower 500 --dstPortUpper 600",
+		Use:     "firewallrule <--interface-id> [flags]",
+		Short:   "Add a FirewallRule to interface",
+		Example: "dpservice-cli add fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --ipv=0 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --srcPortLower=1 --srcPortUpper=1000 --dstPortLower=500 --dstPortUpper=600",
 		Aliases: FirewallRuleAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceID := args[0]
-			return RunCreateFirewallRule(
+
+			return RunAddFirewallRule(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceID,
 				opts,
 			)
 		},
@@ -58,7 +57,8 @@ func CreateFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	return cmd
 }
 
-type CreateFirewallRuleOptions struct {
+type AddFirewallRuleOptions struct {
+	InterfaceID       string
 	RuleID            string
 	TrafficDirection  uint8
 	FirewallAction    uint8
@@ -75,7 +75,8 @@ type CreateFirewallRuleOptions struct {
 	IcmpCode          int32
 }
 
-func (o *CreateFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID of FW Rule.")
 	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "RuleID of FW Rule.")
 	fs.Uint8Var(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
 	fs.Uint8Var(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: Drop = 0/Accept = 1 // Can be only \"accept\" at the moment.")
@@ -93,9 +94,9 @@ func (o *CreateFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 
 }
 
-func (o *CreateFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	// TODO if protocol is not specified it should match all protocols
-	for _, name := range []string{"rule-id", "direction", "action", "ipv", "src", "dst", "protocol"} {
+	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipv", "src", "dst", "protocol"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -103,7 +104,7 @@ func (o *CreateFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, interfaceID string, opts CreateFirewallRuleOptions) error {
+func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts AddFirewallRuleOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -114,7 +115,7 @@ func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
@@ -167,11 +168,11 @@ func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 		}}
 	}
 
-	fwrule, err := client.CreateFirewallRule(ctx, &api.FirewallRule{
+	fwrule, err := client.AddFirewallRule(ctx, &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
 			RuleID:      opts.RuleID,
-			InterfaceID: interfaceID,
+			InterfaceID: opts.InterfaceID,
 		},
 		Spec: api.FirewallRuleSpec{
 			TrafficDirection:  opts.TrafficDirection,
@@ -185,7 +186,7 @@ func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 	},
 	)
 	if err != nil {
-		return fmt.Errorf("error creating firewall rule: %w", err)
+		return fmt.Errorf("error adding firewall rule: %w", err)
 	}
 
 	if err := renderer.Render(fwrule); err != nil {

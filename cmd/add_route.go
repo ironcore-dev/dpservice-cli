@@ -19,48 +19,31 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strconv"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func CreateRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func AddRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts CreateRouteOptions
+		opts AddRouteOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "route <prefix> <next-hop-vni> <next-hop-ip>",
-		Short:   "Create a route",
-		Example: "dpservice-cli create route 10.100.3.0/24 0 fc00:2::64:0:1 --vni=100",
+		Use:     "route <--prefix> <--next-hop-vni> <--next-hop-ip> <--vni>",
+		Short:   "Add a route",
+		Example: "dpservice-cli add route --prefix=10.100.3.0/24 --next-hop-vni=0 --next-hop-ip=fc00:2::64:0:1 --vni=100",
 		Aliases: RouteAliases,
-		Args:    cobra.ExactArgs(3),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix, err := netip.ParsePrefix(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing prefix: %w", err)
-			}
 
-			nextHopVNI, err := strconv.ParseUint(args[1], 10, 32)
-			if err != nil {
-				return fmt.Errorf("error parsing next hop vni: %w", err)
-			}
-
-			nextHopIP, err := netip.ParseAddr(args[2])
-			if err != nil {
-				return fmt.Errorf("error parsing next hop ip: %w", err)
-			}
-
-			return RunCreateRoute(
+			return RunAddRoute(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				prefix,
-				uint32(nextHopVNI),
-				nextHopIP,
 				opts,
 			)
 		},
@@ -73,16 +56,22 @@ func CreateRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFa
 	return cmd
 }
 
-type CreateRouteOptions struct {
-	VNI uint32
+type AddRouteOptions struct {
+	Prefix     netip.Prefix
+	NextHopVNI uint32
+	NextHopIP  netip.Addr
+	VNI        uint32
 }
 
-func (o *CreateRouteOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *AddRouteOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix for the route.")
+	fs.Uint32Var(&o.NextHopVNI, "next-hop-vni", o.NextHopVNI, "Next hop VNI for the route.")
+	flag.AddrVar(fs, &o.NextHopIP, "next-hop-ip", o.NextHopIP, "Next hop IP for the route.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "Source VNI for the route.")
 }
 
-func (o *CreateRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni"} {
+func (o *AddRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"prefix", "next-hop-vni", "next-hop-ip", "vni"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -90,14 +79,11 @@ func (o *CreateRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunCreateRoute(
+func RunAddRoute(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	prefix netip.Prefix,
-	nextHopVNI uint32,
-	nextHopIP netip.Addr,
-	opts CreateRouteOptions,
+	opts AddRouteOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -109,24 +95,24 @@ func RunCreateRoute(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	route, err := client.CreateRoute(ctx, &api.Route{
+	route, err := client.AddRoute(ctx, &api.Route{
 		RouteMeta: api.RouteMeta{
 			VNI:    opts.VNI,
-			Prefix: prefix,
+			Prefix: opts.Prefix,
 			NextHop: api.RouteNextHop{
-				VNI: nextHopVNI,
-				IP:  nextHopIP,
+				VNI: opts.NextHopVNI,
+				IP:  opts.NextHopIP,
 			},
 		},
 		Spec: api.RouteSpec{},
 	})
 	if err != nil {
-		return fmt.Errorf("error creating route: %w", err)
+		return fmt.Errorf("error adding route: %w", err)
 	}
 
 	if err := renderer.Render(route); err != nil {

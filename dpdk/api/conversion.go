@@ -73,7 +73,7 @@ func LbipToProtoLbip(lbip netip.Addr) *proto.LBIP {
 	return &proto.LBIP{IpVersion: NetIPAddrToProtoIPVersion(lbip), Address: []byte(lbip.String())}
 }
 
-func ProtoLbipToLbip(protolbip proto.LBIP) *LBIP {
+func ProtoLbipToLbip(protolbip proto.LBIP) *netip.Addr {
 	var ip netip.Addr
 	if lbipString := string(protolbip.Address); lbipString != "" {
 		var err error
@@ -82,7 +82,7 @@ func ProtoLbipToLbip(protolbip proto.LBIP) *LBIP {
 			return nil
 		}
 	}
-	return &LBIP{Address: ip, IpVersion: proto.IPVersion_name[int32(protolbip.IpVersion)]}
+	return &ip
 }
 
 func StringLbportToLbport(lbport string) (LBPort, error) {

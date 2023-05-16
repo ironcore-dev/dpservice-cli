@@ -21,36 +21,32 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func CreateLoadBalancerTarget(
+func AddPrefix(
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
 ) *cobra.Command {
 	var (
-		opts CreateLoadBalancerTargetOptions
+		opts AddPrefixOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget <targetIP> [flags]",
-		Short:   "Create a loadbalancer target",
-		Example: "dpservice-cli create lbtarget ff80::5 --lb-id 2",
-		Args:    cobra.ExactArgs(1),
-		Aliases: LoadBalancerTargetAliases,
+		Use:     "prefix <--prefix> <--interface-id>",
+		Short:   "Add a prefix to interface.",
+		Example: "dpservice-cli add prefix --prefix=10.20.30.0/24 --interface-id=vm1",
+		Args:    cobra.ExactArgs(0),
+		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ip, err := netip.ParseAddr(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing ip: %w", err)
-			}
 
-			return RunCreateLoadBalancerTarget(
+			return RunAddPrefix(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				ip,
 				opts,
 			)
 		},
@@ -63,16 +59,18 @@ func CreateLoadBalancerTarget(
 	return cmd
 }
 
-type CreateLoadBalancerTargetOptions struct {
-	LoadBalancerID string
+type AddPrefixOptions struct {
+	Prefix      netip.Prefix
+	InterfaceID string
 }
 
-func (o *CreateLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "ID of the loadbalancer to create the target for.")
+func (o *AddPrefixOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix to add to the interface.")
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "ID of the interface to add the prefix for.")
 }
 
-func (o *CreateLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"lb-id"} {
+func (o *AddPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"prefix", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -80,12 +78,11 @@ func (o *CreateLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) 
 	return nil
 }
 
-func RunCreateLoadBalancerTarget(
+func RunAddPrefix(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	ip netip.Addr,
-	opts CreateLoadBalancerTargetOptions,
+	opts AddPrefixOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -97,23 +94,24 @@ func RunCreateLoadBalancerTarget(
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	targetIP := api.ProtoLbipToLbip(*api.LbipToProtoLbip(ip))
-	res, err := client.CreateLoadBalancerTarget(ctx, &api.LoadBalancerTarget{
-		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
-		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{ID: opts.LoadBalancerID},
-		Spec:                   api.LoadBalancerTargetSpec{TargetIP: *targetIP},
+	res, err := client.AddPrefix(ctx, &api.Prefix{
+		PrefixMeta: api.PrefixMeta{
+			InterfaceID: opts.InterfaceID,
+			Prefix:      opts.Prefix,
+		},
+		Spec: api.PrefixSpec{},
 	})
 	if err != nil {
-		return fmt.Errorf("error creating loadbalancer target: %w", err)
+		return fmt.Errorf("error adding prefix: %w", err)
 	}
 
 	if err := renderer.Render(res); err != nil {
-		return fmt.Errorf("error rendering loadbalancer target: %w", err)
+		return fmt.Errorf("error rendering prefix: %w", err)
 	}
 	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -35,22 +36,17 @@ func CreateLoadBalancerPrefix(
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbprefix <prefix> <--interface-id>",
+		Use:     "lbprefix <--prefix> <--interface-id>",
 		Short:   "Create a loadbalancer prefix",
-		Example: "dpservice-cli create lbprefix 10.10.10.0/24 --interface-id=vm1",
-		Args:    cobra.ExactArgs(1),
+		Example: "dpservice-cli add lbprefix --prefix=10.10.10.0/24 --interface-id=vm1",
+		Args:    cobra.ExactArgs(0),
 		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix, err := netip.ParsePrefix(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing prefix: %w", err)
-			}
 
 			return RunCreateLoadBalancerPrefix(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				prefix,
 				opts,
 			)
 		},
@@ -64,15 +60,17 @@ func CreateLoadBalancerPrefix(
 }
 
 type CreateLoadBalancerPrefixOptions struct {
+	Prefix      netip.Prefix
 	InterfaceID string
 }
 
 func (o *CreateLoadBalancerPrefixOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix to add to the interface.")
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "ID of the interface to create the prefix for.")
 }
 
 func (o *CreateLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+	for _, name := range []string{"prefix", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -84,7 +82,6 @@ func RunCreateLoadBalancerPrefix(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	prefix netip.Prefix,
 	opts CreateLoadBalancerPrefixOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -105,7 +102,7 @@ func RunCreateLoadBalancerPrefix(
 	res, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
 			InterfaceID: opts.InterfaceID,
-			Prefix:      prefix,
+			Prefix:      opts.Prefix,
 		},
 		Spec: api.PrefixSpec{},
 	})

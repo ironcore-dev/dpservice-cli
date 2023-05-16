@@ -33,18 +33,16 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer <id>",
+		Use:     "loadbalancer <--id> <--vni> <--vip> <--lbports>",
 		Short:   "Create a loadbalancer",
-		Example: "dpservice-cli create lb 4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
+		Example: "dpservice-cli create lb --id=4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
 		Aliases: LoadBalancerAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			loadbalancerID := args[0]
 			return RunCreateLoadBalancer(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				loadbalancerID,
 				opts,
 			)
 		},
@@ -58,19 +56,21 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 }
 
 type CreateLoadBalancerOptions struct {
+	Id      string
 	VNI     uint32
 	LbVipIP netip.Addr
 	Lbports []string
 }
 
 func (o *CreateLoadBalancerOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.Id, "id", o.Id, "Loadbalancer ID to add.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the loadbalancer to.")
 	flag.AddrVar(fs, &o.LbVipIP, "vip", o.LbVipIP, "VIP to assign to the loadbalancer.")
-	fs.StringSliceVar(&o.Lbports, "lbports", o.Lbports, "LB ports to assign to the loadbalancer")
+	fs.StringSliceVar(&o.Lbports, "lbports", o.Lbports, "LB ports to assign to the loadbalancer.")
 }
 
 func (o *CreateLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni", "vip", "lbports"} {
+	for _, name := range []string{"id", "vni", "vip", "lbports"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (o *CreateLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, loadbalancerID string, opts CreateLoadBalancerOptions) error {
+func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts CreateLoadBalancerOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -105,7 +105,7 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 
 	lb, err := client.CreateLoadBalancer(ctx, &api.LoadBalancer{
 		LoadBalancerMeta: api.LoadBalancerMeta{
-			ID: loadbalancerID,
+			ID: opts.Id,
 		},
 		Spec: api.LoadBalancerSpec{
 			VNI:     opts.VNI,

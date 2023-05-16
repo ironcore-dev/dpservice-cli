@@ -208,8 +208,8 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 	for i, lbtarget := range lbtargets {
 		columns[i] = []any{
 			lbtarget.LoadBalancerTargetMeta.ID,
-			lbtarget.Spec.TargetIP.IpVersion,
-			lbtarget.Spec.TargetIP.Address,
+			api.NetIPAddrToProtoIPVersion(lbtarget.Spec.TargetIP),
+			lbtarget.Spec.TargetIP,
 		}
 	}
 

@@ -27,24 +27,23 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func CreateNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func AddNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts CreateNatOptions
+		opts AddNatOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "nat <interfaceID> [flags]",
-		Short:   "Create a NAT",
-		Example: "dpservice-cli create nat vm1 --natip=10.20.30.40 --minport=30000 --maxport=30100",
+		Use:     "nat <interface-id> <--natip> <--minport> <--maxport>",
+		Short:   "Add a NAT to interface",
+		Example: "dpservice-cli add nat --interface-id=vm1 --natip=10.20.30.40 --minport=30000 --maxport=30100",
 		Aliases: NatAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceID := args[0]
-			return RunCreateNat(
+
+			return RunAddNat(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceID,
 				opts,
 			)
 		},
@@ -57,20 +56,22 @@ func CreateNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFact
 	return cmd
 }
 
-type CreateNatOptions struct {
-	NATVipIP netip.Addr
-	MinPort  uint32
-	MaxPort  uint32
+type AddNatOptions struct {
+	InterfaceID string
+	NATVipIP    netip.Addr
+	MinPort     uint32
+	MaxPort     uint32
 }
 
-func (o *CreateNatOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *AddNatOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID where to add NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of NAT.")
 	fs.Uint32Var(&o.MaxPort, "maxport", o.MaxPort, "MaxPort of NAT.")
 	flag.AddrVar(fs, &o.NATVipIP, "natip", o.NATVipIP, "NAT IP to assign to the interface.")
 }
 
-func (o *CreateNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"minport", "maxport", "natip"} {
+func (o *AddNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id", "minport", "maxport", "natip"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -78,7 +79,7 @@ func (o *CreateNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunCreateNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, interfaceID string, opts CreateNatOptions) error {
+func RunAddNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts AddNatOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -89,14 +90,14 @@ func RunCreateNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rend
 		}
 	}()
 
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
+	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	nat, err := client.CreateNat(ctx, &api.Nat{
+	nat, err := client.AddNat(ctx, &api.Nat{
 		NatMeta: api.NatMeta{
-			InterfaceID: interfaceID,
+			InterfaceID: opts.InterfaceID,
 		},
 		Spec: api.NatSpec{
 			NatVIPIP: opts.NATVipIP,
@@ -105,7 +106,7 @@ func RunCreateNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rend
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("error creating nat: %w", err)
+		return fmt.Errorf("error adding nat: %w", err)
 	}
 
 	if err := renderer.Render(nat); err != nil {

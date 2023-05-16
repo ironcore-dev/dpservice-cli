@@ -192,7 +192,7 @@ func (m *LoadBalancerTargetMeta) GetName() string {
 }
 
 type LoadBalancerTargetSpec struct {
-	TargetIP LBIP `json:"targetIP"`
+	TargetIP netip.Addr `json:"targetIP"`
 }
 
 type LoadBalancerTargetList struct {

@@ -33,18 +33,16 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface <id>",
+		Use:     "interface <--id> [<--ip>] <--vni> <--device>",
 		Short:   "Create an interface",
-		Example: "dpservice-cli create interface vm4 --ips=10.200.1.4 --ips=2000:200:1::4 --vni=200 --device=net_tap5",
+		Example: "dpservice-cli add interface --id=vm4 --ip=10.200.1.4 --ip=2000:200:1::4 --vni=200 --device=net_tap5",
 		Aliases: InterfaceAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceID := args[0]
 			return RunCreateInterface(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceID,
 				opts,
 			)
 		},
@@ -58,19 +56,21 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 }
 
 type CreateInterfaceOptions struct {
+	ID     string
 	VNI    uint32
-	IPs    []netip.Addr
+	IP     []netip.Addr
 	Device string
 }
 
 func (o *CreateInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "ID of the interface.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the interface to.")
-	flag.AddrSliceVar(fs, &o.IPs, "ips", o.IPs, "IPs to assign to the interface.")
+	flag.AddrSliceVar(fs, &o.IP, "ip", o.IP, "IP to assign to the interface.")
 	fs.StringVar(&o.Device, "device", o.Device, "Device to allocate.")
 }
 
 func (o *CreateInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni", "ips"} {
+	for _, name := range []string{"id", "vni", "ip", "device"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (o *CreateInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, interfaceID string, opts CreateInterfaceOptions) error {
+func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts CreateInterfaceOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -96,12 +96,12 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 
 	iface, err := client.CreateInterface(ctx, &api.Interface{
 		InterfaceMeta: api.InterfaceMeta{
-			ID: interfaceID,
+			ID: opts.ID,
 		},
 		Spec: api.InterfaceSpec{
 			VNI:    opts.VNI,
 			Device: opts.Device,
-			IPs:    opts.IPs,
+			IPs:    opts.IP,
 		},
 	})
 	if err != nil {

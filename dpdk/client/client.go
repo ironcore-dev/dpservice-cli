@@ -35,7 +35,7 @@ type Client interface {
 	DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) error
 
 	GetLoadBalancerTargets(ctx context.Context, interfaceID string) (*api.LoadBalancerTargetList, error)
-	CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error)
+	AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error)
 	DeleteLoadBalancerTarget(ctx context.Context, id string, targetIP netip.Addr) error
 
 	GetInterface(ctx context.Context, id string) (*api.Interface, error)
@@ -44,27 +44,27 @@ type Client interface {
 	DeleteInterface(ctx context.Context, id string) error
 
 	GetVirtualIP(ctx context.Context, interfaceID string) (*api.VirtualIP, error)
-	CreateVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*api.VirtualIP, error)
+	AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*api.VirtualIP, error)
 	DeleteVirtualIP(ctx context.Context, interfaceID string) error
 
 	ListPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error)
-	CreatePrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error)
+	AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error)
 	DeletePrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) error
 
 	ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, error)
-	CreateRoute(ctx context.Context, route *api.Route) (*api.Route, error)
+	AddRoute(ctx context.Context, route *api.Route) (*api.Route, error)
 	DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefix, nextHopVNI uint32, nextHopIP netip.Addr) error
 
 	GetNat(ctx context.Context, interfaceID string) (*api.Nat, error)
-	CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
+	AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
 	DeleteNat(ctx context.Context, interfaceID string) error
 
-	CreateNeighborNat(ctx context.Context, nat *api.NeighborNat) error
+	AddNeighborNat(ctx context.Context, nat *api.NeighborNat) error
 	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error)
 	DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error
 
 	ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error)
-	CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
+	AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error
 
@@ -234,10 +234,10 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 	}, nil
 }
 
-func (c *client) CreateLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error) {
+func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error) {
 	res, err := c.DPDKonmetalClient.AddLoadBalancerTarget(ctx, &dpdkproto.AddLoadBalancerTargetRequest{
 		LoadBalancerID: []byte(lbtarget.LoadBalancerTargetMeta.ID),
-		TargetIP:       api.LbipToProtoLbip(lbtarget.Spec.TargetIP.Address),
+		TargetIP:       api.LbipToProtoLbip(lbtarget.Spec.TargetIP),
 	})
 	if err != nil {
 		return nil, err
@@ -356,7 +356,7 @@ func (c *client) GetVirtualIP(ctx context.Context, interfaceName string) (*api.V
 	return api.ProtoVirtualIPToVirtualIP(interfaceName, res)
 }
 
-func (c *client) CreateVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*api.VirtualIP, error) {
+func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*api.VirtualIP, error) {
 	res, err := c.DPDKonmetalClient.AddInterfaceVIP(ctx, &dpdkproto.InterfaceVIPMsg{
 		InterfaceID: []byte(virtualIP.InterfaceID),
 		InterfaceVIPIP: &dpdkproto.InterfaceVIPIP{
@@ -372,8 +372,9 @@ func (c *client) CreateVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) 
 	}
 
 	return &api.VirtualIP{
-		TypeMeta: api.TypeMeta{Kind: api.VirtualIPKind},
-		Spec:     virtualIP.Spec,
+		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
+		VirtualIPMeta: virtualIP.VirtualIPMeta,
+		Spec:          virtualIP.Spec,
 	}, nil
 }
 
@@ -414,7 +415,7 @@ func (c *client) ListPrefixes(ctx context.Context, interfaceID string) (*api.Pre
 	}, nil
 }
 
-func (c *client) CreatePrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error) {
+func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error) {
 	res, err := c.DPDKonmetalClient.AddInterfacePrefix(ctx, &dpdkproto.InterfacePrefixMsg{
 		InterfaceID: &dpdkproto.InterfaceIDMsg{
 			InterfaceID: []byte(prefix.InterfaceID),
@@ -458,7 +459,7 @@ func (c *client) DeletePrefix(ctx context.Context, interfaceID string, prefix ne
 	return nil
 }
 
-func (c *client) CreateRoute(ctx context.Context, route *api.Route) (*api.Route, error) {
+func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, error) {
 	res, err := c.DPDKonmetalClient.AddRoute(ctx, &dpdkproto.VNIRouteMsg{
 		Vni: &dpdkproto.VNIMsg{Vni: route.VNI},
 		Route: &dpdkproto.Route{
@@ -546,7 +547,7 @@ func (c *client) GetNat(ctx context.Context, interfaceID string) (*api.Nat, erro
 	return nat, err
 }
 
-func (c *client) CreateNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
+func (c *client) AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
 	res, err := c.DPDKonmetalClient.AddNAT(ctx, &dpdkproto.AddNATRequest{
 		InterfaceID: []byte(nat.NatMeta.InterfaceID),
 		NatVIPIP: &dpdkproto.NATIP{
@@ -593,7 +594,7 @@ func (c *client) DeleteNat(ctx context.Context, interfaceID string) error {
 	return nil
 }
 
-func (c *client) CreateNeighborNat(ctx context.Context, nNat *api.NeighborNat) error {
+func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) error {
 
 	res, err := c.DPDKonmetalClient.AddNeighborNAT(ctx, &dpdkproto.AddNeighborNATRequest{
 		NatVIPIP: &dpdkproto.NATIP{
@@ -703,7 +704,7 @@ func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*ap
 	}, nil
 }
 
-func (c *client) CreateFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error) {
+func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error) {
 	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
 		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
 		Rule: &dpdkproto.FirewallRule{
