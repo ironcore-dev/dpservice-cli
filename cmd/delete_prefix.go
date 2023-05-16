@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,18 +31,14 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "prefix <prefix> [<prefixes>...]",
+		Use:     "prefix <--prefix> <--interface-id>",
 		Short:   "Delete a prefix",
-		Example: "dpservice-cli delete prefix 10.20.30.0/24 --interface-id=vm1",
+		Example: "dpservice-cli delete prefix --prefix=10.20.30.0/24 --interface-id=vm1",
 		Aliases: PrefixAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefixes, err := ParsePrefixArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunDeletePrefix(cmd.Context(), factory, prefixes, opts)
+			return RunDeletePrefix(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -53,15 +50,17 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeletePrefixOptions struct {
+	Prefix      netip.Prefix
 	InterfaceID string
 }
 
 func (o *DeletePrefixOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix to delete.")
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the prefix.")
 }
 
 func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+	for _, name := range []string{"prefix", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -69,7 +68,7 @@ func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, prefixes []netip.Prefix, opts DeletePrefixOptions) error {
+func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, opts DeletePrefixOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -80,11 +79,10 @@ func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, prefixes []
 		}
 	}()
 
-	for _, prefix := range prefixes {
-		if err := client.DeletePrefix(ctx, opts.InterfaceID, prefix); err != nil {
-			return fmt.Errorf("error deleting prefix %s/%v: %v", opts.InterfaceID, prefix, err)
-		}
-		fmt.Printf("Deleted prefix %s/%v\n", opts.InterfaceID, prefix)
+	if err := client.DeletePrefix(ctx, opts.InterfaceID, opts.Prefix); err != nil {
+		return fmt.Errorf("error deleting prefix %s/%v: %v", opts.InterfaceID, opts.Prefix, err)
 	}
+	fmt.Printf("Deleted prefix %s/%v\n", opts.InterfaceID, opts.Prefix)
+
 	return nil
 }

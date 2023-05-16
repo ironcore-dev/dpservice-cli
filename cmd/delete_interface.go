@@ -29,14 +29,14 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface <interfaceID> [<interfaceIDs> ...]",
-		Short:   "Delete interface(s)",
-		Example: "dpservice-cli delete interface vm1",
+		Use:     "interface <--id>",
+		Short:   "Delete interface",
+		Example: "dpservice-cli delete interface --id=vm1",
 		Aliases: InterfaceAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunDeleteInterface(cmd.Context(), factory, interfaceIDs, opts)
+
+			return RunDeleteInterface(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -48,16 +48,23 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteInterfaceOptions struct {
+	ID string
 }
 
 func (o *DeleteInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "Interface ID to delete.")
 }
 
 func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, interfaceIDs []string, opts DeleteInterfaceOptions) error {
+func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, opts DeleteInterfaceOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -68,12 +75,11 @@ func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, interfac
 		}
 	}()
 
-	for _, interfaceID := range interfaceIDs {
-		if err := client.DeleteInterface(ctx, interfaceID); err != nil {
-			return fmt.Errorf("error deleting interface %s: %v", interfaceID, err)
-		}
-
-		fmt.Println("Deleted interface", interfaceID)
+	if err := client.DeleteInterface(ctx, opts.ID); err != nil {
+		return fmt.Errorf("error deleting interface %s: %v", opts.ID, err)
 	}
+
+	fmt.Println("Deleted interface", opts.ID)
+
 	return nil
 }

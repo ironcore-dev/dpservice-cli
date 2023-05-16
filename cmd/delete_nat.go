@@ -29,14 +29,14 @@ func DeleteNat(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "nat <interfaceID> [<interfaceIDs>...]",
-		Short:   "Delete nat(s)",
-		Example: "dpservice-cli delete nat vm1",
+		Use:     "nat <--interface-id>",
+		Short:   "Delete nat from interface",
+		Example: "dpservice-cli delete nat --interface-id=vm1",
 		Aliases: NatAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunDeleteNat(cmd.Context(), factory, interfaceIDs, opts)
+
+			return RunDeleteNat(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -48,16 +48,23 @@ func DeleteNat(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteNatOptions struct {
+	InterfaceID string
 }
 
 func (o *DeleteNatOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the Virtual IP.")
 }
 
 func (o *DeleteNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, interfaceIDs []string, opts DeleteNatOptions) error {
+func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, opts DeleteNatOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -68,12 +75,11 @@ func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, interfaceIDs [
 		}
 	}()
 
-	for _, interfaceID := range interfaceIDs {
-		if err := client.DeleteNat(ctx, interfaceID); err != nil {
-			return fmt.Errorf("error deleting nat of interface %s: %v", interfaceID, err)
-		}
-
-		fmt.Printf("Deleted nat of interface %s\n", interfaceID)
+	if err := client.DeleteNat(ctx, opts.InterfaceID); err != nil {
+		return fmt.Errorf("error deleting nat of interface %s: %v", opts.InterfaceID, err)
 	}
+
+	fmt.Printf("Deleted NAT of interface %s\n", opts.InterfaceID)
+
 	return nil
 }

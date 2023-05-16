@@ -17,7 +17,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/netip"
 
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -29,18 +31,14 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "route <prefix> <next-hop-vni> <next-hop-ip> [<prefix-n> <next-hop-ip-n> <next-hop-ip-n>...]",
+		Use:     "route <--prefix> <--next-hop-vni> <--next-hop-ip> <--vni>",
 		Short:   "Delete a route",
-		Example: "dpservice-cli delete route 10.100.2.0/24 0 fc00:2::64:0:1 --vni=100",
+		Example: "dpservice-cli delete route --prefix=10.100.2.0/24 --next-hop-vni=0 --next-hop-ip=fc00:2::64:0:1 --vni=100",
 		Aliases: RouteAliases,
-		Args:    MultipleOfArgs(3),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			keys, err := ParseRouteKeyArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunDeleteRoute(cmd.Context(), factory, keys, opts)
+			return RunDeleteRoute(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -52,15 +50,21 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteRouteOptions struct {
-	VNI uint32
+	Prefix     netip.Prefix
+	NextHopVNI uint32
+	NextHopIP  netip.Addr
+	VNI        uint32
 }
 
 func (o *DeleteRouteOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix of the route.")
+	fs.Uint32Var(&o.NextHopVNI, "next-hop-vni", o.NextHopVNI, "Next hop VNI of the route.")
+	flag.AddrVar(fs, &o.NextHopIP, "next-hop-ip", o.NextHopIP, "Next hop IP of the route.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI of the route.")
 }
 
 func (o *DeleteRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni"} {
+	for _, name := range []string{"prefix", "next-hop-vni", "next-hop-ip", "vni"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -68,7 +72,7 @@ func (o *DeleteRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, keys []RouteKey, opts DeleteRouteOptions) error {
+func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, opts DeleteRouteOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -79,12 +83,10 @@ func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, keys []Route
 		}
 	}()
 
-	for _, key := range keys {
-		if err := client.DeleteRoute(ctx, opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP); err != nil {
-			return fmt.Errorf("error deleting route %d-%v:%d-%v: %v", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP, err)
-		}
-		fmt.Printf("Deleted route %d-%v:%d-%v\n", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP)
+	if err := client.DeleteRoute(ctx, opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP); err != nil {
+		return fmt.Errorf("error deleting route %d-%v:%d-%v: %v", opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP, err)
 	}
+	fmt.Printf("Deleted route %d-%v:%d-%v\n", opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP)
 
 	return nil
 }

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,15 +31,14 @@ func DeleteLoadBalancerTarget(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget [<targetIPs>] --lb-id <loadbalancerID>",
+		Use:     "lbtarget <--target-ip> <--lb-id>",
 		Short:   "Delete a loadbalancer target",
-		Example: "dpservice-cli delete lbtarget ff80::4 ff80::5 --lb-id=2",
+		Example: "dpservice-cli delete lbtarget --target-ip=ff80::1 --lb-id=1",
 		Aliases: LoadBalancerTargetAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			targets := args
 
-			return RunDeleteLoadBalancerTarget(cmd.Context(), factory, targets, opts)
+			return RunDeleteLoadBalancerTarget(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -50,15 +50,17 @@ func DeleteLoadBalancerTarget(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteLoadBalancerTargetOptions struct {
+	TargetIP       netip.Addr
 	LoadBalancerID string
 }
 
 func (o *DeleteLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.TargetIP, "target-ip", o.TargetIP, "LoadBalancer target IP to delete.")
 	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "LoadBalancerID where to delete target.")
 }
 
 func (o *DeleteLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"lb-id"} {
+	for _, name := range []string{"target-ip", "lb-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -66,7 +68,7 @@ func (o *DeleteLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) 
 	return nil
 }
 
-func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory, targets []string, opts DeleteLoadBalancerTargetOptions) error {
+func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory, opts DeleteLoadBalancerTargetOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -77,15 +79,10 @@ func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory,
 		}
 	}()
 
-	for _, target := range targets {
-		targetIP, err := netip.ParseAddr(target)
-		if err != nil {
-			return fmt.Errorf("not valid IP Address: %w", err)
-		}
-		if err := client.DeleteLoadBalancerTarget(ctx, opts.LoadBalancerID, targetIP); err != nil {
-			return fmt.Errorf("error deleting loadbalancer target %s/%v: %v", opts.LoadBalancerID, target, err)
-		}
-		fmt.Printf("Deleted loadbalancer target %s/%v\n", opts.LoadBalancerID, target)
+	if err := client.DeleteLoadBalancerTarget(ctx, opts.LoadBalancerID, opts.TargetIP); err != nil {
+		return fmt.Errorf("error deleting loadbalancer target %s/%v: %v", opts.LoadBalancerID, opts.TargetIP, err)
 	}
+	fmt.Printf("Deleted loadbalancer target %s/%v\n", opts.LoadBalancerID, opts.TargetIP)
+
 	return nil
 }

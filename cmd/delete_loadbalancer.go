@@ -29,14 +29,14 @@ func DeleteLoadBalancer(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer <loadbalancerID> [<loadbalancerIDs> ...]",
-		Short:   "Delete loadbalancer(s)",
-		Example: "dpservice-cli delete loadbalancer 1",
+		Use:     "loadbalancer <--id>",
+		Short:   "Delete loadbalancer",
+		Example: "dpservice-cli delete loadbalancer --id=1",
 		Aliases: LoadBalancerAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			loadbalancerIDs := args
-			return RunDeleteLoadBalancer(cmd.Context(), factory, loadbalancerIDs, opts)
+
+			return RunDeleteLoadBalancer(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -48,16 +48,23 @@ func DeleteLoadBalancer(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteLoadBalancerOptions struct {
+	ID string
 }
 
 func (o *DeleteLoadBalancerOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "LoadBalancer ID to delete.")
 }
 
 func (o *DeleteLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, loadbalancerIDs []string, opts DeleteLoadBalancerOptions) error {
+func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, opts DeleteLoadBalancerOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -68,12 +75,11 @@ func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, loadb
 		}
 	}()
 
-	for _, loadbalancerID := range loadbalancerIDs {
-		if err := client.DeleteLoadBalancer(ctx, loadbalancerID); err != nil {
-			return fmt.Errorf("error deleting loadbalancer %s: %v", loadbalancerID, err)
-		}
-
-		fmt.Println("Deleted loadbalancer", loadbalancerID)
+	if err := client.DeleteLoadBalancer(ctx, opts.ID); err != nil {
+		return fmt.Errorf("error deleting loadbalancer %s: %v", opts.ID, err)
 	}
+
+	fmt.Println("Deleted loadbalancer", opts.ID)
+
 	return nil
 }

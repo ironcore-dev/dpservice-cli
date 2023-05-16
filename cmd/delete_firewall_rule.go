@@ -29,14 +29,14 @@ func DeleteFirewallRule(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "firewallrule [<ruleID> ...] <--interface-id>",
-		Short:   "Delete firewall rule(s)",
-		Example: "dpservice-cli delete firewallrule 1 --interface-id=vm1",
+		Use:     "firewallrule <--rule-id> <--interface-id>",
+		Short:   "Delete firewall rule from interface",
+		Example: "dpservice-cli delete firewallrule --rule-id=1 --interface-id=vm1",
 		Aliases: FirewallRuleAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ruleIDs := args
-			return RunDeleteFirewallRule(cmd.Context(), factory, ruleIDs, opts)
+
+			return RunDeleteFirewallRule(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -48,15 +48,17 @@ func DeleteFirewallRule(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteFirewallRuleOptions struct {
-	InrerfaceID string
+	RuleID      string
+	InterfaceID string
 }
 
 func (o *DeleteFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.InrerfaceID, "interface-id", o.InrerfaceID, "Intreface ID where to delete firewall rule(s).")
+	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "Rule ID to delete.")
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Intreface ID where to delete firewall rule.")
 }
 
 func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+	for _, name := range []string{"rule-id", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -64,7 +66,7 @@ func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, ruleIDs []string, opts DeleteFirewallRuleOptions) error {
+func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, opts DeleteFirewallRuleOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -75,12 +77,11 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, ruleI
 		}
 	}()
 
-	for _, ruleID := range ruleIDs {
-		if err := client.DeleteFirewallRule(ctx, opts.InrerfaceID, ruleID); err != nil {
-			return fmt.Errorf("error deleting firewall rule %s: %v", ruleID, err)
-		}
-
-		fmt.Println("Deleted firewall rule", ruleID, "on interface", opts.InrerfaceID)
+	if err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID); err != nil {
+		return fmt.Errorf("error deleting firewall rule %s/%s: %v", opts.RuleID, opts.InterfaceID, err)
 	}
+
+	fmt.Printf("Deleted firewall rule %s on interface %s\n", opts.RuleID, opts.InterfaceID)
+
 	return nil
 }

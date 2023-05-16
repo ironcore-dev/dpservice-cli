@@ -20,6 +20,7 @@ import (
 	"net/netip"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,18 +32,14 @@ func DeleteNeighborNat(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "neighbornat <NAT IP> [flags]",
-		Short:   "Delete neighbor nat(s)",
-		Example: "dpservice-cli delete neighbornat 10.20.30.40 --vni=100 --minport=30000 --maxport=30100",
+		Use:     "neighbornat <--natip> <--vni> <--minport> <--maxport>",
+		Short:   "Delete neighbor nat",
+		Example: "dpservice-cli delete neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100",
 		Aliases: NeighborNatAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			natVIPIP, err := netip.ParseAddr(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing nat vip ip: %w", err)
-			}
 
-			return RunDeleteNeighborNat(cmd.Context(), factory, natVIPIP, opts)
+			return RunDeleteNeighborNat(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -54,19 +51,21 @@ func DeleteNeighborNat(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteNeighborNatOptions struct {
+	NatIP   netip.Addr
 	Vni     uint32
 	MinPort uint32
 	MaxPort uint32
 }
 
 func (o *DeleteNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.NatIP, "natip", o.NatIP, "Neighbor NAT IP.")
 	fs.Uint32Var(&o.Vni, "vni", o.Vni, "VNI of neighbor NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of neighbor NAT.")
 	fs.Uint32Var(&o.MaxPort, "maxport", o.MaxPort, "MaxPort of neighbor NAT.")
 }
 
 func (o *DeleteNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni", "minport", "maxport"} {
+	for _, name := range []string{"natip", "vni", "minport", "maxport"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -74,7 +73,7 @@ func (o *DeleteNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, natVIPIP netip.Addr, opts DeleteNeighborNatOptions) error {
+func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, opts DeleteNeighborNatOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -87,7 +86,7 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, natVIP
 
 	neigbhorNat := api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NatKind},
-		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: natVIPIP},
+		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: opts.NatIP},
 		Spec: api.NeighborNatSpec{
 			Vni:     opts.Vni,
 			MinPort: opts.MinPort,
@@ -95,10 +94,10 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, natVIP
 		},
 	}
 	if err := client.DeleteNeighborNat(ctx, neigbhorNat); err != nil {
-		return fmt.Errorf("error deleting neighbor nat with ip %s: %v", natVIPIP, err)
+		return fmt.Errorf("error deleting neighbor nat with ip %s: %v", opts.NatIP, err)
 	}
 
-	fmt.Printf("Deleted neighbor NAT with IP %s\n", natVIPIP)
+	fmt.Printf("Deleted neighbor NAT with IP %s\n", opts.NatIP)
 
 	return nil
 }

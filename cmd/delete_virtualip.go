@@ -29,14 +29,14 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip <interfaceID> [<interfaceIDs>...]",
-		Short:   "Delete virtual ip(s)",
-		Example: "dpservice-cli delete virtualip vm1",
+		Use:     "virtualip <--interface-id>",
+		Short:   "Delete virtual IP from interface",
+		Example: "dpservice-cli delete virtualip --interface-id=vm1",
 		Aliases: VirtualIPAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunDeleteVirtualIP(cmd.Context(), factory, interfaceIDs, opts)
+
+			return RunDeleteVirtualIP(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -48,16 +48,23 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteVirtualIPOptions struct {
+	InterfaceID string
 }
 
 func (o *DeleteVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the Virtual IP.")
 }
 
 func (o *DeleteVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, interfaceIDs []string, opts DeleteVirtualIPOptions) error {
+func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, opts DeleteVirtualIPOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -68,12 +75,11 @@ func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, interfac
 		}
 	}()
 
-	for _, interfaceID := range interfaceIDs {
-		if err := client.DeleteVirtualIP(ctx, interfaceID); err != nil {
-			return fmt.Errorf("error deleting virtual ip of interface %s: %v", interfaceID, err)
-		}
-
-		fmt.Printf("Deleted virtual ip of interface %s\n", interfaceID)
+	if err := client.DeleteVirtualIP(ctx, opts.InterfaceID); err != nil {
+		return fmt.Errorf("error deleting virtual ip of interface %s: %v", opts.InterfaceID, err)
 	}
+
+	fmt.Printf("Deleted virtual ip of interface %s\n", opts.InterfaceID)
+
 	return nil
 }

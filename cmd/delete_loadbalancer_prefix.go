@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,18 +31,14 @@ func DeleteLoadBalancerPrefix(factory DPDKClientFactory) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbprefix <prefix> [<prefixes>...]",
+		Use:     "lbprefix <--prefix> <--interface-id>",
 		Short:   "Delete a loadbalancer prefix",
-		Example: "dpservice-cli delete lbprefix ff80::1/64 --interface-id=vm1",
+		Example: "dpservice-cli delete lbprefix --prefix=ff80::1/64 --interface-id=vm1",
 		Aliases: LoadBalancerPrefixAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefixes, err := ParsePrefixArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunDeleteLoadBalancerPrefix(cmd.Context(), factory, prefixes, opts)
+			return RunDeleteLoadBalancerPrefix(cmd.Context(), factory, opts)
 		},
 	}
 
@@ -53,15 +50,17 @@ func DeleteLoadBalancerPrefix(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteLoadBalancerPrefixOptions struct {
+	Prefix      netip.Prefix
 	InterfaceID string
 }
 
 func (o *DeleteLoadBalancerPrefixOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Loadbalancer prefix to delete.")
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the loadbalancer prefix.")
 }
 
 func (o *DeleteLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+	for _, name := range []string{"prefix", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -69,7 +68,7 @@ func (o *DeleteLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) 
 	return nil
 }
 
-func RunDeleteLoadBalancerPrefix(ctx context.Context, factory DPDKClientFactory, prefixes []netip.Prefix, opts DeleteLoadBalancerPrefixOptions) error {
+func RunDeleteLoadBalancerPrefix(ctx context.Context, factory DPDKClientFactory, opts DeleteLoadBalancerPrefixOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -80,11 +79,10 @@ func RunDeleteLoadBalancerPrefix(ctx context.Context, factory DPDKClientFactory,
 		}
 	}()
 
-	for _, prefix := range prefixes {
-		if err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, prefix); err != nil {
-			return fmt.Errorf("error deleting loadbalancer prefix %s/%v: %v", opts.InterfaceID, prefix, err)
-		}
-		fmt.Printf("Deleted loadbalancer prefix %s/%v\n", opts.InterfaceID, prefix)
+	if err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, opts.Prefix); err != nil {
+		return fmt.Errorf("error deleting loadbalancer prefix %s/%v: %v", opts.InterfaceID, opts.Prefix, err)
 	}
+	fmt.Printf("Deleted loadbalancer prefix %s/%v\n", opts.InterfaceID, opts.Prefix)
+
 	return nil
 }
