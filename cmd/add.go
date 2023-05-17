@@ -26,7 +26,7 @@ import (
 )
 
 func Add(dpdkClientFactory DPDKClientFactory) *cobra.Command {
-	rendererOptions := &RendererOptions{Output: "name"}
+	rendererOptions := &RendererOptions{Output: "table"}
 	sourcesOptions := &SourcesOptions{}
 
 	cmd := &cobra.Command{

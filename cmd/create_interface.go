@@ -111,6 +111,5 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	if err := renderer.Render(iface); err != nil {
 		return fmt.Errorf("error rendering interface: %w", err)
 	}
-	fmt.Println("Underlay IP is:", iface.Status.UnderlayIP)
 	return nil
 }

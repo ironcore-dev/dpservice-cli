@@ -109,6 +109,5 @@ func RunAddVirtualIP(
 	if err := renderer.Render(virtualIP); err != nil {
 		return fmt.Errorf("error rendering virtual ip: %w", err)
 	}
-	fmt.Println("Underlay route is:", virtualIP.Spec.UnderlayRoute)
 	return nil
 }

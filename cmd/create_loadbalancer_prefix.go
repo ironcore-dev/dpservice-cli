@@ -112,6 +112,5 @@ func RunCreateLoadBalancerPrefix(
 	if err := renderer.Render(lbprefix); err != nil {
 		return fmt.Errorf("error rendering prefix: %w", err)
 	}
-	fmt.Println("Underlay route is:", lbprefix.Spec.UnderlayRoute)
 	return nil
 }

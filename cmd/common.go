@@ -93,7 +93,7 @@ type RendererOptions struct {
 }
 
 func (o *RendererOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format.")
+	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format. [json|yaml|table|name]")
 	fs.BoolVar(&o.Pretty, "pretty", o.Pretty, "Whether to render pretty output.")
 }
 

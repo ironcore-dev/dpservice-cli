@@ -112,6 +112,5 @@ func RunAddPrefix(
 	if err := renderer.Render(res); err != nil {
 		return fmt.Errorf("error rendering prefix: %w", err)
 	}
-	fmt.Println("underlay route is:", res.Spec.UnderlayRoute)
 	return nil
 }

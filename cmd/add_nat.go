@@ -112,6 +112,5 @@ func RunAddNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendere
 	if err := renderer.Render(nat); err != nil {
 		return fmt.Errorf("error rendering nat: %w", err)
 	}
-	fmt.Println("Underlay route is:", nat.Spec.UnderlayRoute)
 	return nil
 }
