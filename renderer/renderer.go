@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"strconv"
 	"strings"
 
@@ -238,7 +237,7 @@ func (t defaultTableConverter) prefixTable(prefixes []api.Prefix) (*TableData, e
 
 	columns := make([][]any, len(prefixes))
 	for i, prefix := range prefixes {
-		columns[i] = []any{prefix.Prefix, net.ParseIP(string(prefix.Spec.UnderlayRoute))}
+		columns[i] = []any{prefix.Prefix, prefix.Spec.UnderlayRoute}
 	}
 
 	return &TableData{

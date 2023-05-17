@@ -180,10 +180,14 @@ func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefi
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
 	return &api.Prefix{
 		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
 		PrefixMeta: prefix.PrefixMeta,
-		Spec:       prefix.Spec,
+		Spec:       api.PrefixSpec{UnderlayRoute: underlayRoute},
 	}, nil
 }
 
@@ -370,11 +374,15 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
 
 	return &api.VirtualIP{
 		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
 		VirtualIPMeta: virtualIP.VirtualIPMeta,
-		Spec:          virtualIP.Spec,
+		Spec:          api.VirtualIPSpec{UnderlayRoute: underlayRoute},
 	}, nil
 }
 
@@ -432,10 +440,14 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
 		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
 	}
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
 	return &api.Prefix{
 		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
 		PrefixMeta: prefix.PrefixMeta,
-		Spec:       prefix.Spec,
+		Spec:       api.PrefixSpec{UnderlayRoute: underlayRoute},
 	}, nil
 }
 

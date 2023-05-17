@@ -99,19 +99,19 @@ func RunCreateLoadBalancerPrefix(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	res, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
+	lbprefix, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
 			InterfaceID: opts.InterfaceID,
 			Prefix:      opts.Prefix,
 		},
-		Spec: api.PrefixSpec{},
 	})
 	if err != nil {
 		return fmt.Errorf("error creating prefix: %w", err)
 	}
 
-	if err := renderer.Render(res); err != nil {
+	if err := renderer.Render(lbprefix); err != nil {
 		return fmt.Errorf("error rendering prefix: %w", err)
 	}
+	fmt.Println("Underlay route is:", lbprefix.Spec.UnderlayRoute)
 	return nil
 }

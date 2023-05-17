@@ -203,6 +203,11 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 		return nil, fmt.Errorf("invalid dpdk prefix length %d for address %s", dpdkPrefix.PrefixLength, addr)
 	}
 
+	underlayRoute, err := netip.ParseAddr(string(dpdkPrefix.Address))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+
 	return &Prefix{
 		TypeMeta: TypeMeta{
 			Kind: PrefixKind,
@@ -211,7 +216,7 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 			InterfaceID: interfaceID,
 			Prefix:      prefix,
 		},
-		Spec: PrefixSpec{UnderlayRoute: dpdkPrefix.UnderlayRoute},
+		Spec: PrefixSpec{UnderlayRoute: underlayRoute},
 	}, nil
 }
 

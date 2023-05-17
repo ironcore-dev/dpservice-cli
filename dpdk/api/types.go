@@ -105,7 +105,7 @@ func (m *PrefixMeta) GetName() string {
 }
 
 type PrefixSpec struct {
-	UnderlayRoute []byte `json:"underplayRoute"`
+	UnderlayRoute netip.Addr `json:"underplayRoute"`
 }
 
 type VirtualIP struct {
@@ -124,6 +124,7 @@ func (m *VirtualIPMeta) GetName() string {
 }
 
 type VirtualIPSpec struct {
+	UnderlayRoute netip.Addr `json:"underlayRoute"`
 }
 
 // LoadBalancer section

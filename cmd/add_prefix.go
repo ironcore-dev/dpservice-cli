@@ -104,7 +104,6 @@ func RunAddPrefix(
 			InterfaceID: opts.InterfaceID,
 			Prefix:      opts.Prefix,
 		},
-		Spec: api.PrefixSpec{},
 	})
 	if err != nil {
 		return fmt.Errorf("error adding prefix: %w", err)
@@ -113,5 +112,6 @@ func RunAddPrefix(
 	if err := renderer.Render(res); err != nil {
 		return fmt.Errorf("error rendering prefix: %w", err)
 	}
+	fmt.Println("underlay route is:", res.Spec.UnderlayRoute)
 	return nil
 }

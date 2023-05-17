@@ -120,5 +120,6 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 	if err := renderer.Render(lb); err != nil {
 		return fmt.Errorf("error rendering loadbalancer: %w", err)
 	}
+	fmt.Println("Underlay route is:", lb.Spec.UnderlayRoute)
 	return nil
 }
