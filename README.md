@@ -1,6 +1,7 @@
 # dpservice-cli
 
 CLI for [net-dpservice](https://github.com/onmetal/net-dpservice).
+<br />
 
 ## Installation
 
@@ -18,6 +19,22 @@ run
 ```shell
 make install
 ```
+<br />
+
+## Autocompletion
+
+To generate autocompletion use:
+
+```shell
+dpservice-cli completion [bash|zsh|fish|powershell]
+```
+
+Or use -h to get more info and examples for specific shell:
+
+```shell
+dpservice-cli completion -h
+```
+<br />
 
 ## Usage
 
@@ -27,11 +44,14 @@ Usage:
   dpservice-cli [command]
 
 Available Commands:
-  completion  Generate the autocompletion script for the specified shell
-  create      Creates one of [interface prefix route virtualip]
-  delete      Deletes one of [interface prefix route virtualip]
-  get         Gets/Lists one of [interface prefix route virtualip]
+  add         Creates one of [interface prefix route virtualip loadbalancer lbprefix lbtarget nat neighbornat firewallrule]
+  completion  Generate completion script
+  delete      Deletes one of [interface prefix route virtualip loadbalancer lbprefix lbtarget nat neighbornat firewallrule]
+  get         Gets one of [interface virtualip loadbalancer lbtarget nat natinfo firewallrule]
   help        Help about any command
+  init        Initial set up of the DPDK app
+  initialized Indicates if the DPDK app has been initialized already
+  list        Lists one of [firewallrules interfaces prefixes lbprefixes routes]
 
 Flags:
       --address string             net-dpservice address. (default "localhost:1337")
@@ -40,3 +60,6 @@ Flags:
 
 Use "dpservice-cli [command] --help" for more information about a command.
 ```
+All commands are in [docs](/docs/dpservice-cli.md)
+
+<br />
