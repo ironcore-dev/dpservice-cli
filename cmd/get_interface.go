@@ -30,17 +30,16 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface [<interfaceIDs>...]",
-		Short:   "Get or list interface(s)",
-		Example: "dpservice-cli get interface vm1 vm2",
+		Use:     "interface <--id>",
+		Short:   "Get interface",
+		Example: "dpservice-cli get interface --id=vm1",
 		Aliases: InterfaceAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
+
 			return RunGetInterface(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
 				opts,
 			)
 		},
@@ -54,12 +53,19 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 }
 
 type GetInterfaceOptions struct {
+	ID string
 }
 
 func (o *GetInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "ID of the interface.")
 }
 
 func (o *GetInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -67,7 +73,6 @@ func RunGetInterface(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
 	opts GetInterfaceOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -85,27 +90,13 @@ func RunGetInterface(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		ifaceList, err := client.ListInterfaces(ctx)
-		if err != nil {
-			return fmt.Errorf("error listing interfaces: %w", err)
-		}
-
-		if err := renderer.Render(ifaceList); err != nil {
-			return fmt.Errorf("error rendering list: %w", err)
-		}
-		return nil
+	iface, err := client.GetInterface(ctx, opts.ID)
+	if err != nil {
+		return fmt.Errorf("error getting interface: %w", err)
 	}
 
-	for _, interfaceID := range interfaceIDs {
-		iface, err := client.GetInterface(ctx, interfaceID)
-		if err != nil {
-			return fmt.Errorf("error getting interface: %w", err)
-		}
-
-		if err := renderer.Render(iface); err != nil {
-			return fmt.Errorf("error rendering interface %s: %w", interfaceID, err)
-		}
+	if err := renderer.Render(iface); err != nil {
+		return fmt.Errorf("error rendering interface %s: %w", opts.ID, err)
 	}
 	return nil
 }

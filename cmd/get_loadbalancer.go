@@ -30,18 +30,17 @@ func GetLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	)
 
 	cmd := &cobra.Command{
-		Use:     "loadbalancer [<loadbalancerIDs>...]",
-		Short:   "Get or list loadbalancer(s)",
-		Example: "dpservice-cli get lb 4",
+		Use:     "loadbalancer <--id>",
+		Short:   "Get loadbalancer",
+		Example: "dpservice-cli get loadbalancer --id=4",
 		Aliases: LoadBalancerAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			loadbalancerIDs := args
+
 			return RunGetLoadBalancer(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				loadbalancerIDs,
 				opts,
 			)
 		},
@@ -55,12 +54,19 @@ func GetLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 }
 
 type GetLoadBalancerOptions struct {
+	ID string
 }
 
 func (o *GetLoadBalancerOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "ID of the LoadBalancer.")
 }
 
 func (o *GetLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -68,7 +74,6 @@ func RunGetLoadBalancer(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	loadbalancerIDs []string,
 	opts GetLoadBalancerOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -86,19 +91,13 @@ func RunGetLoadBalancer(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(loadbalancerIDs) == 0 {
-		return fmt.Errorf("need to specify loadbalancer id")
+	lb, err := client.GetLoadBalancer(ctx, opts.ID)
+	if err != nil {
+		return fmt.Errorf("error getting loadbalancer: %w", err)
 	}
 
-	for _, loadbalancerID := range loadbalancerIDs {
-		lb, err := client.GetLoadBalancer(ctx, loadbalancerID)
-		if err != nil {
-			return fmt.Errorf("error getting loadbalancer: %w", err)
-		}
-
-		if err := renderer.Render(lb); err != nil {
-			return fmt.Errorf("error rendering loadbalancer %s: %w", loadbalancerID, err)
-		}
+	if err := renderer.Render(lb); err != nil {
+		return fmt.Errorf("error rendering loadbalancer %s: %w", opts.ID, err)
 	}
 	return nil
 }

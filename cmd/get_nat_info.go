@@ -20,6 +20,7 @@ import (
 	"net/netip"
 	"os"
 
+	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,21 +32,16 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 	)
 
 	cmd := &cobra.Command{
-		Use:     "natinfo <NatIP> <--nat-type>",
-		Short:   "List all local machines that are behind this IP",
-		Example: "dpservice-cli get natinfo 10.20.30.40 --nat-type=1",
-		Args:    cobra.ExactArgs(1),
+		Use:     "natinfo <--nat-ip> <--nat-type>",
+		Short:   "List all machines that are behind this IP",
+		Example: "dpservice-cli get natinfo --nat-ip=10.20.30.40 --nat-type=1",
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			natVIPIP, err := netip.ParseAddr(args[0])
-			if err != nil {
-				return fmt.Errorf("error parsing nat vip ip: %w", err)
-			}
 
 			return RunGetNatInfo(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				natVIPIP,
 				opts,
 			)
 		},
@@ -59,15 +55,17 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 }
 
 type GetNatInfoOptions struct {
+	NatIP   netip.Addr
 	NatType int32
 }
 
 func (o *GetNatInfoOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
 	fs.Int32Var(&o.NatType, "nat-type", o.NatType, "NAT Info type: NATInfoTypeZero = 0/NATInfoLocal = 1/NATInfoNeigh = 2")
 }
 
 func (o *GetNatInfoOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"nat-type"} {
+	for _, name := range []string{"nat-ip", "nat-type"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -79,7 +77,6 @@ func RunGetNatInfo(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	natVIPIP netip.Addr,
 	opts GetNatInfoOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -97,9 +94,9 @@ func RunGetNatInfo(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	natinfo, err := client.GetNATInfo(ctx, natVIPIP, opts.NatType)
+	natinfo, err := client.GetNATInfo(ctx, opts.NatIP, opts.NatType)
 	if err != nil {
-		return fmt.Errorf("error getting nat info for interface %s: %v", natVIPIP, err)
+		return fmt.Errorf("error getting nat info for ip %s: %v", opts.NatIP, err)
 	}
 
 	if err := renderer.Render(natinfo); err != nil {

@@ -30,18 +30,17 @@ func GetLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactory
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget [<loadbalancerIDs>...]",
-		Short:   "Get or list LoadBalancerTarget(s)",
-		Example: "dpservice-cli get lbtarget 1 2",
+		Use:     "lbtarget <--lb-id>",
+		Short:   "Get LoadBalancer Targets",
+		Example: "dpservice-cli get lbtarget --lb-id=1",
 		Aliases: LoadBalancerTargetAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
+
 			return RunGetLoadBalancerTargets(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
 				opts,
 			)
 		},
@@ -55,12 +54,19 @@ func GetLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactory
 }
 
 type GetLoadBalancerTargetOptions struct {
+	LoadBalancerID string
 }
 
 func (o *GetLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "ID of the loadbalancer to get the targets for.")
 }
 
 func (o *GetLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"lb-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -68,7 +74,6 @@ func RunGetLoadBalancerTargets(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
 	opts GetLoadBalancerTargetOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -86,19 +91,14 @@ func RunGetLoadBalancerTargets(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		return fmt.Errorf("listing loadbalancer targets is not implemented")
+	lbtarget, err := client.GetLoadBalancerTargets(ctx, opts.LoadBalancerID)
+	if err != nil {
+		return fmt.Errorf("error getting loadbalancer target for interface %s: %v", opts.LoadBalancerID, err)
 	}
 
-	for _, interfaceID := range interfaceIDs {
-		lbtarget, err := client.GetLoadBalancerTargets(ctx, interfaceID)
-		if err != nil {
-			return fmt.Errorf("error getting loadbalancer target for interface %s: %v", interfaceID, err)
-		}
-
-		if err := renderer.Render(lbtarget); err != nil {
-			return fmt.Errorf("error rendering loadbalancer target: %w", err)
-		}
+	if err := renderer.Render(lbtarget); err != nil {
+		return fmt.Errorf("error rendering loadbalancer target: %w", err)
 	}
+
 	return nil
 }

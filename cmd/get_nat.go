@@ -30,18 +30,17 @@ func GetNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory
 	)
 
 	cmd := &cobra.Command{
-		Use:     "nat [<interfaceIDs>...]",
-		Short:   "Get or list nat(s)",
-		Example: "dpservice-cli get nat vm1",
+		Use:     "nat <--interface-id>",
+		Short:   "Get NAT on interface",
+		Example: "dpservice-cli get nat --interface-id=vm1",
 		Aliases: NatAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
+
 			return RunGetNat(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
 				opts,
 			)
 		},
@@ -55,12 +54,19 @@ func GetNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory
 }
 
 type GetNatOptions struct {
+	InterfaceID string
 }
 
 func (o *GetNatOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the NAT.")
 }
 
 func (o *GetNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -68,7 +74,6 @@ func RunGetNat(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
 	opts GetNatOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -86,19 +91,14 @@ func RunGetNat(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		return fmt.Errorf("listing all nats is not implemented")
+	nat, err := client.GetNat(ctx, opts.InterfaceID)
+	if err != nil {
+		return fmt.Errorf("error getting nat for interface %s: %v", opts.InterfaceID, err)
 	}
 
-	for _, interfaceID := range interfaceIDs {
-		nat, err := client.GetNat(ctx, interfaceID)
-		if err != nil {
-			return fmt.Errorf("error getting nat for interface %s: %v", interfaceID, err)
-		}
-
-		if err := renderer.Render(nat); err != nil {
-			return fmt.Errorf("error rendering  nat: %w", err)
-		}
+	if err := renderer.Render(nat); err != nil {
+		return fmt.Errorf("error rendering  nat: %w", err)
 	}
+
 	return nil
 }

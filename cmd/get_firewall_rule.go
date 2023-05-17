@@ -30,18 +30,17 @@ func GetFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	)
 
 	cmd := &cobra.Command{
-		Use:     "firewallrule <ruleID> <--interface-id>",
+		Use:     "firewallrule <--rule-id> <--interface-id>",
 		Short:   "Get firewall rule",
-		Example: "dpservice-cli get fwrule 1 --interface-id=vm1",
+		Example: "dpservice-cli get fwrule --rule-id=1 --interface-id=vm1",
 		Aliases: FirewallRuleAliases,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ruleID := args[0]
+
 			return RunGetFirewallRule(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				ruleID,
 				opts,
 			)
 		},
@@ -55,15 +54,17 @@ func GetFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 }
 
 type GetFirewallRuleOptions struct {
+	RuleID      string
 	InterfaceID string
 }
 
 func (o *GetFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID where is firewall rule.")
+	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "Rule ID to get.")
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID where is firewall rule.")
 }
 
 func (o *GetFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
+	for _, name := range []string{"rule-id", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -75,7 +76,6 @@ func RunGetFirewallRule(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	ruleID string,
 	opts GetFirewallRuleOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -93,13 +93,13 @@ func RunGetFirewallRule(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	fwrule, err := client.GetFirewallRule(ctx, ruleID, opts.InterfaceID)
+	fwrule, err := client.GetFirewallRule(ctx, opts.RuleID, opts.InterfaceID)
 	if err != nil {
 		return fmt.Errorf("error getting firewall rule: %w", err)
 	}
 
 	if err := renderer.Render(fwrule); err != nil {
-		return fmt.Errorf("error rendering firewall rule %s/%s: %w", ruleID, opts.InterfaceID, err)
+		return fmt.Errorf("error rendering firewall rule %s/%s: %w", opts.RuleID, opts.InterfaceID, err)
 	}
 	return nil
 }
