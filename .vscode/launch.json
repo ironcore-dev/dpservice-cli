@@ -21,7 +21,8 @@
             //"args": ["add", "fwrule", "vm1", "--action=1", "--direction=1", "--dst=5.5.5.0/24", "--ipv=0",
             // "--priority=100", "--rule-id=9", "--src=1.1.1.1/32", "--protocol=tcp"]
             //"args": ["add", "nnat", "10.20.30.40", "--vni", "100", "--minport", "30000", "--maxport", "30100", "--underlayroute", "ff80::1"]
-            "args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
+            //"args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
+            "args": ["add", "-f", "/tmp/addint.json"]
         }
     ]
 }

@@ -1,9 +1,11 @@
 # dpservice-cli
 
-CLI for [net-dpservice](https://github.com/onmetal/net-dpservice).
+Command-line tool for debugging over gRPC for [net-dpservice](https://github.com/onmetal/net-dpservice).
+
+This tool connects directly to a running dp-service and communicates with it (orchestrates it).
 <br />
 
-## Installation
+## Installation and developing
 
 To build the CLI binary, run
 
@@ -19,6 +21,8 @@ run
 ```shell
 make install
 ```
+
+For more details about developing refer to documentation folder [docs](/docs/development/README.md)
 <br />
 
 ## Autocompletion
@@ -38,6 +42,10 @@ dpservice-cli completion -h
 
 ## Usage
 
+Each command or subcommand has help that can be viewed with -h or --help flag.
+```shell
+dpservice-cli --help
+```
 ```bash
 Usage:
   dpservice-cli [flags]
@@ -60,6 +68,6 @@ Flags:
 
 Use "dpservice-cli [command] --help" for more information about a command.
 ```
-All commands are in [docs](/docs/dpservice-cli.md)
+All commands can be found in [docs](/docs/commands/dpservice-cli.md)
 
 <br />
