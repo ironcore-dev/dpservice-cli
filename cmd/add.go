@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Add(dpdkClientFactory DPDKClientFactory) *cobra.Command {
+func Add(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "table"}
 	sourcesOptions := &SourcesOptions{}
 
@@ -34,7 +34,7 @@ func Add(dpdkClientFactory DPDKClientFactory) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			return RunAdd(ctx, dpdkClientFactory, rendererOptions, sourcesOptions)
+			return RunAdd(ctx, factory, rendererOptions, sourcesOptions)
 		},
 	}
 
@@ -43,16 +43,16 @@ func Add(dpdkClientFactory DPDKClientFactory) *cobra.Command {
 	sourcesOptions.AddFlags(cmd.Flags())
 
 	subcommands := []*cobra.Command{
-		CreateInterface(dpdkClientFactory, rendererOptions),
-		AddPrefix(dpdkClientFactory, rendererOptions),
-		AddRoute(dpdkClientFactory, rendererOptions),
-		AddVirtualIP(dpdkClientFactory, rendererOptions),
-		CreateLoadBalancer(dpdkClientFactory, rendererOptions),
-		CreateLoadBalancerPrefix(dpdkClientFactory, rendererOptions),
-		AddLoadBalancerTarget(dpdkClientFactory, rendererOptions),
-		AddNat(dpdkClientFactory, rendererOptions),
-		AddNeighborNat(dpdkClientFactory, rendererOptions),
-		AddFirewallRule(dpdkClientFactory, rendererOptions),
+		CreateInterface(factory, rendererOptions),
+		AddPrefix(factory, rendererOptions),
+		AddRoute(factory, rendererOptions),
+		AddVirtualIP(factory, rendererOptions),
+		CreateLoadBalancer(factory, rendererOptions),
+		CreateLoadBalancerPrefix(factory, rendererOptions),
+		AddLoadBalancerTarget(factory, rendererOptions),
+		AddNat(factory, rendererOptions),
+		AddNeighborNat(factory, rendererOptions),
+		AddFirewallRule(factory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Creates one of %v", CommandNames(subcommands))

@@ -330,7 +330,14 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 		InterfaceMeta: iface.InterfaceMeta,
 		Spec:          iface.Spec, // TODO: Enable dynamic device allocation
 		Status: api.InterfaceStatus{
-			UnderlayIP: underlayIP,
+			UnderlayIP: &underlayIP,
+			VirtualFunction: &api.VirtualFunction{
+				Name:     res.Vf.Name,
+				Domain:   res.Vf.Domain,
+				Bus:      res.Vf.Bus,
+				Slot:     res.Vf.Slot,
+				Function: res.Vf.Function,
+			},
 		},
 	}, nil
 }

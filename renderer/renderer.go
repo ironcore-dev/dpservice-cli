@@ -219,11 +219,20 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 }
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {
-	headers := []any{"ID", "VNI", "Device", "IPs", "UnderlayIP"}
+	var headers []any
+	if ifaces[0].Status.VirtualFunction == nil {
+		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayIP"}
+	} else {
+		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayIP", "VirtualFunction"}
+	}
 
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
-		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Status.UnderlayIP}
+		if ifaces[0].Status.VirtualFunction == nil {
+			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Status.UnderlayIP}
+		} else {
+			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Status.UnderlayIP, iface.Status.VirtualFunction.String()}
+		}
 	}
 
 	return &TableData{

@@ -17,13 +17,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
+func DeleteInterface(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteInterfaceOptions
 	)
@@ -36,7 +38,12 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteInterface(cmd.Context(), factory, opts)
+			return RunDeleteInterface(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -64,7 +71,7 @@ func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, opts DeleteInterfaceOptions) error {
+func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteInterfaceOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -75,11 +82,21 @@ func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, opts Del
 		}
 	}()
 
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+
 	if err := client.DeleteInterface(ctx, opts.ID); err != nil {
 		return fmt.Errorf("error deleting interface %s: %v", opts.ID, err)
 	}
+	iface := api.Interface{
+		TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
+		InterfaceMeta: api.InterfaceMeta{ID: opts.ID}}
 
-	fmt.Println("Deleted interface", opts.ID)
+	if err := renderer.Render(&iface); err != nil {
+		return fmt.Errorf("error rendering interface: %w", err)
+	}
 
 	return nil
 }

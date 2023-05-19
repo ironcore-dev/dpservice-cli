@@ -218,13 +218,26 @@ func (m *InterfaceMeta) GetName() string {
 }
 
 type InterfaceSpec struct {
-	VNI    uint32       `json:"vni"`
-	Device string       `json:"device"`
-	IPs    []netip.Addr `json:"ips"`
+	VNI    uint32       `json:"vni,omitempty"`
+	Device string       `json:"device,omitempty"`
+	IPs    []netip.Addr `json:"ips,omitempty"`
 }
 
 type InterfaceStatus struct {
-	UnderlayIP netip.Addr `json:"underlayIP"`
+	UnderlayIP      *netip.Addr      `json:"underlayIP,omitempty"`
+	VirtualFunction *VirtualFunction `json:"virtualFunction,omitempty"`
+}
+
+type VirtualFunction struct {
+	Name     string `json:"vfName,omitempty"`
+	Domain   uint32 `json:"vfDomain,omitempty"`
+	Bus      uint32 `json:"vfBus,omitempty"`
+	Slot     uint32 `json:"vfSlot,omitempty"`
+	Function uint32 `json:"vfFunction,omitempty"`
+}
+
+func (vf *VirtualFunction) String() string {
+	return fmt.Sprintf("Name: %s, Domain: %d, Bus: %d, Slot: %d, Function: %d", vf.Name, vf.Domain, vf.Bus, vf.Slot, vf.Function)
 }
 
 type InterfaceList struct {

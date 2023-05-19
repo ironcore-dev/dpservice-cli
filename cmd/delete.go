@@ -39,10 +39,12 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 		},
 	}
 
+	rendererOptions.AddFlags(cmd.PersistentFlags())
+
 	sourcesOptions.AddFlags(cmd.Flags())
 
 	subcommands := []*cobra.Command{
-		DeleteInterface(factory),
+		DeleteInterface(factory, rendererOptions),
 		DeletePrefix(factory),
 		DeleteRoute(factory),
 		DeleteVirtualIP(factory),

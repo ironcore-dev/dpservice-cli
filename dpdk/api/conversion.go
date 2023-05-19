@@ -147,7 +147,7 @@ func ProtoInterfaceToInterface(dpdkIface *proto.Interface) (*Interface, error) {
 			IPs:    ips,
 		},
 		Status: InterfaceStatus{
-			UnderlayIP: underlayIP,
+			UnderlayIP: &underlayIP,
 		},
 	}, nil
 }
