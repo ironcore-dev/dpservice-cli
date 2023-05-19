@@ -101,7 +101,7 @@ func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (
 	res, err := c.DPDKonmetalClient.CreateLoadBalancer(ctx, &dpdkproto.CreateLoadBalancerRequest{
 		LoadBalancerID: []byte(lb.LoadBalancerMeta.ID),
 		Vni:            lb.Spec.VNI,
-		LbVipIP:        api.LbipToProtoLbip(lb.Spec.LbVipIP),
+		LbVipIP:        api.LbipToProtoLbip(*lb.Spec.LbVipIP),
 		Lbports:        lbPorts,
 	})
 	if err != nil {
@@ -115,13 +115,13 @@ func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (
 	if err != nil {
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	lb.Spec.UnderlayRoute = underlayRoute
+	lb.Spec.UnderlayRoute = &underlayRoute
 
 	return &api.LoadBalancer{
 		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
 		LoadBalancerMeta: lb.LoadBalancerMeta,
 		Spec:             lb.Spec,
-		Status: api.LoadBalancerStatus{
+		Status: api.Status{
 			Error:   res.Status.Error,
 			Message: res.Status.Message,
 		},
@@ -158,7 +158,7 @@ func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID strin
 	}
 
 	return &api.PrefixList{
-		TypeMeta: api.TypeMeta{Kind: api.PrefixListKind},
+		TypeMeta: api.TypeMeta{Kind: "LoadBalancerPrefixList"},
 		Items:    prefixes,
 	}, nil
 }
@@ -185,9 +185,9 @@ func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefi
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
 	return &api.Prefix{
-		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
+		TypeMeta:   api.TypeMeta{Kind: "LoadBalancerPrefix"},
 		PrefixMeta: prefix.PrefixMeta,
-		Spec:       api.PrefixSpec{UnderlayRoute: underlayRoute},
+		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
 	}, nil
 }
 
@@ -226,7 +226,7 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 	for i, dpdkLBtarget := range res.GetTargetIPs() {
 		var lbtarget api.LoadBalancerTarget
 		lbtarget.TypeMeta.Kind = api.LoadBalancerTargetKind
-		lbtarget.Spec.TargetIP = *api.ProtoLbipToLbip(*dpdkLBtarget)
+		lbtarget.Spec.TargetIP = api.ProtoLbipToLbip(*dpdkLBtarget)
 		lbtarget.LoadBalancerTargetMeta.ID = loadBalancerID
 
 		lbtargets[i] = lbtarget
@@ -241,7 +241,7 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error) {
 	res, err := c.DPDKonmetalClient.AddLoadBalancerTarget(ctx, &dpdkproto.AddLoadBalancerTargetRequest{
 		LoadBalancerID: []byte(lbtarget.LoadBalancerTargetMeta.ID),
-		TargetIP:       api.LbipToProtoLbip(lbtarget.Spec.TargetIP),
+		TargetIP:       api.LbipToProtoLbip(*lbtarget.Spec.TargetIP),
 	})
 	if err != nil {
 		return nil, err
@@ -320,7 +320,7 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 		return nil, apierrors.NewStatusError(errorCode, res.GetResponse().GetStatus().GetMessage())
 	}
 
-	underlayIP, err := netip.ParseAddr(string(res.GetResponse().GetUnderlayRoute()))
+	underlayRoute, err := netip.ParseAddr(string(res.GetResponse().GetUnderlayRoute()))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
@@ -328,9 +328,11 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 	return &api.Interface{
 		TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
 		InterfaceMeta: iface.InterfaceMeta,
-		Spec:          iface.Spec, // TODO: Enable dynamic device allocation
-		Status: api.InterfaceStatus{
-			UnderlayIP: &underlayIP,
+		Spec: api.InterfaceSpec{
+			VNI:           iface.Spec.VNI,
+			Device:        iface.Spec.Device,
+			IPs:           iface.Spec.IPs,
+			UnderlayRoute: &underlayRoute,
 			VirtualFunction: &api.VirtualFunction{
 				Name:     res.Vf.Name,
 				Domain:   res.Vf.Domain,
@@ -338,6 +340,10 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 				Slot:     res.Vf.Slot,
 				Function: res.Vf.Function,
 			},
+		},
+		Status: api.Status{
+			Error:   res.Response.Status.Error,
+			Message: res.Response.Status.Message,
 		},
 	}, nil
 }
@@ -389,7 +395,7 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 	return &api.VirtualIP{
 		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
 		VirtualIPMeta: virtualIP.VirtualIPMeta,
-		Spec:          api.VirtualIPSpec{UnderlayRoute: underlayRoute},
+		Spec:          api.VirtualIPSpec{UnderlayRoute: &underlayRoute},
 	}, nil
 }
 
@@ -454,7 +460,7 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 	return &api.Prefix{
 		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
 		PrefixMeta: prefix.PrefixMeta,
-		Spec:       api.PrefixSpec{UnderlayRoute: underlayRoute},
+		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
 	}, nil
 }
 
@@ -570,7 +576,7 @@ func (c *client) AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
 	res, err := c.DPDKonmetalClient.AddNAT(ctx, &dpdkproto.AddNATRequest{
 		InterfaceID: []byte(nat.NatMeta.InterfaceID),
 		NatVIPIP: &dpdkproto.NATIP{
-			IpVersion: api.NetIPAddrToProtoIPVersion(nat.Spec.NatVIPIP),
+			IpVersion: api.NetIPAddrToProtoIPVersion(*nat.Spec.NatVIPIP),
 			Address:   []byte(nat.Spec.NatVIPIP.String()),
 		},
 		MinPort: nat.Spec.MinPort,
@@ -587,13 +593,13 @@ func (c *client) AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	nat.Spec.UnderlayRoute = underlayRoute
+	nat.Spec.UnderlayRoute = &underlayRoute
 
 	return &api.Nat{
 		TypeMeta: api.TypeMeta{Kind: api.NatKind},
 		NatMeta:  nat.NatMeta,
 		Spec:     nat.Spec,
-		Status: api.NatStatus{
+		Status: api.Status{
 			Error:   res.Status.Error,
 			Message: res.Status.Message,
 		},
@@ -617,7 +623,7 @@ func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) erro
 
 	res, err := c.DPDKonmetalClient.AddNeighborNAT(ctx, &dpdkproto.AddNeighborNATRequest{
 		NatVIPIP: &dpdkproto.NATIP{
-			IpVersion: api.NetIPAddrToProtoIPVersion(nNat.NeighborNatMeta.NatVIPIP),
+			IpVersion: api.NetIPAddrToProtoIPVersion(*nNat.NeighborNatMeta.NatVIPIP),
 			Address:   []byte(nNat.NeighborNatMeta.NatVIPIP.String()),
 		},
 		Vni:           nNat.Spec.Vni,
@@ -656,18 +662,18 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType in
 			if err != nil {
 				return nil, fmt.Errorf("error parsing underlay route: %w", err)
 			}
-			nat.Spec.UnderlayRoute = underlayRoute
+			nat.Spec.UnderlayRoute = &underlayRoute
 			vipIP, err = netip.ParseAddr(string(res.NatVIPIP.Address))
 			if err != nil {
 				return nil, fmt.Errorf("error parsing vip ip: %w", err)
 			}
-			nat.Spec.NatVIPIP = vipIP
+			nat.Spec.NatVIPIP = &vipIP
 		} else if res.NatInfoType == 1 {
 			vipIP, err = netip.ParseAddr(string(natInfoEntry.GetAddress()))
 			if err != nil {
 				return nil, fmt.Errorf("error parsing vip ip: %w", err)
 			}
-			nat.Spec.NatVIPIP = vipIP
+			nat.Spec.NatVIPIP = &vipIP
 		}
 		nat.Kind = api.NatKind
 		nat.Spec.MinPort = natInfoEntry.MinPort
@@ -684,7 +690,7 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType in
 func (c *client) DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error {
 	res, err := c.DPDKonmetalClient.DeleteNeighborNAT(ctx, &dpdkproto.DeleteNeighborNATRequest{
 		NatVIPIP: &dpdkproto.NATIP{
-			IpVersion: api.NetIPAddrToProtoIPVersion(neigbhorNat.NatVIPIP),
+			IpVersion: api.NetIPAddrToProtoIPVersion(*neigbhorNat.NatVIPIP),
 			Address:   []byte(neigbhorNat.NatVIPIP.String()),
 		},
 		Vni:     neigbhorNat.Spec.Vni,
@@ -742,7 +748,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 				Address:      []byte(fwRule.Spec.DestinationPrefix.Addr().String()),
 				PrefixLength: uint32(fwRule.Spec.DestinationPrefix.Bits()),
 			},
-			ProtocolFilter: &fwRule.Spec.ProtocolFilter,
+			ProtocolFilter: fwRule.Spec.ProtocolFilter,
 		},
 	})
 	if err != nil {
@@ -755,9 +761,10 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 	return &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
-			RuleID:      fwRule.RuleID,
+			RuleID:      string(res.RuleID),
 			InterfaceID: fwRule.InterfaceID,
 		},
+		Spec: fwRule.Spec,
 	}, nil
 }
 

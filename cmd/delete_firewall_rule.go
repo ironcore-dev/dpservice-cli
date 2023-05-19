@@ -17,13 +17,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteFirewallRule(factory DPDKClientFactory) *cobra.Command {
+func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteFirewallRuleOptions
 	)
@@ -36,7 +38,12 @@ func DeleteFirewallRule(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteFirewallRule(cmd.Context(), factory, opts)
+			return RunDeleteFirewallRule(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -66,7 +73,7 @@ func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, opts DeleteFirewallRuleOptions) error {
+func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -81,7 +88,23 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, opts 
 		return fmt.Errorf("error deleting firewall rule %s/%s: %v", opts.RuleID, opts.InterfaceID, err)
 	}
 
-	fmt.Printf("Deleted firewall rule %s on interface %s\n", opts.RuleID, opts.InterfaceID)
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	fwrule := api.FirewallRule{
+		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
+		FirewallRuleMeta: api.FirewallRuleMeta{
+			InterfaceID: opts.InterfaceID,
+			RuleID:      opts.RuleID,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&fwrule); err != nil {
+		return fmt.Errorf("error rendering prefix: %w", err)
+	}
 
 	return nil
 }

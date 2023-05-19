@@ -10,7 +10,7 @@ Before using dpservice-cli client, you need to have dpservice instance running.
 
 Please refer to this guide [net-dpservice](https://github.com/onmetal/net-dpservice/blob/osc/grpc_docs/docs/development/building.md) on how to build dpservice from source.
 
-You can then run python script /test/dp_service.py that will start the dpservice with preloaded config.
+You can then run python script **/test/dp_service.py** that will start the dpservice with preloaded config.
 ```bash
 sudo ./test/dp_service.py
 ```
@@ -23,19 +23,23 @@ echo 2048 > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepag
 
 ## Running dpservice-cli
 
-Go version 1.18 or newer is needed. \"make\" tool is also needed to utilize the Makefile.
-
+Go version 1.18 or newer is needed. \"make\" tool is also needed to utilize the Makefile.  
 To run the dpservice-cli client build the binary first and then use it with commands and flags:
 ```bash
 make build
 ./bin/dpservice-cli -h
 ```
-When you are running dpservice on the same VM you don't need to specify the address and defaults are used (localhost:1337).
-
-If dpservice is running on different machine or you changed the default settings, use --address <string> flag:
+When you are running dpservice on the same VM you don't need to specify the address and defaults are used (localhost:1337).  
+If dpservice is running on different machine or you changed the default settings, use **--address \<string\>** flag:
 ```bash
 ./bin/dpservice-cli --address <IP:port> [command] [flags]
 ```
+To change the output format of commands you can use **-o, --output** flag with one of **json | yaml | table | name**
+
+  -  **json**   - shows output in json (you can use --pretty flag to show formatted json)
+  -  **yaml**   - shows output in yaml
+  -  **table**  - shows output in predefined table format
+  -  **name**   - shows only short output with type/name
 <br />
 
 

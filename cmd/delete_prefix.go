@@ -18,14 +18,16 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
+func DeletePrefix(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeletePrefixOptions
 	)
@@ -38,7 +40,12 @@ func DeletePrefix(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeletePrefix(cmd.Context(), factory, opts)
+			return RunDeletePrefix(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -68,7 +75,7 @@ func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, opts DeletePrefixOptions) error {
+func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeletePrefixOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -82,7 +89,24 @@ func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, opts Delete
 	if err := client.DeletePrefix(ctx, opts.InterfaceID, opts.Prefix); err != nil {
 		return fmt.Errorf("error deleting prefix %s/%v: %v", opts.InterfaceID, opts.Prefix, err)
 	}
-	fmt.Printf("Deleted prefix %s/%v\n", opts.InterfaceID, opts.Prefix)
+
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	prefix := api.Prefix{
+		TypeMeta: api.TypeMeta{Kind: api.PrefixKind},
+		PrefixMeta: api.PrefixMeta{
+			InterfaceID: opts.InterfaceID,
+			Prefix:      opts.Prefix,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&prefix); err != nil {
+		return fmt.Errorf("error rendering prefix: %w", err)
+	}
 
 	return nil
 }

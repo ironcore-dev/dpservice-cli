@@ -39,6 +39,11 @@ func (m *TypeMeta) GetKind() string {
 	return m.Kind
 }
 
+type Status struct {
+	Error   int32  `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 type RouteList struct {
 	TypeMeta `json:",inline"`
 	Items    []Route `json:"items"`
@@ -56,6 +61,7 @@ type Route struct {
 	TypeMeta  `json:",inline"`
 	RouteMeta `json:"metadata"`
 	Spec      RouteSpec `json:"spec"`
+	Status    Status    `json:"status"`
 }
 
 type RouteMeta struct {
@@ -93,6 +99,7 @@ type Prefix struct {
 	TypeMeta   `json:",inline"`
 	PrefixMeta `json:"metadata"`
 	Spec       PrefixSpec `json:"spec"`
+	Status     Status     `json:"status"`
 }
 
 type PrefixMeta struct {
@@ -105,13 +112,14 @@ func (m *PrefixMeta) GetName() string {
 }
 
 type PrefixSpec struct {
-	UnderlayRoute netip.Addr `json:"underplayRoute"`
+	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
 type VirtualIP struct {
 	TypeMeta      `json:",inline"`
 	VirtualIPMeta `json:"metadata"`
 	Spec          VirtualIPSpec `json:"spec"`
+	Status        Status        `json:"status"`
 }
 
 type VirtualIPMeta struct {
@@ -124,15 +132,15 @@ func (m *VirtualIPMeta) GetName() string {
 }
 
 type VirtualIPSpec struct {
-	UnderlayRoute netip.Addr `json:"underlayRoute"`
+	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
 // LoadBalancer section
 type LoadBalancer struct {
 	TypeMeta         `json:",inline"`
 	LoadBalancerMeta `json:"metadata"`
-	Spec             LoadBalancerSpec   `json:"spec"`
-	Status           LoadBalancerStatus `json:"status"`
+	Spec             LoadBalancerSpec `json:"spec"`
+	Status           Status           `json:"status"`
 }
 
 type LoadBalancerMeta struct {
@@ -144,25 +152,15 @@ func (m *LoadBalancerMeta) GetName() string {
 }
 
 type LoadBalancerSpec struct {
-	VNI           uint32     `json:"vni"`
-	LbVipIP       netip.Addr `json:"lbVipIP"`
-	Lbports       []LBPort   `json:"lbports"`
-	UnderlayRoute netip.Addr `json:"underlayRoute"`
-}
-
-type LoadBalancerStatus struct {
-	Error   int32  `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-type LBIP struct {
-	IpVersion string     `json:"ipVersion"`
-	Address   netip.Addr `json:"address"`
+	VNI           uint32      `json:"vni,omitempty"`
+	LbVipIP       *netip.Addr `json:"lbVipIP,omitempty"`
+	Lbports       []LBPort    `json:"lbports,omitempty"`
+	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
 type LBPort struct {
-	Protocol uint32 `json:"protocol"`
-	Port     uint32 `json:"port"`
+	Protocol uint32 `json:"protocol,omitempty"`
+	Port     uint32 `json:"port,omitempty"`
 }
 
 type LoadBalancerList struct {
@@ -182,6 +180,7 @@ type LoadBalancerTarget struct {
 	TypeMeta               `json:",inline"`
 	LoadBalancerTargetMeta `json:"metadata"`
 	Spec                   LoadBalancerTargetSpec `json:"spec"`
+	Status                 Status                 `json:"status"`
 }
 
 type LoadBalancerTargetMeta struct {
@@ -193,7 +192,7 @@ func (m *LoadBalancerTargetMeta) GetName() string {
 }
 
 type LoadBalancerTargetSpec struct {
-	TargetIP netip.Addr `json:"targetIP"`
+	TargetIP *netip.Addr `json:"targetIP,omitempty"`
 }
 
 type LoadBalancerTargetList struct {
@@ -205,8 +204,8 @@ type LoadBalancerTargetList struct {
 type Interface struct {
 	TypeMeta      `json:",inline"`
 	InterfaceMeta `json:"metadata"`
-	Spec          InterfaceSpec   `json:"spec"`
-	Status        InterfaceStatus `json:"status"`
+	Spec          InterfaceSpec `json:"spec"`
+	Status        Status        `json:"status"`
 }
 
 type InterfaceMeta struct {
@@ -218,13 +217,10 @@ func (m *InterfaceMeta) GetName() string {
 }
 
 type InterfaceSpec struct {
-	VNI    uint32       `json:"vni,omitempty"`
-	Device string       `json:"device,omitempty"`
-	IPs    []netip.Addr `json:"ips,omitempty"`
-}
-
-type InterfaceStatus struct {
-	UnderlayIP      *netip.Addr      `json:"underlayIP,omitempty"`
+	VNI             uint32           `json:"vni,omitempty"`
+	Device          string           `json:"device,omitempty"`
+	IPs             []netip.Addr     `json:"ips,omitempty"`
+	UnderlayRoute   *netip.Addr      `json:"underlayRoute,omitempty"`
 	VirtualFunction *VirtualFunction `json:"virtualFunction,omitempty"`
 }
 
@@ -257,8 +253,8 @@ func (l *InterfaceList) GetItems() []Object {
 type Nat struct {
 	TypeMeta `json:",inline"`
 	NatMeta  `json:"metadata"`
-	Spec     NatSpec   `json:"spec"`
-	Status   NatStatus `json:"status"`
+	Spec     NatSpec `json:"spec"`
+	Status   Status  `json:"status"`
 }
 
 type NatMeta struct {
@@ -270,15 +266,10 @@ func (m *NatMeta) GetName() string {
 }
 
 type NatSpec struct {
-	NatVIPIP      netip.Addr `json:"natVIPIP"`
-	MinPort       uint32     `json:"minPort"`
-	MaxPort       uint32     `json:"maxPort"`
-	UnderlayRoute netip.Addr `json:"underlayRoute"`
-}
-
-type NatStatus struct {
-	Error   int32  `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
+	NatVIPIP      *netip.Addr `json:"natVIPIP,omitempty"`
+	MinPort       uint32      `json:"minPort,omitempty"`
+	MaxPort       uint32      `json:"maxPort,omitempty"`
+	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
 type NatList struct {
@@ -297,12 +288,12 @@ func (l *NatList) GetItems() []Object {
 type NeighborNat struct {
 	TypeMeta        `json:",inline"`
 	NeighborNatMeta `json:"metadata"`
-	Spec            NeighborNatSpec   `json:"spec"`
-	Status          NeighborNatStatus `json:"status"`
+	Spec            NeighborNatSpec `json:"spec"`
+	Status          Status          `json:"status"`
 }
 
 type NeighborNatMeta struct {
-	NatVIPIP netip.Addr `json:"natVIPIP"`
+	NatVIPIP *netip.Addr `json:"natVIPIP"`
 }
 
 func (m *NeighborNatMeta) GetName() string {
@@ -310,23 +301,18 @@ func (m *NeighborNatMeta) GetName() string {
 }
 
 type NeighborNatSpec struct {
-	Vni           uint32     `json:"vni"`
-	MinPort       uint32     `json:"minPort"`
-	MaxPort       uint32     `json:"maxPort"`
-	UnderlayRoute netip.Addr `json:"underlayRoute"`
-}
-
-type NeighborNatStatus struct {
-	Error   int32  `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
+	Vni           uint32      `json:"vni,omitempty"`
+	MinPort       uint32      `json:"minPort,omitempty"`
+	MaxPort       uint32      `json:"maxPort,omitempty"`
+	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
 // FirewallRule section
 type FirewallRule struct {
 	TypeMeta         `json:",inline"`
 	FirewallRuleMeta `json:"metadata"`
-	Spec             FirewallRuleSpec   `json:"spec"`
-	Status           FirewallRuleStatus `json:"status"`
+	Spec             FirewallRuleSpec `json:"spec"`
+	Status           Status           `json:"status"`
 }
 
 type FirewallRuleMeta struct {
@@ -339,18 +325,13 @@ func (m *FirewallRuleMeta) GetName() string {
 }
 
 type FirewallRuleSpec struct {
-	TrafficDirection  uint8                `json:"trafficeDirection"`
-	FirewallAction    uint8                `json:"firewallAction"`
-	Priority          uint32               `json:"priority"`
-	IpVersion         uint8                `json:"ipVersion"`
-	SourcePrefix      netip.Prefix         `json:"sourcePrefix"`
-	DestinationPrefix netip.Prefix         `json:"destinationPrefix"`
-	ProtocolFilter    proto.ProtocolFilter `json:"protocolFilter"`
-}
-
-type FirewallRuleStatus struct {
-	Error   int32  `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
+	TrafficDirection  uint8                 `json:"trafficeDirection,omitempty"`
+	FirewallAction    uint8                 `json:"firewallAction,omitempty"`
+	Priority          uint32                `json:"priority,omitempty"`
+	IpVersion         uint8                 `json:"ipVersion,omitempty"`
+	SourcePrefix      *netip.Prefix         `json:"sourcePrefix,omitempty"`
+	DestinationPrefix *netip.Prefix         `json:"destinationPrefix,omitempty"`
+	ProtocolFilter    *proto.ProtocolFilter `json:"protocolFilter,omitempty"`
 }
 
 type FirewallRuleList struct {

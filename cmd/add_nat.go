@@ -100,7 +100,7 @@ func RunAddNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendere
 			InterfaceID: opts.InterfaceID,
 		},
 		Spec: api.NatSpec{
-			NatVIPIP: opts.NATVipIP,
+			NatVIPIP: &opts.NATVipIP,
 			MinPort:  opts.MinPort,
 			MaxPort:  opts.MaxPort,
 		},

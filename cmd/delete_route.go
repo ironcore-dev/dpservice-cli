@@ -18,14 +18,16 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
+func DeleteRoute(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteRouteOptions
 	)
@@ -38,7 +40,12 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteRoute(cmd.Context(), factory, opts)
+			return RunDeleteRoute(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -72,7 +79,7 @@ func (o *DeleteRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, opts DeleteRouteOptions) error {
+func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteRouteOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -86,7 +93,28 @@ func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, opts DeleteR
 	if err := client.DeleteRoute(ctx, opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP); err != nil {
 		return fmt.Errorf("error deleting route %d-%v:%d-%v: %v", opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP, err)
 	}
-	fmt.Printf("Deleted route %d-%v:%d-%v\n", opts.VNI, opts.Prefix, opts.NextHopVNI, opts.NextHopIP)
+
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	route := api.Route{
+		TypeMeta: api.TypeMeta{Kind: api.RouteKind},
+		RouteMeta: api.RouteMeta{
+			VNI:    opts.VNI,
+			Prefix: opts.Prefix,
+			NextHop: api.RouteNextHop{
+				VNI: opts.NextHopVNI,
+				IP:  opts.NextHopIP,
+			},
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&route); err != nil {
+		return fmt.Errorf("error rendering route: %w", err)
+	}
 
 	return nil
 }

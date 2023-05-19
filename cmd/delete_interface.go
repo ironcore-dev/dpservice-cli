@@ -82,18 +82,21 @@ func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, renderer
 		}
 	}()
 
+	if err := client.DeleteInterface(ctx, opts.ID); err != nil {
+		return fmt.Errorf("error deleting interface %s: %v", opts.ID, err)
+	}
+
 	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
-
-	if err := client.DeleteInterface(ctx, opts.ID); err != nil {
-		return fmt.Errorf("error deleting interface %s: %v", opts.ID, err)
-	}
 	iface := api.Interface{
 		TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
-		InterfaceMeta: api.InterfaceMeta{ID: opts.ID}}
-
+		InterfaceMeta: api.InterfaceMeta{ID: opts.ID},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
 	if err := renderer.Render(&iface); err != nil {
 		return fmt.Errorf("error rendering interface: %w", err)
 	}

@@ -65,6 +65,8 @@ Flags:
       --address string             net-dpservice address. (default "localhost:1337")
       --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
   -h, --help                       help for dpservice-cli
+  -o, --output string              Output format. [json|yaml|table|name]
+      --pretty                     Whether to render pretty output.
 
 Use "dpservice-cli [command] --help" for more information about a command.
 ```

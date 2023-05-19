@@ -207,7 +207,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 	for i, lbtarget := range lbtargets {
 		columns[i] = []any{
 			lbtarget.LoadBalancerTargetMeta.ID,
-			api.NetIPAddrToProtoIPVersion(lbtarget.Spec.TargetIP),
+			api.NetIPAddrToProtoIPVersion(*lbtarget.Spec.TargetIP),
 			lbtarget.Spec.TargetIP,
 		}
 	}
@@ -220,18 +220,18 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {
 	var headers []any
-	if ifaces[0].Status.VirtualFunction == nil {
-		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayIP"}
+	if ifaces[0].Spec.VirtualFunction == nil {
+		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute"}
 	} else {
-		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayIP", "VirtualFunction"}
+		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute", "VirtualFunction"}
 	}
 
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
-		if ifaces[0].Status.VirtualFunction == nil {
-			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Status.UnderlayIP}
+		if ifaces[0].Spec.VirtualFunction == nil {
+			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
 		} else {
-			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Status.UnderlayIP, iface.Status.VirtualFunction.String()}
+			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute, iface.Spec.VirtualFunction.String()}
 		}
 	}
 

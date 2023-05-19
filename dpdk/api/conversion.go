@@ -58,11 +58,11 @@ func ProtoLoadBalancerToLoadBalancer(dpdkLB *proto.GetLoadBalancerResponse, lbID
 		},
 		Spec: LoadBalancerSpec{
 			VNI:           dpdkLB.Vni,
-			LbVipIP:       lbip,
+			LbVipIP:       &lbip,
 			Lbports:       lbports,
-			UnderlayRoute: underlayRoute,
+			UnderlayRoute: &underlayRoute,
 		},
-		Status: LoadBalancerStatus{
+		Status: Status{
 			Error:   dpdkLB.Status.Error,
 			Message: dpdkLB.Status.Message,
 		},
@@ -125,10 +125,10 @@ func ProtoInterfaceToInterface(dpdkIface *proto.Interface) (*Interface, error) {
 		ips = append(ips, ip)
 	}
 
-	var underlayIP netip.Addr
-	if underlayIPString := string(dpdkIface.GetUnderlayRoute()); underlayIPString != "" {
+	var underlayRoute netip.Addr
+	if underlayRouteString := string(dpdkIface.GetUnderlayRoute()); underlayRouteString != "" {
 		var err error
-		underlayIP, err = netip.ParseAddr(string(dpdkIface.GetUnderlayRoute()))
+		underlayRoute, err = netip.ParseAddr(string(dpdkIface.GetUnderlayRoute()))
 		if err != nil {
 			return nil, fmt.Errorf("error parsing underlay ip: %w", err)
 		}
@@ -142,12 +142,10 @@ func ProtoInterfaceToInterface(dpdkIface *proto.Interface) (*Interface, error) {
 			ID: string(dpdkIface.InterfaceID),
 		},
 		Spec: InterfaceSpec{
-			VNI:    dpdkIface.GetVni(),
-			Device: dpdkIface.GetPciDpName(),
-			IPs:    ips,
-		},
-		Status: InterfaceStatus{
-			UnderlayIP: &underlayIP,
+			VNI:           dpdkIface.GetVni(),
+			Device:        dpdkIface.GetPciDpName(),
+			IPs:           ips,
+			UnderlayRoute: &underlayRoute,
 		},
 	}, nil
 }
@@ -216,7 +214,7 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 			InterfaceID: interfaceID,
 			Prefix:      prefix,
 		},
-		Spec: PrefixSpec{UnderlayRoute: underlayRoute},
+		Spec: PrefixSpec{UnderlayRoute: &underlayRoute},
 	}, nil
 }
 
@@ -284,12 +282,12 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 			InterfaceID: interfaceID,
 		},
 		Spec: NatSpec{
-			NatVIPIP:      natvipip,
+			NatVIPIP:      &natvipip,
 			MinPort:       dpdkNat.MinPort,
 			MaxPort:       dpdkNat.MaxPort,
-			UnderlayRoute: underlayRoute,
+			UnderlayRoute: &underlayRoute,
 		},
-		Status: NatStatus{
+		Status: Status{
 			Error:   dpdkNat.Status.Error,
 			Message: dpdkNat.Status.Message,
 		},
@@ -319,9 +317,9 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*F
 			FirewallAction:    uint8(dpdkFwRule.Action),
 			Priority:          dpdkFwRule.Priority,
 			IpVersion:         uint8(dpdkFwRule.IpVersion),
-			SourcePrefix:      srcPrefix.Prefix,
-			DestinationPrefix: dstPrefix.Prefix,
-			ProtocolFilter:    *dpdkFwRule.ProtocolFilter,
+			SourcePrefix:      &srcPrefix.Prefix,
+			DestinationPrefix: &dstPrefix.Prefix,
+			ProtocolFilter:    dpdkFwRule.ProtocolFilter,
 		},
 	}, nil
 }

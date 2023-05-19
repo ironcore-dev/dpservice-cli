@@ -17,13 +17,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
+func DeleteVirtualIP(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteVirtualIPOptions
 	)
@@ -36,7 +38,12 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteVirtualIP(cmd.Context(), factory, opts)
+			return RunDeleteVirtualIP(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -64,7 +71,7 @@ func (o *DeleteVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, opts DeleteVirtualIPOptions) error {
+func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteVirtualIPOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -79,7 +86,22 @@ func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, opts Del
 		return fmt.Errorf("error deleting virtual ip of interface %s: %v", opts.InterfaceID, err)
 	}
 
-	fmt.Printf("Deleted virtual ip of interface %s\n", opts.InterfaceID)
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	virtualIP := api.VirtualIP{
+		TypeMeta: api.TypeMeta{Kind: api.VirtualIPKind},
+		VirtualIPMeta: api.VirtualIPMeta{
+			InterfaceID: opts.InterfaceID,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&virtualIP); err != nil {
+		return fmt.Errorf("error rendering prefix: %w", err)
+	}
 
 	return nil
 }

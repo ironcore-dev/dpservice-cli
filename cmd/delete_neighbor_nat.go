@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/flag"
@@ -26,7 +27,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func DeleteNeighborNat(factory DPDKClientFactory) *cobra.Command {
+func DeleteNeighborNat(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteNeighborNatOptions
 	)
@@ -39,7 +40,12 @@ func DeleteNeighborNat(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteNeighborNat(cmd.Context(), factory, opts)
+			return RunDeleteNeighborNat(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -73,7 +79,7 @@ func (o *DeleteNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, opts DeleteNeighborNatOptions) error {
+func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteNeighborNatOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -86,7 +92,7 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, opts D
 
 	neigbhorNat := api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NatKind},
-		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: opts.NatIP},
+		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: &opts.NatIP},
 		Spec: api.NeighborNatSpec{
 			Vni:     opts.Vni,
 			MinPort: opts.MinPort,
@@ -97,7 +103,22 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, opts D
 		return fmt.Errorf("error deleting neighbor nat with ip %s: %v", opts.NatIP, err)
 	}
 
-	fmt.Printf("Deleted neighbor NAT with IP %s\n", opts.NatIP)
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	nNat := api.NeighborNat{
+		TypeMeta: api.TypeMeta{Kind: api.NeighborNatKind},
+		NeighborNatMeta: api.NeighborNatMeta{
+			NatVIPIP: &opts.NatIP,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&nNat); err != nil {
+		return fmt.Errorf("error rendering prefix: %w", err)
+	}
 
 	return nil
 }

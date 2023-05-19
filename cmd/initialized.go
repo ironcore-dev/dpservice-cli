@@ -57,6 +57,6 @@ func RunInitialized(
 	if err != nil {
 		return fmt.Errorf("error: %w", err)
 	}
-	fmt.Println("UUID of dp-service:", uuid)
+	fmt.Printf("{\"status\": \"initialized\", \"uuid\": \"%s\"}\n", uuid)
 	return nil
 }

@@ -178,9 +178,9 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			TrafficDirection:  opts.TrafficDirection,
 			FirewallAction:    opts.FirewallAction,
 			Priority:          opts.Priority,
-			SourcePrefix:      srcPfx,
-			DestinationPrefix: dstPfx,
-			ProtocolFilter: dpdkproto.ProtocolFilter{
+			SourcePrefix:      &srcPfx,
+			DestinationPrefix: &dstPfx,
+			ProtocolFilter: &dpdkproto.ProtocolFilter{
 				Filter: protocolFilter.Filter},
 		},
 	},

@@ -17,13 +17,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteLoadBalancer(factory DPDKClientFactory) *cobra.Command {
+func DeleteLoadBalancer(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteLoadBalancerOptions
 	)
@@ -36,7 +38,12 @@ func DeleteLoadBalancer(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteLoadBalancer(cmd.Context(), factory, opts)
+			return RunDeleteLoadBalancer(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -64,7 +71,7 @@ func (o *DeleteLoadBalancerOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, opts DeleteLoadBalancerOptions) error {
+func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteLoadBalancerOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -79,7 +86,22 @@ func RunDeleteLoadBalancer(ctx context.Context, factory DPDKClientFactory, opts 
 		return fmt.Errorf("error deleting loadbalancer %s: %v", opts.ID, err)
 	}
 
-	fmt.Println("Deleted loadbalancer", opts.ID)
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	lb := api.LoadBalancer{
+		TypeMeta: api.TypeMeta{Kind: api.LoadBalancerKind},
+		LoadBalancerMeta: api.LoadBalancerMeta{
+			ID: opts.ID,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&lb); err != nil {
+		return fmt.Errorf("error rendering loadbalancer: %w", err)
+	}
 
 	return nil
 }

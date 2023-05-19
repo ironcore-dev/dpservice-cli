@@ -102,7 +102,7 @@ func RunAddLoadBalancerTarget(
 	res, err := client.AddLoadBalancerTarget(ctx, &api.LoadBalancerTarget{
 		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
 		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{ID: opts.LoadBalancerID},
-		Spec:                   api.LoadBalancerTargetSpec{TargetIP: opts.TargetIP},
+		Spec:                   api.LoadBalancerTargetSpec{TargetIP: &opts.TargetIP},
 	})
 	if err != nil {
 		return fmt.Errorf("error adding loadbalancer target: %w", err)

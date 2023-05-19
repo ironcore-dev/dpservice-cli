@@ -86,5 +86,7 @@ func RunInit(
 		return fmt.Errorf("error: %w", err)
 	}
 
+	fmt.Println("{\"status\": \"initialized\"}")
+
 	return nil
 }

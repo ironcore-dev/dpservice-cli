@@ -18,14 +18,16 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteLoadBalancerTarget(factory DPDKClientFactory) *cobra.Command {
+func DeleteLoadBalancerTarget(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteLoadBalancerTargetOptions
 	)
@@ -38,7 +40,12 @@ func DeleteLoadBalancerTarget(factory DPDKClientFactory) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteLoadBalancerTarget(cmd.Context(), factory, opts)
+			return RunDeleteLoadBalancerTarget(
+				cmd.Context(),
+				factory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -68,7 +75,7 @@ func (o *DeleteLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) 
 	return nil
 }
 
-func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory, opts DeleteLoadBalancerTargetOptions) error {
+func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteLoadBalancerTargetOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting dpdk client: %w", err)
@@ -82,7 +89,25 @@ func RunDeleteLoadBalancerTarget(ctx context.Context, factory DPDKClientFactory,
 	if err := client.DeleteLoadBalancerTarget(ctx, opts.LoadBalancerID, opts.TargetIP); err != nil {
 		return fmt.Errorf("error deleting loadbalancer target %s/%v: %v", opts.LoadBalancerID, opts.TargetIP, err)
 	}
-	fmt.Printf("Deleted loadbalancer target %s/%v\n", opts.LoadBalancerID, opts.TargetIP)
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	lbtarget := api.LoadBalancerTarget{
+		TypeMeta: api.TypeMeta{Kind: api.LoadBalancerTargetKind},
+		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{
+			ID: opts.LoadBalancerID,
+		},
+		Spec: api.LoadBalancerTargetSpec{
+			TargetIP: &opts.TargetIP,
+		},
+		Status: api.Status{
+			Message: "Deleted",
+		},
+	}
+	if err := renderer.Render(&lbtarget); err != nil {
+		return fmt.Errorf("error rendering loadbalancer target: %w", err)
+	}
 
 	return nil
 }

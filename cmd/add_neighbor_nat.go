@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/flag"
@@ -91,23 +92,31 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 		}
 	}()
 
-	err = client.AddNeighborNat(ctx, &api.NeighborNat{
+	nNat := &api.NeighborNat{
+		TypeMeta: api.TypeMeta{Kind: api.NeighborNatKind},
 		NeighborNatMeta: api.NeighborNatMeta{
-			NatVIPIP: opts.NatIP,
+			NatVIPIP: &opts.NatIP,
 		},
 		Spec: api.NeighborNatSpec{
 			Vni:           opts.Vni,
 			MinPort:       opts.MinPort,
 			MaxPort:       opts.MaxPort,
-			UnderlayRoute: opts.UnderlayRoute,
+			UnderlayRoute: &opts.UnderlayRoute,
 		},
-	})
+	}
+	err = client.AddNeighborNat(ctx, nNat)
 
 	if err != nil {
 		return fmt.Errorf("error adding neighbor nat: %w", err)
 	}
 
-	fmt.Printf("Neighbor NAT with IP: %s added\n", opts.NatIP.String())
+	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(&nNat); err != nil {
+		return fmt.Errorf("error rendering neighbor nat: %w", err)
+	}
 
 	return nil
 }

@@ -109,7 +109,7 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 		},
 		Spec: api.LoadBalancerSpec{
 			VNI:     opts.VNI,
-			LbVipIP: opts.LbVipIP,
+			LbVipIP: &opts.LbVipIP,
 			Lbports: ports,
 		},
 	})
