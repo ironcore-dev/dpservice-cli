@@ -43,6 +43,12 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 
 	sourcesOptions.AddFlags(cmd.Flags())
 
+	errorOptions := &RendererOptions{Output: "json"}
+	errorRenderer, err := errorOptions.NewRenderer("", os.Stdout)
+	if err != nil {
+		return nil
+	}
+
 	subcommands := []*cobra.Command{
 		DeleteInterface(factory, rendererOptions),
 		DeletePrefix(factory, rendererOptions),
@@ -53,7 +59,7 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 		DeleteLoadBalancerTarget(factory, rendererOptions),
 		DeleteNat(factory, rendererOptions),
 		DeleteNeighborNat(factory, rendererOptions),
-		DeleteFirewallRule(factory, rendererOptions),
+		DeleteFirewallRule(factory, rendererOptions, errorRenderer),
 	}
 
 	cmd.Short = fmt.Sprintf("Deletes one of %v", CommandNames(subcommands))

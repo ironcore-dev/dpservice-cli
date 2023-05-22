@@ -177,6 +177,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
+	case *api.Status:
+		return t.statusTable([]api.Status{*obj})
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -284,11 +286,24 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 }
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
-	headers := []any{"interfaceID", "NatIP", "minPort", "maxPort", "underlayRoute"}
+	var headers []any
+	if nats[0].Spec.UnderlayRoute == nil {
+		headers = []any{"NatIP", "minPort", "maxPort"}
+	} else if nats[0].NatMeta.InterfaceID == "" {
+		headers = []any{"NatIP", "minPort", "maxPort", "underlayRoute"}
+	} else {
+		headers = []any{"interfaceID", "NatIP", "minPort", "maxPort", "underlayRoute"}
+	}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+		if nats[0].Spec.UnderlayRoute == nil {
+			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort}
+		} else if nats[0].NatMeta.InterfaceID == "" {
+			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+		} else {
+			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+		}
 	}
 
 	return &TableData{
@@ -305,12 +320,29 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 		columns[i] = []any{
 			fwrule.FirewallRuleMeta.InterfaceID,
 			fwrule.FirewallRuleMeta.RuleID,
-			dpdkproto.TrafficDirection(fwrule.Spec.TrafficDirection).String(),
+			fwrule.Spec.TrafficDirection,
 			fwrule.Spec.SourcePrefix,
 			fwrule.Spec.DestinationPrefix,
-			dpdkproto.FirewallAction(fwrule.Spec.FirewallAction).String(),
+			fwrule.Spec.FirewallAction,
 			fwrule.Spec.ProtocolFilter.String(),
 			fwrule.Spec.Priority,
+		}
+	}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) statusTable(statuses []api.Status) (*TableData, error) {
+	headers := []any{"error", "message"}
+
+	columns := make([][]any, len(statuses))
+	for i, status := range statuses {
+		columns[i] = []any{
+			status.Error,
+			status.Message,
 		}
 	}
 

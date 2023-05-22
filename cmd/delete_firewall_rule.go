@@ -18,14 +18,17 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
+	"github.com/onmetal/dpservice-cli/renderer"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory, errorRenderer renderer.Renderer) *cobra.Command {
 	var (
 		opts DeleteFirewallRuleOptions
 	)
@@ -43,6 +46,7 @@ func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFacto
 				factory,
 				rendererFactory,
 				opts,
+				errorRenderer,
 			)
 		},
 	}
@@ -73,7 +77,7 @@ func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions) error {
+func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions, errorRenderer renderer.Renderer) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -84,14 +88,13 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rende
 		}
 	}()
 
-	if err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID); err != nil {
-		return fmt.Errorf("error deleting firewall rule %s/%s: %v", opts.RuleID, opts.InterfaceID, err)
+	if status, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID); err != nil {
+		if rendErr := errorRenderer.Render(&status); rendErr != nil {
+			return fmt.Errorf("error rendering status: %w", rendErr)
+		}
+		return fmt.Errorf(strconv.Itoa(errors.SERVER_ERROR))
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
 	fwrule := api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
@@ -101,6 +104,11 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rende
 		Status: api.Status{
 			Message: "Deleted",
 		},
+	}
+
+	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
 	}
 	if err := renderer.Render(&fwrule); err != nil {
 		return fmt.Errorf("error rendering prefix: %w", err)

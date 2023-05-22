@@ -287,7 +287,7 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 			MaxPort:       dpdkNat.MaxPort,
 			UnderlayRoute: &underlayRoute,
 		},
-		Status: Status{
+		Status: &Status{
 			Error:   dpdkNat.Status.Error,
 			Message: dpdkNat.Status.Message,
 		},
@@ -305,6 +305,22 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*F
 	if err != nil {
 		return nil, fmt.Errorf("error converting prefix: %w", err)
 	}
+	var direction, action, ipv string
+	if dpdkFwRule.Direction == 0 {
+		direction = "Ingress"
+	} else {
+		direction = "Egress"
+	}
+	if dpdkFwRule.Action == 0 {
+		action = "Drop"
+	} else {
+		action = "Accept"
+	}
+	if dpdkFwRule.IpVersion == 0 {
+		ipv = "IPv4"
+	} else {
+		ipv = "IPv6"
+	}
 
 	return &FirewallRule{
 		TypeMeta: TypeMeta{Kind: FirewallRuleKind},
@@ -313,13 +329,20 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*F
 			RuleID:      string(dpdkFwRule.RuleID),
 		},
 		Spec: FirewallRuleSpec{
-			TrafficDirection:  uint8(dpdkFwRule.Direction),
-			FirewallAction:    uint8(dpdkFwRule.Action),
+			TrafficDirection:  direction,
+			FirewallAction:    action,
 			Priority:          dpdkFwRule.Priority,
-			IpVersion:         uint8(dpdkFwRule.IpVersion),
+			IpVersion:         ipv,
 			SourcePrefix:      &srcPrefix.Prefix,
 			DestinationPrefix: &dstPrefix.Prefix,
 			ProtocolFilter:    dpdkFwRule.ProtocolFilter,
 		},
 	}, nil
+}
+
+func ProtoStatusToStatus(dpdkStatus *proto.Status) Status {
+	return Status{
+		Error:   dpdkStatus.Error,
+		Message: dpdkStatus.Message,
+	}
 }

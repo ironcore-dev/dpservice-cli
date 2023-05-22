@@ -39,9 +39,21 @@ func (m *TypeMeta) GetKind() string {
 	return m.Kind
 }
 
+type ServerError struct {
+	ServerError Status `json:"serverError"`
+}
+
 type Status struct {
 	Error   int32  `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+func (m *Status) GetKind() string {
+	return "Status"
+}
+
+func (m *Status) GetName() string {
+	return m.Message
 }
 
 type RouteList struct {
@@ -254,11 +266,11 @@ type Nat struct {
 	TypeMeta `json:",inline"`
 	NatMeta  `json:"metadata"`
 	Spec     NatSpec `json:"spec"`
-	Status   Status  `json:"status"`
+	Status   *Status `json:"status,omitempty"`
 }
 
 type NatMeta struct {
-	InterfaceID string `json:"interfaceID"`
+	InterfaceID string `json:"interfaceID,omitempty"`
 }
 
 func (m *NatMeta) GetName() string {
@@ -325,10 +337,10 @@ func (m *FirewallRuleMeta) GetName() string {
 }
 
 type FirewallRuleSpec struct {
-	TrafficDirection  uint8                 `json:"trafficeDirection,omitempty"`
-	FirewallAction    uint8                 `json:"firewallAction,omitempty"`
+	TrafficDirection  string                `json:"trafficDirection,omitempty"`
+	FirewallAction    string                `json:"firewallAction,omitempty"`
 	Priority          uint32                `json:"priority,omitempty"`
-	IpVersion         uint8                 `json:"ipVersion,omitempty"`
+	IpVersion         string                `json:"ipVersion,omitempty"`
 	SourcePrefix      *netip.Prefix         `json:"sourcePrefix,omitempty"`
 	DestinationPrefix *netip.Prefix         `json:"destinationPrefix,omitempty"`
 	ProtocolFilter    *proto.ProtocolFilter `json:"protocolFilter,omitempty"`

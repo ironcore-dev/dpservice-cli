@@ -17,13 +17,19 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/onmetal/dpservice-cli/cmd"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 )
 
 func main() {
 	if err := cmd.Command().Execute(); err != nil {
-		fmt.Printf("Error running command: %v\n", err)
-		os.Exit(1)
+		if err.Error() == strconv.Itoa(errors.SERVER_ERROR) {
+			os.Exit(errors.SERVER_ERROR)
+		}
+
+		fmt.Fprintf(os.Stderr, "Error running command: %v\n", err)
+		os.Exit(errors.CLIENT_ERROR)
 	}
 }

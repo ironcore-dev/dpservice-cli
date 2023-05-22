@@ -104,8 +104,8 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 			UnderlayRoute: &opts.UnderlayRoute,
 		},
 	}
-	err = client.AddNeighborNat(ctx, nNat)
 
+	neighNat, err := client.AddNeighborNat(ctx, nNat)
 	if err != nil {
 		return fmt.Errorf("error adding neighbor nat: %w", err)
 	}
@@ -114,7 +114,7 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
-	if err := renderer.Render(&nNat); err != nil {
+	if err := renderer.Render(&neighNat); err != nil {
 		return fmt.Errorf("error rendering neighbor nat: %w", err)
 	}
 

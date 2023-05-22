@@ -104,6 +104,10 @@ const (
 	GET_NO_FWALL_RULE_ERR        = 811
 	DEL_FWALL_ERR                = 820
 	DEL_NO_FWALL_RULE_ERR        = 821
+
+	// os.Exit value
+	CLIENT_ERROR = 1
+	SERVER_ERROR = 2
 )
 
 type StatusError struct {

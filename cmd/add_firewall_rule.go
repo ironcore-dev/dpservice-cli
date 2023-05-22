@@ -36,7 +36,7 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "firewallrule <--interface-id> [flags]",
 		Short:   "Add a FirewallRule to interface",
-		Example: "dpservice-cli add fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --ipv=0 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --srcPortLower=1 --srcPortUpper=1000 --dstPortLower=500 --dstPortUpper=600",
+		Example: "dpservice-cli add fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --ipv=0 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --src-port-min=1 --src-port-max=1000 --dst-port-min=500 --dst-port-max=600",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,10 +60,10 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 type AddFirewallRuleOptions struct {
 	InterfaceID       string
 	RuleID            string
-	TrafficDirection  uint8
-	FirewallAction    uint8
+	TrafficDirection  string
+	FirewallAction    string
 	Priority          uint32
-	IpVersion         uint8
+	IpVersion         string
 	SourcePrefix      netip.Prefix
 	DestinationPrefix netip.Prefix
 	ProtocolFilter    string
@@ -78,19 +78,19 @@ type AddFirewallRuleOptions struct {
 func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID of FW Rule.")
 	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "RuleID of FW Rule.")
-	fs.Uint8Var(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
-	fs.Uint8Var(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: Drop = 0/Accept = 1 // Can be only \"accept\" at the moment.")
-	fs.Uint32Var(&o.Priority, "priority", o.Priority, "Priority of FW Rule. // For future use. No effect at the moment.")
-	fs.Uint8Var(&o.IpVersion, "ipv", o.IpVersion, "IpVersion of FW Rule IPv4 = 0/IPv6 = 1.")
-	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix // 0.0.0.0 with prefix length 0 matches all source IPs.")
-	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix // 0.0.0.0 with prefix length 0 matches all destination IPs.")
-	fs.StringVar(&o.ProtocolFilter, "protocol", o.ProtocolFilter, "Protocol used icmp/tcp/udp // Not defining a protocol filter matches all protocols.")
-	fs.Int32Var(&o.SrcPortLower, "srcPortLower", o.SrcPortLower, "Source Ports start // -1 matches all source ports.")
-	fs.Int32Var(&o.SrcPortUpper, "srcPortUpper", o.SrcPortUpper, "Source Ports end.")
-	fs.Int32Var(&o.DstPortLower, "dstPortLower", o.DstPortLower, "Destination Ports start // -1 matches all destination ports.")
-	fs.Int32Var(&o.DstPortUpper, "dstPortUpper", o.DstPortUpper, "Destination Ports end.")
-	fs.Int32Var(&o.IcmpType, "icmpType", o.IcmpType, "ICMP type // -1 matches all ICMP Types.")
-	fs.Int32Var(&o.IcmpCode, "icmpCode", o.IcmpCode, "ICMP code // -1 matches all ICMP Codes.")
+	fs.StringVar(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
+	fs.StringVar(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: Drop = 0/Accept = 1 (Can be only \"accept\" at the moment).")
+	fs.Uint32Var(&o.Priority, "priority", o.Priority, "Priority of FW Rule. (For future use. No effect at the moment).")
+	fs.StringVar(&o.IpVersion, "ipv", o.IpVersion, "IpVersion of FW Rule IPv4 = 0/IPv6 = 1.")
+	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix (0.0.0.0 with prefix length 0 matches all source IPs).")
+	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix (0.0.0.0 with prefix length 0 matches all destination IPs).")
+	fs.StringVar(&o.ProtocolFilter, "protocol", o.ProtocolFilter, "Protocol used icmp/tcp/udp (Not defining a protocol filter matches all protocols).")
+	fs.Int32Var(&o.SrcPortLower, "src-port-min", o.SrcPortLower, "Source Ports start (-1 matches all source ports).")
+	fs.Int32Var(&o.SrcPortUpper, "src-port-max", o.SrcPortUpper, "Source Ports end.")
+	fs.Int32Var(&o.DstPortLower, "dst-port-min", o.DstPortLower, "Destination Ports start (-1 matches all destination ports).")
+	fs.Int32Var(&o.DstPortUpper, "dst-port-max", o.DstPortUpper, "Destination Ports end.")
+	fs.Int32Var(&o.IcmpType, "icmp-type", o.IcmpType, "ICMP type (-1 matches all ICMP Types).")
+	fs.Int32Var(&o.IcmpCode, "icmp-code", o.IcmpCode, "ICMP code (-1 matches all ICMP Codes).")
 
 }
 
@@ -132,11 +132,11 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	// TODO add cases if icmp type or code is -1
 	var protocolFilter dpdkproto.ProtocolFilter
 	switch opts.ProtocolFilter {
-	case "icmp":
+	case "icmp", "1":
 		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Icmp{Icmp: &dpdkproto.ICMPFilter{
 			IcmpType: opts.IcmpType,
 			IcmpCode: opts.IcmpCode}}
-	case "tcp":
+	case "tcp", "6":
 		if opts.SrcPortLower == -1 {
 			opts.SrcPortLower = 1
 			opts.SrcPortUpper = 65535
@@ -151,7 +151,7 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}
-	case "udp":
+	case "udp", "17":
 		if opts.SrcPortLower == -1 {
 			opts.SrcPortLower = 1
 			opts.SrcPortUpper = 65535
@@ -166,6 +166,8 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}
+	default:
+		return fmt.Errorf("protocol can be only: icmp = 1/tcp = 6/udp = 17")
 	}
 
 	fwrule, err := client.AddFirewallRule(ctx, &api.FirewallRule{
@@ -178,6 +180,7 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			TrafficDirection:  opts.TrafficDirection,
 			FirewallAction:    opts.FirewallAction,
 			Priority:          opts.Priority,
+			IpVersion:         opts.IpVersion,
 			SourcePrefix:      &srcPfx,
 			DestinationPrefix: &dstPfx,
 			ProtocolFilter: &dpdkproto.ProtocolFilter{

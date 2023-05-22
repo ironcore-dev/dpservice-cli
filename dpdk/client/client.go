@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
 	apierrors "github.com/onmetal/dpservice-cli/dpdk/api/errors"
@@ -59,14 +60,14 @@ type Client interface {
 	AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error)
 	DeleteNat(ctx context.Context, interfaceID string) error
 
-	AddNeighborNat(ctx context.Context, nat *api.NeighborNat) error
-	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error)
+	AddNeighborNat(ctx context.Context, nat *api.NeighborNat) (*api.NeighborNat, error)
+	GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType string) (*api.NatList, error)
 	DeleteNeighborNat(ctx context.Context, neigbhorNat api.NeighborNat) error
 
 	ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error)
 	AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
-	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error
+	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (api.ServerError, error)
 
 	Initialized(ctx context.Context) (string, error)
 	Init(ctx context.Context, initConfig dpdkproto.InitConfig) error
@@ -121,10 +122,7 @@ func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (
 		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
 		LoadBalancerMeta: lb.LoadBalancerMeta,
 		Spec:             lb.Spec,
-		Status: api.Status{
-			Error:   res.Status.Error,
-			Message: res.Status.Message,
-		},
+		Status:           api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -188,6 +186,7 @@ func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefi
 		TypeMeta:   api.TypeMeta{Kind: "LoadBalancerPrefix"},
 		PrefixMeta: prefix.PrefixMeta,
 		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
+		Status:     api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -254,6 +253,7 @@ func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBa
 		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
 		LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
 		Spec:                   lbtarget.Spec,
+		Status:                 api.ProtoStatusToStatus(res),
 	}, nil
 }
 
@@ -341,10 +341,7 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 				Function: res.Vf.Function,
 			},
 		},
-		Status: api.Status{
-			Error:   res.Response.Status.Error,
-			Message: res.Response.Status.Message,
-		},
+		Status: api.ProtoStatusToStatus(res.Response.Status),
 	}, nil
 }
 
@@ -396,6 +393,7 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
 		VirtualIPMeta: virtualIP.VirtualIPMeta,
 		Spec:          api.VirtualIPSpec{UnderlayRoute: &underlayRoute},
+		Status:        api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -461,6 +459,7 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
 		PrefixMeta: prefix.PrefixMeta,
 		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
+		Status:     api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -509,6 +508,7 @@ func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, er
 		TypeMeta:  api.TypeMeta{Kind: api.RouteKind},
 		RouteMeta: route.RouteMeta,
 		Spec:      route.Spec,
+		Status:    api.ProtoStatusToStatus(res),
 	}, nil
 }
 
@@ -594,15 +594,13 @@ func (c *client) AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
 	nat.Spec.UnderlayRoute = &underlayRoute
+	status := api.ProtoStatusToStatus(res.Status)
 
 	return &api.Nat{
 		TypeMeta: api.TypeMeta{Kind: api.NatKind},
 		NatMeta:  nat.NatMeta,
 		Spec:     nat.Spec,
-		Status: api.Status{
-			Error:   res.Status.Error,
-			Message: res.Status.Message,
-		},
+		Status:   &status,
 	}, nil
 }
 
@@ -619,7 +617,7 @@ func (c *client) DeleteNat(ctx context.Context, interfaceID string) error {
 	return nil
 }
 
-func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) error {
+func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) (*api.NeighborNat, error) {
 
 	res, err := c.DPDKonmetalClient.AddNeighborNAT(ctx, &dpdkproto.AddNeighborNATRequest{
 		NatVIPIP: &dpdkproto.NATIP{
@@ -632,21 +630,36 @@ func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) erro
 		UnderlayRoute: []byte(nNat.Spec.UnderlayRoute.String()),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if res.Error == 0 {
-		return nil
+		return &api.NeighborNat{
+			TypeMeta:        api.TypeMeta{Kind: api.NeighborNatKind},
+			NeighborNatMeta: nNat.NeighborNatMeta,
+			Spec:            nNat.Spec,
+			Status:          api.ProtoStatusToStatus(res),
+		}, nil
 	}
-	return fmt.Errorf("%d", res.Error)
+	return nil, fmt.Errorf("%d", res.Error)
 }
 
-func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType int32) (*api.NatList, error) {
+func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType string) (*api.NatList, error) {
+	var nType int32
+	switch strings.ToLower(natType) {
+	case "local", "1":
+		nType = 1
+	case "neigh", "2", "neighbor":
+		nType = 2
+	default:
+		return nil, fmt.Errorf("nat info type can be only: Local = 1/Neigh(bor) = 2")
+	}
+
 	res, err := c.DPDKonmetalClient.GetNATInfo(ctx, &dpdkproto.GetNATInfoRequest{
 		NatVIPIP: &dpdkproto.NATIP{IpVersion: api.NetIPAddrToProtoIPVersion(natVIPIP),
 			Address: []byte(natVIPIP.String()),
 		},
-		NatInfoType: dpdkproto.NATInfoType(natType),
+		NatInfoType: dpdkproto.NATInfoType(nType),
 	})
 	if err != nil {
 		return nil, err
@@ -678,7 +691,6 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType in
 		nat.Kind = api.NatKind
 		nat.Spec.MinPort = natInfoEntry.MinPort
 		nat.Spec.MaxPort = natInfoEntry.MaxPort
-
 		nats[i] = nat
 	}
 	return &api.NatList{
@@ -730,21 +742,56 @@ func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*ap
 }
 
 func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error) {
+	var action, direction, ipv uint8
+
+	switch strings.ToLower(fwRule.Spec.FirewallAction) {
+	case "accept", "1":
+		action = 1
+		fwRule.Spec.FirewallAction = "Accept"
+	case "drop", "0":
+		action = 0
+		fwRule.Spec.FirewallAction = "Drop"
+	default:
+		return nil, fmt.Errorf("firewall action can be only: Drop = 0/Accept = 1")
+	}
+
+	switch strings.ToLower(fwRule.Spec.TrafficDirection) {
+	case "ingress", "0":
+		direction = 0
+		fwRule.Spec.TrafficDirection = "Ingress"
+	case "egress", "1":
+		direction = 1
+		fwRule.Spec.TrafficDirection = "Egress"
+	default:
+		return nil, fmt.Errorf("traffic direction can be only: Ingress = 0/Egress = 1")
+	}
+
+	switch strings.ToLower(fwRule.Spec.IpVersion) {
+	case "ipv4", "0":
+		ipv = 0
+		fwRule.Spec.IpVersion = "IPv4"
+	case "ipv6", "1":
+		ipv = 1
+		fwRule.Spec.IpVersion = "IPv6"
+	default:
+		return nil, fmt.Errorf("ip version can be only: IPv4 = 0/IPv6 = 1")
+	}
+
 	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
 		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
 		Rule: &dpdkproto.FirewallRule{
 			RuleID:    []byte(fwRule.FirewallRuleMeta.RuleID),
-			Direction: dpdkproto.TrafficDirection(fwRule.Spec.TrafficDirection),
-			Action:    dpdkproto.FirewallAction(fwRule.Spec.FirewallAction),
+			Direction: dpdkproto.TrafficDirection(direction),
+			Action:    dpdkproto.FirewallAction(action),
 			Priority:  fwRule.Spec.Priority,
-			IpVersion: dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+			IpVersion: dpdkproto.IPVersion(ipv),
 			SourcePrefix: &dpdkproto.Prefix{
-				IpVersion:    dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+				IpVersion:    dpdkproto.IPVersion(ipv),
 				Address:      []byte(fwRule.Spec.SourcePrefix.Addr().String()),
 				PrefixLength: uint32(fwRule.Spec.SourcePrefix.Bits()),
 			},
 			DestinationPrefix: &dpdkproto.Prefix{
-				IpVersion:    dpdkproto.IPVersion(fwRule.Spec.IpVersion),
+				IpVersion:    dpdkproto.IPVersion(ipv),
 				Address:      []byte(fwRule.Spec.DestinationPrefix.Addr().String()),
 				PrefixLength: uint32(fwRule.Spec.DestinationPrefix.Bits()),
 			},
@@ -764,7 +811,8 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 			RuleID:      string(res.RuleID),
 			InterfaceID: fwRule.InterfaceID,
 		},
-		Spec: fwRule.Spec,
+		Spec:   fwRule.Spec,
+		Status: api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -788,18 +836,19 @@ func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID
 	return fwrule, err
 }
 
-func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) error {
+func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (api.ServerError, error) {
 	res, err := c.DPDKonmetalClient.DeleteFirewallRule(ctx, &dpdkproto.DeleteFirewallRuleRequest{
 		InterfaceID: []byte(interfaceID),
 		RuleID:      []byte(ruleID),
 	})
 	if err != nil {
-		return err
+		return api.ServerError{}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return apierrors.NewStatusError(errorCode, res.GetMessage())
+		srvErr := api.ServerError{ServerError: api.ProtoStatusToStatus(res)}
+		return srvErr, apierrors.NewStatusError(errorCode, res.GetMessage())
 	}
-	return nil
+	return api.ServerError{}, nil
 }
 
 func (c *client) Initialized(ctx context.Context) (string, error) {

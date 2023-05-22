@@ -55,17 +55,17 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 }
 
 type GetNatInfoOptions struct {
-	NatIP   netip.Addr
-	NatType int32
+	NatIP       netip.Addr
+	NatInfoType string
 }
 
 func (o *GetNatInfoOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
-	fs.Int32Var(&o.NatType, "nat-type", o.NatType, "NAT Info type: NATInfoTypeZero = 0/NATInfoLocal = 1/NATInfoNeigh = 2")
+	fs.StringVar(&o.NatInfoType, "info-type", o.NatInfoType, "NAT Info type: Local = 1/Neigh(bor) = 2")
 }
 
 func (o *GetNatInfoOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"nat-ip", "nat-type"} {
+	for _, name := range []string{"nat-ip", "info-type"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func RunGetNatInfo(
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 
-	natinfo, err := client.GetNATInfo(ctx, opts.NatIP, opts.NatType)
+	natinfo, err := client.GetNATInfo(ctx, opts.NatIP, opts.NatInfoType)
 	if err != nil {
 		return fmt.Errorf("error getting nat info for ip %s: %v", opts.NatIP, err)
 	}

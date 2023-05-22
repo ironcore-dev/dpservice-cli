@@ -95,7 +95,7 @@ func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, rendererFactor
 		NatMeta: api.NatMeta{
 			InterfaceID: opts.InterfaceID,
 		},
-		Status: api.Status{
+		Status: &api.Status{
 			Message: "Deleted",
 		},
 	}
