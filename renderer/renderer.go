@@ -313,7 +313,7 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 }
 
 func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
-	headers := []any{"interfaceID", "ruleID", "direction", "src", "dst", "action", "protocol", "priority"}
+	headers := []any{"interfaceID", "ruleID", "direction", "src", "dst", "action", "protocol", "priority", "status"}
 
 	columns := make([][]any, len(fwrules))
 	for i, fwrule := range fwrules {
@@ -326,6 +326,7 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 			fwrule.Spec.FirewallAction,
 			fwrule.Spec.ProtocolFilter.String(),
 			fwrule.Spec.Priority,
+			fwrule.Status.String(),
 		}
 	}
 

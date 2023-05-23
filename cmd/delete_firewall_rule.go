@@ -80,9 +80,7 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rende
 	}
 	defer DpdkClose(cleanup)
 
-	if status, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID); err != nil {
-		return rendererFactory.RenderError(os.Stdout, &status)
-	}
+	status, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
 
 	fwrule := api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
@@ -91,9 +89,12 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rende
 			RuleID:      opts.RuleID,
 		},
 		Status: api.Status{
-			Message: "Deleted",
+			Error:   status.ServerError.Error,
+			Message: status.ServerError.Message,
 		},
 	}
-
+	if err != nil {
+		return rendererFactory.RenderObject("server error", os.Stdout, &fwrule)
+	}
 	return rendererFactory.RenderObject("deleted", os.Stdout, &fwrule)
 }

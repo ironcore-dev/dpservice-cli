@@ -148,6 +148,9 @@ func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Ob
 	if err := renderer.Render(obj); err != nil {
 		return fmt.Errorf("error rendering %s: %w", obj.GetKind(), err)
 	}
+	if operation == "server error" {
+		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
+	}
 	return nil
 }
 

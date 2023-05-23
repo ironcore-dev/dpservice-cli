@@ -44,6 +44,10 @@ type Status struct {
 	Message string `json:"message"`
 }
 
+func (status *Status) String() string {
+	return fmt.Sprintf("Error: %d, Message: %s", status.Error, status.Message)
+}
+
 type ServerError struct {
 	ServerError Status `json:"serverError"`
 }
