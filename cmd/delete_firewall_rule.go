@@ -20,12 +20,13 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteFirewallRuleOptions
 	)
@@ -40,7 +41,7 @@ func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFacto
 
 			return RunDeleteFirewallRule(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -73,28 +74,22 @@ func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer DpdkClose(cleanup)
 
-	status, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
+	fwrule, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
 
-	fwrule := api.FirewallRule{
-		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
-		FirewallRuleMeta: api.FirewallRuleMeta{
-			InterfaceID: opts.InterfaceID,
-			RuleID:      opts.RuleID,
-		},
-		Status: api.Status{
-			Error:   status.ServerError.Error,
-			Message: status.ServerError.Message,
-		},
+	fwrule.TypeMeta.Kind = api.FirewallRuleKind
+	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
+	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
+	if err == errors.ErrServerError {
+		return rendererFactory.RenderObject("server error", os.Stdout, fwrule)
+	} else if err != nil {
+		return fmt.Errorf("error deleting firewall rule: %w", err)
 	}
-	if err != nil {
-		return rendererFactory.RenderObject("server error", os.Stdout, &fwrule)
-	}
-	return rendererFactory.RenderObject("deleted", os.Stdout, &fwrule)
+	return rendererFactory.RenderObject("added", os.Stdout, fwrule)
 }

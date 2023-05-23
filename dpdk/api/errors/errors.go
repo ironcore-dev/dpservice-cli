@@ -110,6 +110,8 @@ const (
 	SERVER_ERROR = 2
 )
 
+var ErrServerError = fmt.Errorf("server error")
+
 type StatusError struct {
 	errorCode int32
 	message   string

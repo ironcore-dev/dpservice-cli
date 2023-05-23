@@ -67,7 +67,7 @@ type Client interface {
 	ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error)
 	AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) (*api.FirewallRule, error)
 	GetFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
-	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (api.ServerError, error)
+	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 
 	Initialized(ctx context.Context) (string, error)
 	Init(ctx context.Context, initConfig dpdkproto.InitConfig) error
@@ -723,14 +723,14 @@ func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*ap
 		InterfaceID: []byte(interfaceID),
 	})
 	if err != nil {
-		return nil, err
+		return &api.FirewallRuleList{}, err
 	}
 
 	fwRules := make([]api.FirewallRule, len(res.GetRules()))
 	for i, dpdkFwRule := range res.GetRules() {
 		fwRule, err := api.ProtoFwRuleToFwRule(dpdkFwRule, interfaceID)
 		if err != nil {
-			return nil, err
+			return &api.FirewallRuleList{}, err
 		}
 		fwRules[i] = *fwRule
 	}
@@ -752,7 +752,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 		action = 0
 		fwRule.Spec.FirewallAction = "Drop"
 	default:
-		return nil, fmt.Errorf("firewall action can be only: Drop = 0/Accept = 1")
+		return &api.FirewallRule{}, fmt.Errorf("firewall action can be only: Drop = 0/Accept = 1")
 	}
 
 	switch strings.ToLower(fwRule.Spec.TrafficDirection) {
@@ -763,7 +763,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 		direction = 1
 		fwRule.Spec.TrafficDirection = "Egress"
 	default:
-		return nil, fmt.Errorf("traffic direction can be only: Ingress = 0/Egress = 1")
+		return &api.FirewallRule{}, fmt.Errorf("traffic direction can be only: Ingress = 0/Egress = 1")
 	}
 
 	switch strings.ToLower(fwRule.Spec.IpVersion) {
@@ -774,7 +774,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 		ipv = 1
 		fwRule.Spec.IpVersion = "IPv6"
 	default:
-		return nil, fmt.Errorf("ip version can be only: IPv4 = 0/IPv6 = 1")
+		return &api.FirewallRule{}, fmt.Errorf("ip version can be only: IPv4 = 0/IPv6 = 1")
 	}
 
 	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
@@ -799,12 +799,12 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 		},
 	})
 	if err != nil {
-		return nil, err
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, err
+	}
+	if res.Status.Error != 0 {
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 
-	if res.Status.Error != 0 {
-		return nil, err
-	}
 	return &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
@@ -822,33 +822,27 @@ func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID
 		RuleID:      []byte(ruleID),
 	})
 	if err != nil {
-		return nil, err
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return nil, apierrors.NewStatusError(errorCode, res.GetStatus().GetMessage())
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 
-	fwrule, err := api.ProtoFwRuleToFwRule(res.Rule, interfaceID)
-	if err != nil {
-		return nil, err
-	}
-
-	return fwrule, err
+	return api.ProtoFwRuleToFwRule(res.Rule, interfaceID)
 }
 
-func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (api.ServerError, error) {
+func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error) {
 	res, err := c.DPDKonmetalClient.DeleteFirewallRule(ctx, &dpdkproto.DeleteFirewallRuleRequest{
 		InterfaceID: []byte(interfaceID),
 		RuleID:      []byte(ruleID),
 	})
 	if err != nil {
-		return api.ServerError{}, err
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res)}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		srvErr := api.ServerError{ServerError: api.ProtoStatusToStatus(res)}
-		return srvErr, apierrors.NewStatusError(errorCode, res.GetMessage())
+		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
 	}
-	return api.ServerError{}, nil
+	return &api.FirewallRule{Status: api.ProtoStatusToStatus(res)}, nil
 }
 
 func (c *client) Initialized(ctx context.Context) (string, error) {

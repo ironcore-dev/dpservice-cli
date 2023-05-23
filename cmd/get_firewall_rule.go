@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -80,26 +82,19 @@ func RunGetFirewallRule(
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	fwrule, err := client.GetFirewallRule(ctx, opts.RuleID, opts.InterfaceID)
-	if err != nil {
+
+	fwrule.TypeMeta.Kind = api.FirewallRuleKind
+	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
+	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
+	if err == errors.ErrServerError {
+		return rendererFactory.RenderObject("server error", os.Stdout, fwrule)
+	} else if err != nil {
 		return fmt.Errorf("error getting firewall rule: %w", err)
 	}
-
-	if err := renderer.Render(fwrule); err != nil {
-		return fmt.Errorf("error rendering firewall rule %s/%s: %w", opts.RuleID, opts.InterfaceID, err)
-	}
-	return nil
+	return rendererFactory.RenderObject("", os.Stdout, fwrule)
 }

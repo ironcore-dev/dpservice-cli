@@ -23,7 +23,7 @@
             //"args": ["add", "nnat", "10.20.30.40", "--vni", "100", "--minport", "30000", "--maxport", "30100", "--underlayroute", "ff80::1"]
             //"args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
             //"args": ["add", "-f", "/tmp/addint.json"]
-            "args": ["delete", "firewallrule", "--interface-id=vm1", "--rule-id=12"]
+            "args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=12"]
         }
     ]
 }
