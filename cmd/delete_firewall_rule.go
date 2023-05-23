@@ -18,17 +18,14 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
-	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
-	"github.com/onmetal/dpservice-cli/renderer"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory, errorRenderer renderer.Renderer) *cobra.Command {
+func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteFirewallRuleOptions
 	)
@@ -46,7 +43,6 @@ func DeleteFirewallRule(factory DPDKClientFactory, rendererFactory RendererFacto
 				factory,
 				rendererFactory,
 				opts,
-				errorRenderer,
 			)
 		},
 	}
@@ -77,22 +73,15 @@ func (o *DeleteFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error 
 	return nil
 }
 
-func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions, errorRenderer renderer.Renderer) error {
+func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteFirewallRuleOptions) error {
 	client, cleanup, err := factory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
 	if status, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID); err != nil {
-		if rendErr := errorRenderer.Render(&status); rendErr != nil {
-			return fmt.Errorf("error rendering status: %w", rendErr)
-		}
-		return fmt.Errorf(strconv.Itoa(errors.SERVER_ERROR))
+		return rendererFactory.RenderError(os.Stdout, &status)
 	}
 
 	fwrule := api.FirewallRule{
@@ -106,13 +95,5 @@ func RunDeleteFirewallRule(ctx context.Context, factory DPDKClientFactory, rende
 		},
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	if err := renderer.Render(&fwrule); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-
-	return nil
+	return rendererFactory.RenderObject("deleted", os.Stdout, &fwrule)
 }

@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	apierrors "github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/dpdk/client"
 	"github.com/onmetal/dpservice-cli/renderer"
 	"github.com/onmetal/dpservice-cli/sources"
@@ -61,6 +63,11 @@ func (o *DPDKClientOptions) NewClient(ctx context.Context) (client.Client, func(
 
 	cleanup := conn.Close
 	return c, cleanup, nil
+}
+func DpdkClose(cleanup func() error) {
+	if err := cleanup(); err != nil {
+		fmt.Printf("error cleaning up client: %s", err)
+	}
 }
 
 func SubcommandRequired(cmd *cobra.Command, args []string) error {
@@ -133,8 +140,32 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 	return registry.New(output, w)
 }
 
+func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Object) error {
+	renderer, err := o.NewRenderer(operation, w)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(obj); err != nil {
+		return fmt.Errorf("error rendering %s: %w", obj.GetKind(), err)
+	}
+	return nil
+}
+
+func (o *RendererOptions) RenderError(w io.Writer, serverError *api.ServerError) error {
+	renderer, err := o.NewRenderer("ServerError", w)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(serverError); err != nil {
+		return fmt.Errorf("error rendering %s: %w", serverError.GetKind(), err)
+	}
+	return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
+}
+
 type RendererFactory interface {
 	NewRenderer(operation string, w io.Writer) (renderer.Renderer, error)
+	RenderObject(operation string, w io.Writer, obj api.Object) error
+	RenderError(w io.Writer, serverError *api.ServerError) error
 }
 
 type SourcesOptions struct {

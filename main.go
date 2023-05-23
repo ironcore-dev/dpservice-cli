@@ -25,10 +25,11 @@ import (
 
 func main() {
 	if err := cmd.Command().Execute(); err != nil {
+		// check if it is Server side error
 		if err.Error() == strconv.Itoa(errors.SERVER_ERROR) {
 			os.Exit(errors.SERVER_ERROR)
 		}
-
+		// else it is Client side error
 		fmt.Fprintf(os.Stderr, "Error running command: %v\n", err)
 		os.Exit(errors.CLIENT_ERROR)
 	}

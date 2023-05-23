@@ -177,8 +177,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
-	case *api.Status:
-		return t.statusTable([]api.Status{*obj})
+	case *api.ServerError:
+		return t.serverErrorTable([]api.ServerError{*obj})
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -335,14 +335,14 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 	}, nil
 }
 
-func (t defaultTableConverter) statusTable(statuses []api.Status) (*TableData, error) {
+func (t defaultTableConverter) serverErrorTable(serverErrors []api.ServerError) (*TableData, error) {
 	headers := []any{"error", "message"}
 
-	columns := make([][]any, len(statuses))
-	for i, status := range statuses {
+	columns := make([][]any, len(serverErrors))
+	for i, serverError := range serverErrors {
 		columns[i] = []any{
-			status.Error,
-			status.Message,
+			serverError.ServerError.Error,
+			serverError.ServerError.Message,
 		}
 	}
 

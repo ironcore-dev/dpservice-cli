@@ -39,21 +39,21 @@ func (m *TypeMeta) GetKind() string {
 	return m.Kind
 }
 
+type Status struct {
+	Error   int32  `json:"error"`
+	Message string `json:"message"`
+}
+
 type ServerError struct {
 	ServerError Status `json:"serverError"`
 }
 
-type Status struct {
-	Error   int32  `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
+func (m *ServerError) GetKind() string {
+	return "ServerError"
 }
 
-func (m *Status) GetKind() string {
-	return "Status"
-}
-
-func (m *Status) GetName() string {
-	return m.Message
+func (m *ServerError) GetName() string {
+	return fmt.Sprintf("%d", m.ServerError.Error)
 }
 
 type RouteList struct {

@@ -81,7 +81,7 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
 	fs.StringVar(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: Drop = 0/Accept = 1 (Can be only \"accept\" at the moment).")
 	fs.Uint32Var(&o.Priority, "priority", o.Priority, "Priority of FW Rule. (For future use. No effect at the moment).")
-	fs.StringVar(&o.IpVersion, "ipv", o.IpVersion, "IpVersion of FW Rule IPv4 = 0/IPv6 = 1.")
+	fs.StringVar(&o.IpVersion, "ipver", o.IpVersion, "IpVersion of FW Rule: IPv4 = 0/IPv6 = 1.")
 	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix (0.0.0.0 with prefix length 0 matches all source IPs).")
 	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix (0.0.0.0 with prefix length 0 matches all destination IPs).")
 	fs.StringVar(&o.ProtocolFilter, "protocol", o.ProtocolFilter, "Protocol used icmp/tcp/udp (Not defining a protocol filter matches all protocols).")
@@ -96,7 +96,7 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 
 func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	// TODO if protocol is not specified it should match all protocols
-	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipv", "src", "dst", "protocol"} {
+	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipver", "src", "dst", "protocol"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
