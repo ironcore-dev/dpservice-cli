@@ -20,14 +20,14 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteLoadBalancerPrefix(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteLoadBalancerPrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteLoadBalancerPrefixOptions
 	)
@@ -42,7 +42,7 @@ func DeleteLoadBalancerPrefix(factory DPDKClientFactory, rendererFactory Rendere
 
 			return RunDeleteLoadBalancerPrefix(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -75,37 +75,20 @@ func (o *DeleteLoadBalancerPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) 
 	return nil
 }
 
-func RunDeleteLoadBalancerPrefix(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteLoadBalancerPrefixOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteLoadBalancerPrefix(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteLoadBalancerPrefixOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error deleting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	if err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, opts.Prefix); err != nil {
-		return fmt.Errorf("error deleting loadbalancer prefix %s/%v: %v", opts.InterfaceID, opts.Prefix, err)
+	lbprefix, err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, opts.Prefix)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting loadbalancer prefix: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	lbprefix := api.Prefix{
-		TypeMeta: api.TypeMeta{Kind: "LoadBalancerPrefix"},
-		PrefixMeta: api.PrefixMeta{
-			InterfaceID: opts.InterfaceID,
-			Prefix:      opts.Prefix,
-		},
-		Status: api.Status{
-			Message: "Deleted",
-		},
-	}
-	if err := renderer.Render(&lbprefix); err != nil {
-		return fmt.Errorf("error rendering loadbalancer prefix: %w", err)
-	}
-	return nil
+	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
+	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	lbprefix.PrefixMeta.Prefix = opts.Prefix
+	return rendererFactory.RenderObject("deleted", os.Stdout, lbprefix)
 }

@@ -171,30 +171,30 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.virtualIPTable([]api.VirtualIP{*obj})
 	case *api.Nat:
 		return t.natTable([]api.Nat{*obj})
+	case *api.NeighborNat:
+		return t.neighborNatTable([]api.NeighborNat{*obj})
 	case *api.NatList:
 		return t.natTable(obj.Items)
 	case *api.FirewallRule:
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
-	case *api.ServerError:
-		return t.serverErrorTable([]api.ServerError{*obj})
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
 }
 
-func (t defaultTableConverter) loadBalancerTable(lbs api.LoadBalancer) (*TableData, error) {
-	headers := []any{"ID", "VNI", "LbVipIP", "Lbports", "UnderlayRoute"}
+func (t defaultTableConverter) loadBalancerTable(lb api.LoadBalancer) (*TableData, error) {
+	headers := []any{"ID", "VNI", "LbVipIP", "Lbports", "UnderlayRoute", "Status"}
 
 	columns := make([][]any, 1)
 
-	var ports = make([]string, 0, len(lbs.Spec.Lbports))
-	for _, port := range lbs.Spec.Lbports {
+	var ports = make([]string, 0, len(lb.Spec.Lbports))
+	for _, port := range lb.Spec.Lbports {
 		p := dpdkproto.Protocol_name[int32(port.Protocol)] + "/" + strconv.Itoa(int(port.Port))
 		ports = append(ports, p)
 	}
-	columns[0] = []any{lbs.ID, lbs.Spec.VNI, lbs.Spec.LbVipIP, ports, lbs.Spec.UnderlayRoute}
+	columns[0] = []any{lb.ID, lb.Spec.VNI, lb.Spec.LbVipIP, ports, lb.Spec.UnderlayRoute, lb.Status.String()}
 
 	return &TableData{
 		Headers: headers,
@@ -203,7 +203,7 @@ func (t defaultTableConverter) loadBalancerTable(lbs api.LoadBalancer) (*TableDa
 }
 
 func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalancerTarget) (*TableData, error) {
-	headers := []any{"LoadBalancerID", "IpVersion", "Address"}
+	headers := []any{"LoadBalancerID", "IpVersion", "Address", "Status"}
 
 	columns := make([][]any, len(lbtargets))
 	for i, lbtarget := range lbtargets {
@@ -211,6 +211,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 			lbtarget.LoadBalancerTargetMeta.ID,
 			api.NetIPAddrToProtoIPVersion(*lbtarget.Spec.TargetIP),
 			lbtarget.Spec.TargetIP,
+			lbtarget.Status.String(),
 		}
 	}
 
@@ -227,13 +228,18 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 	} else {
 		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute", "VirtualFunction"}
 	}
-
+	if len(ifaces) == 1 {
+		headers = append(headers, "Status")
+	}
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
 		if ifaces[0].Spec.VirtualFunction == nil {
 			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
 		} else {
 			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute, iface.Spec.VirtualFunction.String()}
+		}
+		if len(ifaces) == 1 {
+			columns[i] = append(columns[i], iface.Status.String())
 		}
 	}
 
@@ -245,10 +251,15 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 
 func (t defaultTableConverter) prefixTable(prefixes []api.Prefix) (*TableData, error) {
 	headers := []any{"Prefix", "UnderlayRoute"}
-
+	if len(prefixes) == 1 {
+		headers = append(headers, "Status")
+	}
 	columns := make([][]any, len(prefixes))
 	for i, prefix := range prefixes {
 		columns[i] = []any{prefix.Prefix, prefix.Spec.UnderlayRoute}
+		if len(prefixes) == 1 {
+			columns[i] = append(columns[i], prefix.Status.String())
+		}
 	}
 
 	return &TableData{
@@ -258,11 +269,16 @@ func (t defaultTableConverter) prefixTable(prefixes []api.Prefix) (*TableData, e
 }
 
 func (t defaultTableConverter) routeTable(routes []api.Route) (*TableData, error) {
-	headers := []any{"Prefix", "NextHopVNI", "NextHopIP"}
-
+	headers := []any{"Prefix", "VNI", "NextHopVNI", "NextHopIP"}
+	if len(routes) == 1 {
+		headers = append(headers, "Status")
+	}
 	columns := make([][]any, len(routes))
 	for i, route := range routes {
-		columns[i] = []any{route.Prefix, route.NextHop.VNI, route.NextHop.IP}
+		columns[i] = []any{route.Prefix, route.VNI, route.NextHop.VNI, route.NextHop.IP}
+		if len(routes) == 1 {
+			columns[i] = append(columns[i], route.Status.String())
+		}
 	}
 
 	return &TableData{
@@ -272,11 +288,11 @@ func (t defaultTableConverter) routeTable(routes []api.Route) (*TableData, error
 }
 
 func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*TableData, error) {
-	headers := []any{"interfaceID", "virtualIP"}
+	headers := []any{"InterfaceID", "VirtualIP", "UnderlayRoute", "Status"}
 
 	columns := make([][]any, len(virtualIPs))
 	for i, virtualIP := range virtualIPs {
-		columns[i] = []any{virtualIP.InterfaceID, virtualIP.IP}
+		columns[i] = []any{virtualIP.InterfaceID, virtualIP.IP, virtualIP.Spec.UnderlayRoute, virtualIP.Status.String()}
 	}
 
 	return &TableData{
@@ -288,21 +304,21 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	var headers []any
 	if nats[0].Spec.UnderlayRoute == nil {
-		headers = []any{"NatIP", "minPort", "maxPort"}
+		headers = []any{"NatIP", "MinPort", "MaxPort", "Status"}
 	} else if nats[0].NatMeta.InterfaceID == "" {
-		headers = []any{"NatIP", "minPort", "maxPort", "underlayRoute"}
+		headers = []any{"NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
 	} else {
-		headers = []any{"interfaceID", "NatIP", "minPort", "maxPort", "underlayRoute"}
+		headers = []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
 	}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
 		if nats[0].Spec.UnderlayRoute == nil {
-			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort}
+			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Status.String()}
 		} else if nats[0].NatMeta.InterfaceID == "" {
-			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
 		} else {
-			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
 		}
 	}
 
@@ -312,9 +328,28 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	}, nil
 }
 
-func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
-	headers := []any{"interfaceID", "ruleID", "direction", "src", "dst", "action", "protocol", "priority", "status"}
+func (t defaultTableConverter) neighborNatTable(nats []api.NeighborNat) (*TableData, error) {
 
+	headers := []any{"VNI", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
+
+	columns := make([][]any, len(nats))
+	for i, nat := range nats {
+
+		columns[i] = []any{nat.Spec.Vni, nat.NeighborNatMeta.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
+
+	}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableData, error) {
+	headers := []any{"InterfaceID", "RuleID", "Direction", "Src", "Dst", "Action", "Protocol", "Priority"}
+	if len(fwrules) == 1 {
+		headers = append(headers, "Status")
+	}
 	columns := make([][]any, len(fwrules))
 	for i, fwrule := range fwrules {
 		columns[i] = []any{
@@ -326,24 +361,9 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 			fwrule.Spec.FirewallAction,
 			fwrule.Spec.ProtocolFilter.String(),
 			fwrule.Spec.Priority,
-			fwrule.Status.String(),
 		}
-	}
-
-	return &TableData{
-		Headers: headers,
-		Columns: columns,
-	}, nil
-}
-
-func (t defaultTableConverter) serverErrorTable(serverErrors []api.ServerError) (*TableData, error) {
-	headers := []any{"error", "message"}
-
-	columns := make([][]any, len(serverErrors))
-	for i, serverError := range serverErrors {
-		columns[i] = []any{
-			serverError.ServerError.Error,
-			serverError.ServerError.Message,
+		if len(fwrules) == 1 {
+			columns[i] = append(columns[i], fwrule.Status.String())
 		}
 	}
 

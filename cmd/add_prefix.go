@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -88,29 +89,20 @@ func RunAddPrefix(
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-
-	res, err := client.AddPrefix(ctx, &api.Prefix{
+	prefix, err := client.AddPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
 			InterfaceID: opts.InterfaceID,
 			Prefix:      opts.Prefix,
 		},
 	})
-	if err != nil {
+	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding prefix: %w", err)
 	}
 
-	if err := renderer.Render(res); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-	return nil
+	prefix.TypeMeta.Kind = api.PrefixKind
+	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	prefix.PrefixMeta.Prefix = opts.Prefix
+	return rendererFactory.RenderObject("added", os.Stdout, prefix)
 }

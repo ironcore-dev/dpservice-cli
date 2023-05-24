@@ -81,27 +81,14 @@ func RunGetNatInfo(
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	natinfo, err := client.GetNATInfo(ctx, opts.NatIP, opts.NatInfoType)
 	if err != nil {
-		return fmt.Errorf("error getting nat info for ip %s: %v", opts.NatIP, err)
+		return fmt.Errorf("error listing nats: %w", err)
 	}
 
-	if err := renderer.Render(natinfo); err != nil {
-		return fmt.Errorf("error rendering nat info: %w", err)
-	}
-
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, natinfo)
 }

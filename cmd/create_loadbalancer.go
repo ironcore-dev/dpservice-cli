@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	cmd := &cobra.Command{
 		Use:     "loadbalancer <--id> <--vni> <--vip> <--lbports>",
 		Short:   "Create a loadbalancer",
-		Example: "dpservice-cli create lb --id=4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
+		Example: "dpservice-cli add loadbalancer --id=4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
 		Aliases: LoadBalancerAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -83,16 +84,7 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	var ports = make([]api.LBPort, 0, len(opts.Lbports))
 	for _, p := range opts.Lbports {
@@ -113,12 +105,11 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 			Lbports: ports,
 		},
 	})
-	if err != nil {
-		return fmt.Errorf("error creating loadbalancer: %w", err)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error adding loadbalancer: %w", err)
 	}
 
-	if err := renderer.Render(lb); err != nil {
-		return fmt.Errorf("error rendering loadbalancer: %w", err)
-	}
-	return nil
+	lb.TypeMeta.Kind = api.LoadBalancerKind
+	lb.LoadBalancerMeta.ID = opts.Id
+	return rendererFactory.RenderObject("added", os.Stdout, lb)
 }

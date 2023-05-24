@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -78,27 +80,16 @@ func RunGetNat(
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	nat, err := client.GetNat(ctx, opts.InterfaceID)
-	if err != nil {
-		return fmt.Errorf("error getting nat for interface %s: %v", opts.InterfaceID, err)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error getting nat: %w", err)
 	}
 
-	if err := renderer.Render(nat); err != nil {
-		return fmt.Errorf("error rendering  nat: %w", err)
-	}
-
-	return nil
+	nat.TypeMeta.Kind = api.NatKind
+	nat.NatMeta.InterfaceID = opts.InterfaceID
+	return rendererFactory.RenderObject("", os.Stdout, nat)
 }

@@ -178,6 +178,11 @@ func ProtoVirtualIPToVirtualIP(interfaceID string, dpdkVIP *proto.InterfaceVIPIP
 		return nil, fmt.Errorf("error parsing virtual ip address: %w", err)
 	}
 
+	underlayRoute, err := netip.ParseAddr(string(dpdkVIP.UnderlayRoute))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+
 	return &VirtualIP{
 		TypeMeta: TypeMeta{
 			Kind: VirtualIPKind,
@@ -186,7 +191,9 @@ func ProtoVirtualIPToVirtualIP(interfaceID string, dpdkVIP *proto.InterfaceVIPIP
 			InterfaceID: interfaceID,
 			IP:          ip,
 		},
-		Spec: VirtualIPSpec{},
+		Spec: VirtualIPSpec{
+			UnderlayRoute: &underlayRoute,
+		},
 	}, nil
 }
 
@@ -240,7 +247,7 @@ func ProtoRouteToRoute(vni uint32, dpdkRoute *proto.Route) (*Route, error) {
 			Prefix: prefix,
 			NextHop: RouteNextHop{
 				VNI: dpdkRoute.GetNexthopVNI(),
-				IP:  nextHopIP,
+				IP:  &nextHopIP,
 			},
 		},
 		Spec: RouteSpec{},
@@ -287,7 +294,7 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 			MaxPort:       dpdkNat.MaxPort,
 			UnderlayRoute: &underlayRoute,
 		},
-		Status: &Status{
+		Status: Status{
 			Error:   dpdkNat.Status.Error,
 			Message: dpdkNat.Status.Message,
 		},

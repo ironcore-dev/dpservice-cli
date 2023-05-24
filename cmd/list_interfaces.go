@@ -61,24 +61,12 @@ func RunListInterfaces(
 	if err != nil {
 		return fmt.Errorf("error getting dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	interfaceList, err := client.ListInterfaces(ctx)
 	if err != nil {
-		return fmt.Errorf("error listing firewall rules: %w", err)
+		return fmt.Errorf("error listing interfaces: %w", err)
 	}
 
-	if err := renderer.Render(interfaceList); err != nil {
-		return fmt.Errorf("error rendering interfaces: %w", err)
-	}
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, interfaceList)
 }

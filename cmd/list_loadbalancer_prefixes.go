@@ -72,32 +72,20 @@ func (o *ListLoadBalancerPrefixesOptions) MarkRequiredFlags(cmd *cobra.Command) 
 
 func RunListLoadBalancerPrefixes(
 	ctx context.Context,
-	factory DPDKClientFactory,
+	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
 	opts ListLoadBalancerPrefixesOptions,
 ) error {
-	client, cleanup, err := factory.NewClient(ctx)
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error creating client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	prefixList, err := client.ListLoadBalancerPrefixes(ctx, opts.InterfaceID)
 	if err != nil {
 		return fmt.Errorf("error listing loadbalancer prefixes: %w", err)
 	}
 
-	if err := renderer.Render(prefixList); err != nil {
-		return fmt.Errorf("error rendering list: %w", err)
-	}
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, prefixList)
 }

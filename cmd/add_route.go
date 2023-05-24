@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -89,16 +90,7 @@ func RunAddRoute(
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	route, err := client.AddRoute(ctx, &api.Route{
 		RouteMeta: api.RouteMeta{
@@ -106,17 +98,17 @@ func RunAddRoute(
 			Prefix: opts.Prefix,
 			NextHop: api.RouteNextHop{
 				VNI: opts.NextHopVNI,
-				IP:  opts.NextHopIP,
+				IP:  &opts.NextHopIP,
 			},
 		},
 		Spec: api.RouteSpec{},
 	})
-	if err != nil {
+	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding route: %w", err)
 	}
 
-	if err := renderer.Render(route); err != nil {
-		return fmt.Errorf("error rendering route: %w", err)
-	}
-	return nil
+	route.TypeMeta.Kind = api.RouteKind
+	route.RouteMeta.VNI = opts.VNI
+	route.RouteMeta.Prefix = opts.Prefix
+	return rendererFactory.RenderObject("added", os.Stdout, route)
 }

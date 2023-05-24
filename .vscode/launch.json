@@ -11,11 +11,13 @@
             "mode": "auto",
             "program": "main.go",
             //"program": "${fileDirname}",
-            //"args": ["add", "loadbalancer", "7", "--lbports", "389", "--vip", "10.3.4.5", "--vni", "100"]
+            //"args": ["add", "loadbalancer", "--id=4", "--lbports", "tcp/389", "--vip", "10.3.4.5", "--vni", "100"]
+            "args": ["delete", "loadbalancer", "--id=4"]
             //"args": ["get", "route", "0.0.0.0/24", "0", "fc00:2::64:0:1", "--vni", "100"]
             //"args": ["delete", "route", "10.200.2.0/24", "0", "ff80::1", "--vni", "100"]
             //"args": ["add", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
-            //"args": ["add", "lbtarget", "ff80::1", "--lb-id", "1"]
+            //"args": ["delete", "lbtarget", "--target-ip=ff80::1", "--lb-id=1"]
+            //"args": ["get", "lbtarget", "--lb-id=4"]
             //"args": ["get", "natinfo", "--nat-ip=10.20.30.40", "--nat-type=Local"]
             //"args": ["get", "fwrule", "vm1", "--rule-id=4"]
             //"args": ["add", "fwrule", "vm1", "--action=1", "--direction=1", "--dst=5.5.5.0/24", "--ipv=0",
@@ -23,7 +25,7 @@
             //"args": ["add", "nnat", "10.20.30.40", "--vni", "100", "--minport", "30000", "--maxport", "30100", "--underlayroute", "ff80::1"]
             //"args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
             //"args": ["add", "-f", "/tmp/addint.json"]
-            "args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=12"]
+            //"args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=12"]
         }
     ]
 }

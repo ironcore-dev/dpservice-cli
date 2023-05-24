@@ -20,12 +20,13 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteNat(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteNatOptions
 	)
@@ -40,7 +41,7 @@ func DeleteNat(factory DPDKClientFactory, rendererFactory RendererFactory) *cobr
 
 			return RunDeleteNat(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -71,37 +72,19 @@ func (o *DeleteNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteNat(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteNatOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteNatOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	if err := client.DeleteNat(ctx, opts.InterfaceID); err != nil {
-		return fmt.Errorf("error deleting nat of interface %s: %v", opts.InterfaceID, err)
+	nat, err := client.DeleteNat(ctx, opts.InterfaceID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting nat: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	nat := api.Nat{
-		TypeMeta: api.TypeMeta{Kind: api.NatKind},
-		NatMeta: api.NatMeta{
-			InterfaceID: opts.InterfaceID,
-		},
-		Status: &api.Status{
-			Message: "Deleted",
-		},
-	}
-	if err := renderer.Render(&nat); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-
-	return nil
+	nat.TypeMeta.Kind = api.NatKind
+	nat.NatMeta.InterfaceID = opts.InterfaceID
+	return rendererFactory.RenderObject("deleted", os.Stdout, nat)
 }

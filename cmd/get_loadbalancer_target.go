@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -78,27 +80,15 @@ func RunGetLoadBalancerTargets(
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
+	lbtargets, err := client.GetLoadBalancerTargets(ctx, opts.LoadBalancerID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error listing loadbalancer targets: %w", err)
 	}
 
-	lbtarget, err := client.GetLoadBalancerTargets(ctx, opts.LoadBalancerID)
-	if err != nil {
-		return fmt.Errorf("error getting loadbalancer target for interface %s: %v", opts.LoadBalancerID, err)
-	}
-
-	if err := renderer.Render(lbtarget); err != nil {
-		return fmt.Errorf("error rendering loadbalancer target: %w", err)
-	}
-
-	return nil
+	lbtargets.TypeMeta.Kind = api.LoadBalancerTargetListKind
+	return rendererFactory.RenderList("", os.Stdout, lbtargets)
 }

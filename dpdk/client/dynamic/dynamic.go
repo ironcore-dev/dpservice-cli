@@ -106,7 +106,7 @@ func ObjectKeyFromObject(obj any) ObjectKey {
 			VNI:        obj.VNI,
 			Prefix:     obj.Prefix,
 			NextHopVNI: obj.NextHop.VNI,
-			NextHopIP:  obj.NextHop.IP,
+			NextHopIP:  *obj.NextHop.IP,
 		}
 	case *api.VirtualIP:
 		return VirtualIPKey{
@@ -168,13 +168,17 @@ func (c *client) Create(ctx context.Context, obj any) error {
 func (c *client) Delete(ctx context.Context, obj any) error {
 	switch obj := obj.(type) {
 	case *api.Interface:
-		return c.structured.DeleteInterface(ctx, obj.ID)
+		_, err := c.structured.DeleteInterface(ctx, obj.ID)
+		return err
 	case *api.Prefix:
-		return c.structured.DeletePrefix(ctx, obj.InterfaceID, obj.Prefix)
+		_, err := c.structured.DeletePrefix(ctx, obj.InterfaceID, obj.Prefix)
+		return err
 	case *api.Route:
-		return c.structured.DeleteRoute(ctx, obj.VNI, obj.Prefix, obj.NextHop.VNI, obj.NextHop.IP)
+		_, err := c.structured.DeleteRoute(ctx, obj.VNI, obj.Prefix)
+		return err
 	case *api.VirtualIP:
-		return c.structured.DeleteVirtualIP(ctx, obj.InterfaceID)
+		_, err := c.structured.DeleteVirtualIP(ctx, obj.InterfaceID)
+		return err
 	default:
 		return fmt.Errorf("unsupported object %T", obj)
 	}

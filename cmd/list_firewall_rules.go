@@ -86,12 +86,5 @@ func RunListFirewallRules(
 		return fmt.Errorf("error listing firewall rules: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	if err := renderer.Render(fwrules); err != nil {
-		return fmt.Errorf("error rendering firewall rules on interface %s: %w", opts.InterfaceID, err)
-	}
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, fwrules)
 }

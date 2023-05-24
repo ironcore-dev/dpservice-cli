@@ -21,13 +21,14 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeletePrefix(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeletePrefix(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeletePrefixOptions
 	)
@@ -42,7 +43,7 @@ func DeletePrefix(factory DPDKClientFactory, rendererFactory RendererFactory) *c
 
 			return RunDeletePrefix(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -75,38 +76,20 @@ func (o *DeletePrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeletePrefix(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeletePrefixOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeletePrefix(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeletePrefixOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error deleting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	if err := client.DeletePrefix(ctx, opts.InterfaceID, opts.Prefix); err != nil {
-		return fmt.Errorf("error deleting prefix %s/%v: %v", opts.InterfaceID, opts.Prefix, err)
+	prefix, err := client.DeletePrefix(ctx, opts.InterfaceID, opts.Prefix)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting prefix: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	prefix := api.Prefix{
-		TypeMeta: api.TypeMeta{Kind: api.PrefixKind},
-		PrefixMeta: api.PrefixMeta{
-			InterfaceID: opts.InterfaceID,
-			Prefix:      opts.Prefix,
-		},
-		Status: api.Status{
-			Message: "Deleted",
-		},
-	}
-	if err := renderer.Render(&prefix); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-
-	return nil
+	prefix.TypeMeta.Kind = api.PrefixKind
+	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	prefix.PrefixMeta.Prefix = opts.Prefix
+	return rendererFactory.RenderObject("deleted", os.Stdout, prefix)
 }

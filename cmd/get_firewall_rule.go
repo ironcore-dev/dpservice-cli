@@ -87,14 +87,12 @@ func RunGetFirewallRule(
 	defer DpdkClose(cleanup)
 
 	fwrule, err := client.GetFirewallRule(ctx, opts.RuleID, opts.InterfaceID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error getting firewall rule: %w", err)
+	}
 
 	fwrule.TypeMeta.Kind = api.FirewallRuleKind
 	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
 	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
-	if err == errors.ErrServerError {
-		return rendererFactory.RenderObject("server error", os.Stdout, fwrule)
-	} else if err != nil {
-		return fmt.Errorf("error getting firewall rule: %w", err)
-	}
 	return rendererFactory.RenderObject("", os.Stdout, fwrule)
 }

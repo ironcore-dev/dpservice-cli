@@ -80,24 +80,12 @@ func RunGetRoute(
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	routeList, err := client.ListRoutes(ctx, opts.VNI)
 	if err != nil {
 		return fmt.Errorf("error listing routes: %w", err)
 	}
 
-	if err := renderer.Render(routeList); err != nil {
-		return fmt.Errorf("error rendering list: %w", err)
-	}
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, routeList)
 }

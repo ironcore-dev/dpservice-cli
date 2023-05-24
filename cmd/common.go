@@ -141,6 +141,9 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 }
 
 func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Object) error {
+	if obj.GetStatus() != 0 {
+		operation = "server error"
+	}
 	renderer, err := o.NewRenderer(operation, w)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
@@ -148,27 +151,30 @@ func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Ob
 	if err := renderer.Render(obj); err != nil {
 		return fmt.Errorf("error rendering %s: %w", obj.GetKind(), err)
 	}
+	if obj.GetStatus() != 0 {
+		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
+	}
+	return nil
+}
+
+func (o *RendererOptions) RenderList(operation string, w io.Writer, list api.List) error {
+	renderer, err := o.NewRenderer("", w)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(list); err != nil {
+		return fmt.Errorf("error rendering %s: %w", list.GetItems()[0].GetKind(), err)
+	}
 	if operation == "server error" {
 		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
 	}
 	return nil
 }
 
-func (o *RendererOptions) RenderError(w io.Writer, serverError *api.ServerError) error {
-	renderer, err := o.NewRenderer("ServerError", w)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	if err := renderer.Render(serverError); err != nil {
-		return fmt.Errorf("error rendering %s: %w", serverError.GetKind(), err)
-	}
-	return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
-}
-
 type RendererFactory interface {
 	NewRenderer(operation string, w io.Writer) (renderer.Renderer, error)
 	RenderObject(operation string, w io.Writer, obj api.Object) error
-	RenderError(w io.Writer, serverError *api.ServerError) error
+	RenderList(operation string, w io.Writer, list api.List) error
 }
 
 type SourcesOptions struct {

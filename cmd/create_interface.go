@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -83,16 +84,7 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	iface, err := client.CreateInterface(ctx, &api.Interface{
 		InterfaceMeta: api.InterfaceMeta{
@@ -104,12 +96,11 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			IPs:    opts.IP,
 		},
 	})
-	if err != nil {
-		return fmt.Errorf("error creating interface: %w", err)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error adding interface: %w", err)
 	}
 
-	if err := renderer.Render(iface); err != nil {
-		return fmt.Errorf("error rendering interface: %w", err)
-	}
-	return nil
+	iface.TypeMeta.Kind = api.InterfaceKind
+	iface.InterfaceMeta.ID = opts.ID
+	return rendererFactory.RenderObject("added", os.Stdout, iface)
 }

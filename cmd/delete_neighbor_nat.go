@@ -21,13 +21,14 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteNeighborNat(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteNeighborNatOptions
 	)
@@ -42,7 +43,7 @@ func DeleteNeighborNat(factory DPDKClientFactory, rendererFactory RendererFactor
 
 			return RunDeleteNeighborNat(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -79,16 +80,12 @@ func (o *DeleteNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteNeighborNatOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteNeighborNatOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
 	neigbhorNat := api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NatKind},
@@ -99,26 +96,12 @@ func RunDeleteNeighborNat(ctx context.Context, factory DPDKClientFactory, render
 			MaxPort: opts.MaxPort,
 		},
 	}
-	if err := client.DeleteNeighborNat(ctx, neigbhorNat); err != nil {
-		return fmt.Errorf("error deleting neighbor nat with ip %s: %v", opts.NatIP, err)
+	nnat, err := client.DeleteNeighborNat(ctx, neigbhorNat)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting neighbor nat: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	nNat := api.NeighborNat{
-		TypeMeta: api.TypeMeta{Kind: api.NeighborNatKind},
-		NeighborNatMeta: api.NeighborNatMeta{
-			NatVIPIP: &opts.NatIP,
-		},
-		Status: api.Status{
-			Message: "Deleted",
-		},
-	}
-	if err := renderer.Render(&nNat); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-
-	return nil
+	nnat.TypeMeta.Kind = api.NeighborNatKind
+	nnat.NeighborNatMeta.NatVIPIP = &opts.NatIP
+	return rendererFactory.RenderObject("deleted", os.Stdout, nnat)
 }

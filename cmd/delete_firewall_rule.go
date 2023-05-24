@@ -82,14 +82,12 @@ func RunDeleteFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 	defer DpdkClose(cleanup)
 
 	fwrule, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting firewall rule: %w", err)
+	}
 
 	fwrule.TypeMeta.Kind = api.FirewallRuleKind
 	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
 	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
-	if err == errors.ErrServerError {
-		return rendererFactory.RenderObject("server error", os.Stdout, fwrule)
-	} else if err != nil {
-		return fmt.Errorf("error deleting firewall rule: %w", err)
-	}
-	return rendererFactory.RenderObject("added", os.Stdout, fwrule)
+	return rendererFactory.RenderObject("deleted", os.Stdout, fwrule)
 }

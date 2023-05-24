@@ -79,24 +79,12 @@ func RunListPrefixes(
 	if err != nil {
 		return fmt.Errorf("error creating client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	prefixList, err := client.ListPrefixes(ctx, opts.InterfaceID)
 	if err != nil {
 		return fmt.Errorf("error listing prefixes: %w", err)
 	}
 
-	if err := renderer.Render(prefixList); err != nil {
-		return fmt.Errorf("error rendering prefix list: %w", err)
-	}
-	return nil
+	return rendererFactory.RenderList("", os.Stdout, prefixList)
 }

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -86,17 +87,11 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	nNat := &api.NeighborNat{
-		TypeMeta: api.TypeMeta{Kind: api.NeighborNatKind},
-		NeighborNatMeta: api.NeighborNatMeta{
-			NatVIPIP: &opts.NatIP,
-		},
+	neigbhorNat := &api.NeighborNat{
+		TypeMeta:        api.TypeMeta{Kind: api.NeighborNatKind},
+		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: &opts.NatIP},
 		Spec: api.NeighborNatSpec{
 			Vni:           opts.Vni,
 			MinPort:       opts.MinPort,
@@ -105,18 +100,12 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 		},
 	}
 
-	neighNat, err := client.AddNeighborNat(ctx, nNat)
-	if err != nil {
+	nnat, err := client.AddNeighborNat(ctx, neigbhorNat)
+	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding neighbor nat: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	if err := renderer.Render(&neighNat); err != nil {
-		return fmt.Errorf("error rendering neighbor nat: %w", err)
-	}
-
-	return nil
+	nnat.TypeMeta.Kind = api.NeighborNatKind
+	nnat.NeighborNatMeta.NatVIPIP = &opts.NatIP
+	return rendererFactory.RenderObject("added", os.Stdout, nnat)
 }

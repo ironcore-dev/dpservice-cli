@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -88,16 +89,7 @@ func RunCreateLoadBalancerPrefix(
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("created", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	lbprefix, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
@@ -105,12 +97,11 @@ func RunCreateLoadBalancerPrefix(
 			Prefix:      opts.Prefix,
 		},
 	})
-	if err != nil {
-		return fmt.Errorf("error creating prefix: %w", err)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error adding loadbalancer prefix: %w", err)
 	}
-
-	if err := renderer.Render(lbprefix); err != nil {
-		return fmt.Errorf("error rendering prefix: %w", err)
-	}
-	return nil
+	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
+	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	lbprefix.PrefixMeta.Prefix = opts.Prefix
+	return rendererFactory.RenderObject("added", os.Stdout, lbprefix)
 }

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -85,16 +86,7 @@ func RunAddVirtualIP(
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
-
-	renderer, err := rendererFactory.NewRenderer("added", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
+	defer DpdkClose(cleanup)
 
 	virtualIP, err := client.AddVirtualIP(ctx, &api.VirtualIP{
 		VirtualIPMeta: api.VirtualIPMeta{
@@ -102,12 +94,12 @@ func RunAddVirtualIP(
 			IP:          opts.Vip,
 		},
 	})
-	if err != nil {
+	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding virtual ip: %w", err)
 	}
 
-	if err := renderer.Render(virtualIP); err != nil {
-		return fmt.Errorf("error rendering virtual ip: %w", err)
-	}
-	return nil
+	virtualIP.TypeMeta.Kind = api.RouteKind
+	virtualIP.VirtualIPMeta.IP = opts.Vip
+	virtualIP.VirtualIPMeta.InterfaceID = opts.InterfaceID
+	return rendererFactory.RenderObject("added", os.Stdout, virtualIP)
 }

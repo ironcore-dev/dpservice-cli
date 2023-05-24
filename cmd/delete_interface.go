@@ -20,12 +20,13 @@ import (
 	"os"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteInterface(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func DeleteInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteInterfaceOptions
 	)
@@ -40,7 +41,7 @@ func DeleteInterface(factory DPDKClientFactory, rendererFactory RendererFactory)
 
 			return RunDeleteInterface(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
 				rendererFactory,
 				opts,
 			)
@@ -71,35 +72,19 @@ func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteInterfaceOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteInterfaceOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	if err := client.DeleteInterface(ctx, opts.ID); err != nil {
-		return fmt.Errorf("error deleting interface %s: %v", opts.ID, err)
+	iface, err := client.DeleteInterface(ctx, opts.ID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting interface: %w", err)
 	}
 
-	renderer, err := rendererFactory.NewRenderer("deleted", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
-	}
-	iface := api.Interface{
-		TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
-		InterfaceMeta: api.InterfaceMeta{ID: opts.ID},
-		Status: api.Status{
-			Message: "Deleted",
-		},
-	}
-	if err := renderer.Render(&iface); err != nil {
-		return fmt.Errorf("error rendering interface: %w", err)
-	}
-
-	return nil
+	iface.TypeMeta.Kind = api.InterfaceKind
+	iface.InterfaceMeta.ID = opts.ID
+	return rendererFactory.RenderObject("deleted", os.Stdout, iface)
 }
