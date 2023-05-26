@@ -208,7 +208,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 	columns := make([][]any, len(lbtargets))
 	for i, lbtarget := range lbtargets {
 		columns[i] = []any{
-			lbtarget.LoadBalancerTargetMeta.ID,
+			lbtarget.LoadBalancerTargetMeta.LoadbalancerID,
 			api.NetIPAddrToProtoIPVersion(*lbtarget.Spec.TargetIP),
 			lbtarget.Spec.TargetIP,
 			lbtarget.Status.String(),

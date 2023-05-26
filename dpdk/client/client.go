@@ -155,8 +155,9 @@ func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID strin
 	}
 
 	return &api.PrefixList{
-		TypeMeta: api.TypeMeta{Kind: "LoadBalancerPrefixList"},
-		Items:    prefixes,
+		TypeMeta:       api.TypeMeta{Kind: "LoadBalancerPrefixList"},
+		PrefixListMeta: api.PrefixListMeta{InterfaceID: interfaceID},
+		Items:          prefixes,
 	}, nil
 }
 
@@ -225,14 +226,15 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 		var lbtarget api.LoadBalancerTarget
 		lbtarget.TypeMeta.Kind = api.LoadBalancerTargetKind
 		lbtarget.Spec.TargetIP = api.ProtoLbipToLbip(*dpdkLBtarget)
-		lbtarget.LoadBalancerTargetMeta.ID = loadBalancerID
+		lbtarget.LoadBalancerTargetMeta.LoadbalancerID = loadBalancerID
 
 		lbtargets[i] = lbtarget
 	}
 
 	return &api.LoadBalancerTargetList{
-		TypeMeta: api.TypeMeta{Kind: api.LoadBalancerTargetListKind},
-		Items:    lbtargets,
+		TypeMeta:                   api.TypeMeta{Kind: api.LoadBalancerTargetListKind},
+		LoadBalancerTargetListMeta: api.LoadBalancerTargetListMeta{LoadBalancerID: loadBalancerID},
+		Items:                      lbtargets,
 		// TODO server is not returning correct status
 		//Status:   api.ProtoStatusToStatus(res.Status),
 	}, nil
@@ -240,7 +242,7 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 
 func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error) {
 	res, err := c.DPDKonmetalClient.AddLoadBalancerTarget(ctx, &dpdkproto.AddLoadBalancerTargetRequest{
-		LoadBalancerID: []byte(lbtarget.LoadBalancerTargetMeta.ID),
+		LoadBalancerID: []byte(lbtarget.LoadBalancerTargetMeta.LoadbalancerID),
 		TargetIP:       api.LbipToProtoLbip(*lbtarget.Spec.TargetIP),
 	})
 	if err != nil {
@@ -429,8 +431,9 @@ func (c *client) ListPrefixes(ctx context.Context, interfaceID string) (*api.Pre
 	}
 
 	return &api.PrefixList{
-		TypeMeta: api.TypeMeta{Kind: api.PrefixListKind},
-		Items:    prefixes,
+		TypeMeta:       api.TypeMeta{Kind: api.PrefixListKind},
+		PrefixListMeta: api.PrefixListMeta{InterfaceID: interfaceID},
+		Items:          prefixes,
 	}, nil
 }
 
@@ -553,8 +556,9 @@ func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, er
 	}
 
 	return &api.RouteList{
-		TypeMeta: api.TypeMeta{Kind: api.RouteListKind},
-		Items:    routes,
+		TypeMeta:      api.TypeMeta{Kind: api.RouteListKind},
+		RouteListMeta: api.RouteListMeta{VNI: vni},
+		Items:         routes,
 	}, nil
 }
 
@@ -690,8 +694,9 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType st
 		nats[i] = nat
 	}
 	return &api.NatList{
-		TypeMeta: api.TypeMeta{Kind: api.NatListKind},
-		Items:    nats,
+		TypeMeta:    api.TypeMeta{Kind: api.NatListKind},
+		NatListMeta: api.NatListMeta{NatIP: natVIPIP, NatInfoType: natType},
+		Items:       nats,
 	}, nil
 }
 
@@ -732,8 +737,9 @@ func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*ap
 	}
 
 	return &api.FirewallRuleList{
-		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleListKind},
-		Items:    fwRules,
+		TypeMeta:             api.TypeMeta{Kind: api.FirewallRuleListKind},
+		FirewallRuleListMeta: api.FirewallRuleListMeta{InterfaceID: interfaceID},
+		Items:                fwRules,
 	}, nil
 }
 

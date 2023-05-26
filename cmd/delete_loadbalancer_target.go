@@ -89,6 +89,6 @@ func RunDeleteLoadBalancerTarget(ctx context.Context, dpdkClientFactory DPDKClie
 	}
 
 	lbtarget.TypeMeta.Kind = api.LoadBalancerTargetKind
-	lbtarget.LoadBalancerTargetMeta.ID = opts.LoadBalancerID
+	lbtarget.LoadBalancerTargetMeta.LoadbalancerID = opts.LoadBalancerID
 	return rendererFactory.RenderObject("deleted", os.Stdout, lbtarget)
 }

@@ -1,6 +1,7 @@
 # dpservice-cli development guide
 
 This page is intended as a general overview for all development-oriented topics.
+[Cobra](https://github.com/spf13/cobra) framework is used for generating and handling commands in this project.
 <br />
 
 

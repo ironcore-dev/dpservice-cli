@@ -93,7 +93,7 @@ func RunAddLoadBalancerTarget(
 
 	lbtarget, err := client.AddLoadBalancerTarget(ctx, &api.LoadBalancerTarget{
 		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
-		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{ID: opts.LoadBalancerID},
+		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{LoadbalancerID: opts.LoadBalancerID},
 		Spec:                   api.LoadBalancerTargetSpec{TargetIP: &opts.TargetIP},
 	})
 	if err != nil && err != errors.ErrServerError {
@@ -101,6 +101,6 @@ func RunAddLoadBalancerTarget(
 	}
 
 	lbtarget.TypeMeta.Kind = api.LoadBalancerKind
-	lbtarget.LoadBalancerTargetMeta.ID = opts.LoadBalancerID
+	lbtarget.LoadBalancerTargetMeta.LoadbalancerID = opts.LoadBalancerID
 	return rendererFactory.RenderObject("added", os.Stdout, lbtarget)
 }

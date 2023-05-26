@@ -40,6 +40,24 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 		Example: "dpservice-cli add fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --ipver=0 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --src-port-min=1 --src-port-max=1000 --dst-port-min=500 --dst-port-max=600",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(0),
+		// if protocol flag is set, require also additional flags
+		PreRun: func(cmd *cobra.Command, args []string) {
+			filter, _ := cmd.Flags().GetString("protocol")
+			switch filter {
+			case "icmp", "1":
+				cmd.MarkFlagRequired("icmp-type")
+				cmd.MarkFlagRequired("icmp-code")
+			case "tcp", "6", "udp", "17":
+				cmd.MarkFlagRequired("src-port-min")
+				if src, _ := cmd.Flags().GetInt32("src-port-min"); src != -1 {
+					cmd.MarkFlagRequired("src-port-max")
+				}
+				cmd.MarkFlagRequired("dst-port-min")
+				if dst, _ := cmd.Flags().GetInt32("dst-port-min"); dst != -1 {
+					cmd.MarkFlagRequired("dst-port-max")
+				}
+			}
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			return RunAddFirewallRule(
@@ -81,7 +99,7 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "RuleID of FW Rule.")
 	fs.StringVar(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
 	fs.StringVar(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: drop/deny/0|accept/allow/1 (Can be only \"accept/allow/1\" at the moment).")
-	fs.Uint32Var(&o.Priority, "priority", o.Priority, "Priority of FW Rule. (For future use. No effect at the moment).")
+	fs.Uint32Var(&o.Priority, "priority", 1000, "Priority of FW Rule. (For future use. No effect at the moment).")
 	fs.StringVar(&o.IpVersion, "ipver", o.IpVersion, "IpVersion of FW Rule: IPv4 = 0/IPv6 = 1.")
 	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix (0.0.0.0 with prefix length 0 matches all source IPs).")
 	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix (0.0.0.0 with prefix length 0 matches all destination IPs).")
@@ -97,7 +115,7 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 
 func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	// TODO if protocol is not specified it should match all protocols
-	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipver", "src", "dst", "protocol"} {
+	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipver", "src", "dst"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -137,6 +155,15 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			opts.DstPortLower = 1
 			opts.DstPortUpper = 65535
 		}
+		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
+			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
+			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||
+			opts.DstPortUpper < 1 || opts.DstPortUpper > 65535 {
+			return fmt.Errorf("ports can only be -1 or <1,65535>")
+		}
+		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {
+			return fmt.Errorf("min port must be lower or equal to max port")
+		}
 		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Tcp{Tcp: &dpdkproto.TCPFilter{
 			SrcPortLower: opts.SrcPortLower,
 			SrcPortUpper: opts.SrcPortUpper,
@@ -152,14 +179,27 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			opts.DstPortLower = 1
 			opts.DstPortUpper = 65535
 		}
+		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
+			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
+			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||
+			opts.DstPortUpper < 1 || opts.DstPortUpper > 65535 {
+			return fmt.Errorf("ports can only be -1 or <1,65535>")
+		}
+		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {
+			return fmt.Errorf("min port must be lower or equal to max port")
+		}
 		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Udp{Udp: &dpdkproto.UDPFilter{
 			SrcPortLower: opts.SrcPortLower,
 			SrcPortUpper: opts.SrcPortUpper,
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}
+	case "":
 	default:
 		return fmt.Errorf("protocol can be only: icmp = 1/tcp = 6/udp = 17")
+	}
+	if opts.Priority > 65536 {
+		return fmt.Errorf("priority can be only: <0,65536")
 	}
 
 	fwrule, err := client.AddFirewallRule(ctx, &api.FirewallRule{

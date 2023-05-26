@@ -50,8 +50,14 @@ func (status *Status) String() string {
 }
 
 type RouteList struct {
-	TypeMeta `json:",inline"`
-	Items    []Route `json:"items"`
+	TypeMeta      `json:",inline"`
+	RouteListMeta `json:"metadata"`
+	Status        Status  `json:"status"`
+	Items         []Route `json:"items"`
+}
+
+type RouteListMeta struct {
+	VNI uint32 `json:"vni"`
 }
 
 func (l *RouteList) GetItems() []Object {
@@ -92,8 +98,14 @@ type RouteNextHop struct {
 }
 
 type PrefixList struct {
-	TypeMeta `json:",inline"`
-	Items    []Prefix `json:"items"`
+	TypeMeta       `json:",inline"`
+	PrefixListMeta `json:"metadata"`
+	Status         Status   `json:"status"`
+	Items          []Prefix `json:"items"`
+}
+
+type PrefixListMeta struct {
+	InterfaceID string `json:"interfaceID"`
 }
 
 func (l *PrefixList) GetItems() []Object {
@@ -184,19 +196,6 @@ type LBPort struct {
 	Port     uint32 `json:"port,omitempty"`
 }
 
-type LoadBalancerList struct {
-	TypeMeta `json:",inline"`
-	Items    []LoadBalancer `json:"items"`
-}
-
-func (l *LoadBalancerList) GetItems() []Object {
-	res := make([]Object, len(l.Items))
-	for i := range l.Items {
-		res[i] = &l.Items[i]
-	}
-	return res
-}
-
 type LoadBalancerTarget struct {
 	TypeMeta               `json:",inline"`
 	LoadBalancerTargetMeta `json:"metadata"`
@@ -205,11 +204,11 @@ type LoadBalancerTarget struct {
 }
 
 type LoadBalancerTargetMeta struct {
-	ID string `json:"id"`
+	LoadbalancerID string `json:"loadbalancerId"`
 }
 
 func (m *LoadBalancerTargetMeta) GetName() string {
-	return m.ID
+	return m.LoadbalancerID
 }
 
 func (m *LoadBalancerTarget) GetStatus() int32 {
@@ -221,9 +220,14 @@ type LoadBalancerTargetSpec struct {
 }
 
 type LoadBalancerTargetList struct {
-	TypeMeta `json:",inline"`
-	Items    []LoadBalancerTarget `json:"items"`
-	Status   Status               `json:"status"`
+	TypeMeta                   `json:",inline"`
+	LoadBalancerTargetListMeta `json:"metadata"`
+	Status                     Status               `json:"status"`
+	Items                      []LoadBalancerTarget `json:"items"`
+}
+
+type LoadBalancerTargetListMeta struct {
+	LoadBalancerID string `json:"loadbalancerID"`
 }
 
 func (l *LoadBalancerTargetList) GetItems() []Object {
@@ -275,8 +279,13 @@ func (vf *VirtualFunction) String() string {
 }
 
 type InterfaceList struct {
-	TypeMeta `json:",inline"`
-	Items    []Interface `json:"items"`
+	TypeMeta          `json:",inline"`
+	InterfaceListMeta `json:"metadata"`
+	Status            Status      `json:"status"`
+	Items             []Interface `json:"items"`
+}
+
+type InterfaceListMeta struct {
 }
 
 func (l *InterfaceList) GetItems() []Object {
@@ -315,8 +324,15 @@ type NatSpec struct {
 }
 
 type NatList struct {
-	TypeMeta `json:",inline"`
-	Items    []Nat `json:"items"`
+	TypeMeta    `json:",inline"`
+	NatListMeta `json:"metadata"`
+	Status      Status `json:"status"`
+	Items       []Nat  `json:"items"`
+}
+
+type NatListMeta struct {
+	NatIP       netip.Addr `json:"natIp"`
+	NatInfoType string     `json:"infoType"`
 }
 
 func (l *NatList) GetItems() []Object {
@@ -385,8 +401,14 @@ type FirewallRuleSpec struct {
 }
 
 type FirewallRuleList struct {
-	TypeMeta `json:",inline"`
-	Items    []FirewallRule `json:"items"`
+	TypeMeta             `json:",inline"`
+	FirewallRuleListMeta `json:"metadata"`
+	Status               Status         `json:"status"`
+	Items                []FirewallRule `json:"items"`
+}
+
+type FirewallRuleListMeta struct {
+	InterfaceID string `json:"interfaceID"`
 }
 
 func (l *FirewallRuleList) GetItems() []Object {
