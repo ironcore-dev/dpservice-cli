@@ -419,6 +419,49 @@ func (l *FirewallRuleList) GetItems() []Object {
 	return res
 }
 
+type Init struct {
+	TypeMeta `json:",inline"`
+	InitMeta `json:"metadata"`
+	Spec     InitSpec `json:"spec"`
+	Status   Status   `json:"status"`
+}
+
+type InitMeta struct {
+}
+
+type InitSpec struct {
+}
+
+func (m *InitMeta) GetName() string {
+	return "init"
+}
+
+func (m *Init) GetStatus() int32 {
+	return m.Status.Error
+}
+
+type Initialized struct {
+	TypeMeta        `json:",inline"`
+	InitializedMeta `json:"metadata"`
+	Spec            InitializedSpec `json:"spec"`
+	Status          Status          `json:"status"`
+}
+
+type InitializedMeta struct {
+}
+
+type InitializedSpec struct {
+	UUID string `json:"uuid"`
+}
+
+func (m *InitializedMeta) GetName() string {
+	return "initialized"
+}
+
+func (m *Initialized) GetStatus() int32 {
+	return 0
+}
+
 var (
 	InterfaceKind              = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind          = reflect.TypeOf(InterfaceList{}).Name()

@@ -179,6 +179,10 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
+	case *api.Init:
+		return t.initTable(*obj)
+	case *api.Initialized:
+		return t.initializedTable(*obj)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -366,6 +370,28 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 			columns[i] = append(columns[i], fwrule.Status.String())
 		}
 	}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) initTable(init api.Init) (*TableData, error) {
+	headers := []any{"Error", "Message"}
+	columns := make([][]any, 1)
+	columns[0] = []any{init.Status.Error, init.Status.Message}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) initializedTable(initialized api.Initialized) (*TableData, error) {
+	headers := []any{"UUID", "Error", "Message"}
+	columns := make([][]any, 1)
+	columns[0] = []any{initialized.Spec.UUID, initialized.Status.Error, initialized.Status.Message}
 
 	return &TableData{
 		Headers: headers,

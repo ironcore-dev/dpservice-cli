@@ -17,7 +17,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
@@ -25,7 +27,7 @@ import (
 )
 
 // func Init is not up to dpdk.proto spec, but is implemented to comply with current dpservice implementation
-func Init(factory DPDKClientFactory) *cobra.Command {
+func Init(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts InitOptions
 	)
@@ -39,7 +41,8 @@ func Init(factory DPDKClientFactory) *cobra.Command {
 
 			return RunInit(
 				cmd.Context(),
-				factory,
+				dpdkClientFactory,
+				rendererFactory,
 				opts,
 			)
 		},
@@ -64,6 +67,7 @@ func (o *InitOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 func RunInit(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
+	rendererFactory RendererFactory,
 	opts InitOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
@@ -81,12 +85,10 @@ func RunInit(
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
 	}
 
-	err = client.Init(ctx, dpdkproto.InitConfig{})
-	if err != nil {
-		return fmt.Errorf("error: %w", err)
+	init, err := client.Init(ctx, dpdkproto.InitConfig{})
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error init: %w", err)
 	}
 
-	fmt.Println("{\"status\": \"initialized\"}")
-
-	return nil
+	return rendererFactory.RenderObject("", os.Stdout, init)
 }

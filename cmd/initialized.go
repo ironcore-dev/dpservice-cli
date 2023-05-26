@@ -17,11 +17,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/spf13/cobra"
 )
 
-func Initialized(factory DPDKClientFactory) *cobra.Command {
+func Initialized(factory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "initialized",
 		Short:   "Indicates if the DPDK app has been initialized already",
@@ -32,6 +34,7 @@ func Initialized(factory DPDKClientFactory) *cobra.Command {
 			return RunInitialized(
 				cmd.Context(),
 				factory,
+				rendererFactory,
 			)
 		},
 	}
@@ -42,6 +45,7 @@ func Initialized(factory DPDKClientFactory) *cobra.Command {
 func RunInitialized(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
+	rendererFactory RendererFactory,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -55,8 +59,12 @@ func RunInitialized(
 
 	uuid, err := client.Initialized(ctx)
 	if err != nil {
-		return fmt.Errorf("error: %w", err)
+		return fmt.Errorf("error initialized: %w", err)
 	}
-	fmt.Printf("{\"status\": \"initialized\", \"uuid\": \"%s\"}\n", uuid)
-	return nil
+
+	initialized := api.Initialized{
+		TypeMeta: api.TypeMeta{Kind: "Initialized"},
+		Spec:     api.InitializedSpec{UUID: uuid},
+	}
+	return rendererFactory.RenderObject("", os.Stdout, &initialized)
 }

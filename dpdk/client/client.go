@@ -70,7 +70,7 @@ type Client interface {
 	DeleteFirewallRule(ctx context.Context, interfaceID string, ruleID string) (*api.FirewallRule, error)
 
 	Initialized(ctx context.Context) (string, error)
-	Init(ctx context.Context, initConfig dpdkproto.InitConfig) error
+	Init(ctx context.Context, initConfig dpdkproto.InitConfig) (*api.Init, error)
 }
 
 type client struct {
@@ -246,10 +246,10 @@ func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBa
 		TargetIP:       api.LbipToProtoLbip(*lbtarget.Spec.TargetIP),
 	})
 	if err != nil {
-		return nil, err
+		return &api.LoadBalancerTarget{Status: api.ProtoStatusToStatus(res)}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return nil, apierrors.NewStatusError(errorCode, res.GetMessage())
+		return &api.LoadBalancerTarget{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
 	}
 
 	return &api.LoadBalancerTarget{
@@ -855,13 +855,13 @@ func (c *client) Initialized(ctx context.Context) (string, error) {
 	return res.Uuid, nil
 }
 
-func (c *client) Init(ctx context.Context, initConfig dpdkproto.InitConfig) error {
+func (c *client) Init(ctx context.Context, initConfig dpdkproto.InitConfig) (*api.Init, error) {
 	res, err := c.DPDKonmetalClient.Init(ctx, &initConfig)
 	if err != nil {
-		return err
+		return &api.Init{Status: api.ProtoStatusToStatus(res)}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return apierrors.NewStatusError(errorCode, res.GetMessage())
+		return &api.Init{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
 	}
-	return nil
+	return &api.Init{TypeMeta: api.TypeMeta{Kind: "Init"}, Status: api.ProtoStatusToStatus(res)}, nil
 }
