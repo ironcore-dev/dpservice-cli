@@ -208,7 +208,7 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 		return nil, fmt.Errorf("invalid dpdk prefix length %d for address %s", dpdkPrefix.PrefixLength, addr)
 	}
 
-	underlayRoute, err := netip.ParseAddr(string(dpdkPrefix.Address))
+	underlayRoute, err := netip.ParseAddr(string(dpdkPrefix.UnderlayRoute))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing underlay route: %w", err)
 	}
@@ -303,12 +303,12 @@ func ProtoNatToNat(dpdkNat *proto.GetNATResponse, interfaceID string) (*Nat, err
 
 func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*FirewallRule, error) {
 
-	srcPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.SourcePrefix)
+	srcPrefix, err := netip.ParsePrefix(string(dpdkFwRule.SourcePrefix.Address) + "/" + strconv.Itoa(int(dpdkFwRule.SourcePrefix.PrefixLength)))
 	if err != nil {
 		return nil, fmt.Errorf("error converting prefix: %w", err)
 	}
 
-	dstPrefix, err := ProtoPrefixToPrefix(interfaceID, dpdkFwRule.DestinationPrefix)
+	dstPrefix, err := netip.ParsePrefix(string(dpdkFwRule.DestinationPrefix.Address) + "/" + strconv.Itoa(int(dpdkFwRule.DestinationPrefix.PrefixLength)))
 	if err != nil {
 		return nil, fmt.Errorf("error converting prefix: %w", err)
 	}
@@ -340,8 +340,8 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*F
 			FirewallAction:    action,
 			Priority:          dpdkFwRule.Priority,
 			IpVersion:         ipv,
-			SourcePrefix:      &srcPrefix.Prefix,
-			DestinationPrefix: &dstPrefix.Prefix,
+			SourcePrefix:      &srcPrefix,
+			DestinationPrefix: &dstPrefix,
 			ProtocolFilter:    dpdkFwRule.ProtocolFilter,
 		},
 	}, nil

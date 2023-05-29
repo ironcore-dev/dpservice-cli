@@ -57,10 +57,12 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 }
 
 type CreateInterfaceOptions struct {
-	ID     string
-	VNI    uint32
-	IP     []netip.Addr
-	Device string
+	ID          string
+	VNI         uint32
+	IP          []netip.Addr
+	Device      string
+	PxeServer   string
+	PxeFileName string
 }
 
 func (o *CreateInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
@@ -68,6 +70,8 @@ func (o *CreateInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the interface to.")
 	flag.AddrSliceVar(fs, &o.IP, "ip", o.IP, "IP to assign to the interface.")
 	fs.StringVar(&o.Device, "device", o.Device, "Device to allocate.")
+	fs.StringVar(&o.PxeServer, "pxe-server", o.PxeServer, "PXE next server.")
+	fs.StringVar(&o.PxeFileName, "pxe-file-name", o.PxeFileName, "PXE boot file name.")
 }
 
 func (o *CreateInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -88,7 +92,8 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 
 	iface, err := client.CreateInterface(ctx, &api.Interface{
 		InterfaceMeta: api.InterfaceMeta{
-			ID: opts.ID,
+			ID:  opts.ID,
+			PXE: api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
 		},
 		Spec: api.InterfaceSpec{
 			VNI:    opts.VNI,

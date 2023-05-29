@@ -147,14 +147,6 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			IcmpType: opts.IcmpType,
 			IcmpCode: opts.IcmpCode}}
 	case "tcp", "6":
-		if opts.SrcPortLower == -1 {
-			opts.SrcPortLower = 1
-			opts.SrcPortUpper = 65535
-		}
-		if opts.DstPortLower == -1 {
-			opts.DstPortLower = 1
-			opts.DstPortUpper = 65535
-		}
 		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
 			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
 			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||
@@ -171,14 +163,6 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			DstPortUpper: opts.DstPortUpper,
 		}}
 	case "udp", "17":
-		if opts.SrcPortLower == -1 {
-			opts.SrcPortLower = 1
-			opts.SrcPortUpper = 65535
-		}
-		if opts.DstPortLower == -1 {
-			opts.DstPortLower = 1
-			opts.DstPortUpper = 65535
-		}
 		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
 			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
 			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||

@@ -35,10 +35,10 @@ func Get(factory DPDKClientFactory) *cobra.Command {
 		GetInterface(factory, rendererOptions),
 		GetVirtualIP(factory, rendererOptions),
 		GetLoadBalancer(factory, rendererOptions),
-		GetLoadBalancerTargets(factory, rendererOptions),
 		GetNat(factory, rendererOptions),
 		GetNatInfo(factory, rendererOptions),
 		GetFirewallRule(factory, rendererOptions),
+		GetVni(factory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Gets one of %v", CommandNames(subcommands))

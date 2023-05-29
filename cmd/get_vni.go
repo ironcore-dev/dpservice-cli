@@ -26,20 +26,20 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func ListLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func GetVni(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts ListLoadBalancerTargetOptions
+		opts GetVniOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget <--lb-id>",
-		Short:   "List LoadBalancer Targets",
-		Example: "dpservice-cli list lbtarget --lb-id=1",
-		Aliases: LoadBalancerTargetAliases,
+		Use:     "vni <--vni> <--vni-type>",
+		Short:   "Get vni usage information",
+		Example: "dpservice-cli get vni --vni=vm1 --vni-type=0",
+		Aliases: NatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunListLoadBalancerTargets(
+			return RunGetVni(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -55,16 +55,18 @@ func ListLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactor
 	return cmd
 }
 
-type ListLoadBalancerTargetOptions struct {
-	LoadBalancerID string
+type GetVniOptions struct {
+	VNI     uint32
+	VniType uint8
 }
 
-func (o *ListLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "ID of the loadbalancer to get the targets for.")
+func (o *GetVniOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to check.")
+	fs.Uint8Var(&o.VniType, "vni-type", o.VniType, "VNI Type.")
 }
 
-func (o *ListLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"lb-id"} {
+func (o *GetVniOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"vni", "vni-type"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -72,11 +74,11 @@ func (o *ListLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) er
 	return nil
 }
 
-func RunListLoadBalancerTargets(
+func RunGetVni(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	opts ListLoadBalancerTargetOptions,
+	opts GetVniOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -84,11 +86,13 @@ func RunListLoadBalancerTargets(
 	}
 	defer DpdkClose(cleanup)
 
-	lbtargets, err := client.GetLoadBalancerTargets(ctx, opts.LoadBalancerID)
+	vni, err := client.GetVni(ctx, opts.VNI, opts.VniType)
 	if err != nil && err != errors.ErrServerError {
-		return fmt.Errorf("error listing loadbalancer targets: %w", err)
+		return fmt.Errorf("error getting vni: %w", err)
 	}
 
-	lbtargets.TypeMeta.Kind = api.LoadBalancerTargetListKind
-	return rendererFactory.RenderList("", os.Stdout, lbtargets)
+	vni.TypeMeta.Kind = api.VniKind
+	vni.VniMeta.VNI = opts.VNI
+	vni.VniMeta.VniType = opts.VniType
+	return rendererFactory.RenderObject("", os.Stdout, vni)
 }

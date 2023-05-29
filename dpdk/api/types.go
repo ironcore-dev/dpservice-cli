@@ -247,7 +247,13 @@ type Interface struct {
 }
 
 type InterfaceMeta struct {
-	ID string `json:"id"`
+	ID  string `json:"id"`
+	PXE PXE    `json:"pxe"`
+}
+
+type PXE struct {
+	Server   string `json:"server"`
+	FileName string `json:"fileName"`
 }
 
 func (m *InterfaceMeta) GetName() string {
@@ -331,8 +337,8 @@ type NatList struct {
 }
 
 type NatListMeta struct {
-	NatIP       netip.Addr `json:"natIp"`
-	NatInfoType string     `json:"infoType"`
+	NatIP       *netip.Addr `json:"natIp,omitempty"`
+	NatInfoType string      `json:"infoType,omitempty"`
 }
 
 func (l *NatList) GetItems() []Object {
@@ -462,6 +468,30 @@ func (m *Initialized) GetStatus() int32 {
 	return 0
 }
 
+type Vni struct {
+	TypeMeta `json:",inline"`
+	VniMeta  `json:"metadata"`
+	Spec     VniSpec `json:"spec"`
+	Status   Status  `json:"status"`
+}
+
+type VniMeta struct {
+	VNI     uint32 `json:"vni"`
+	VniType uint8  `json:"vniType"`
+}
+
+type VniSpec struct {
+	InUse bool `json:"inUse"`
+}
+
+func (m *VniMeta) GetName() string {
+	return "vni"
+}
+
+func (m *Vni) GetStatus() int32 {
+	return 0
+}
+
 var (
 	InterfaceKind              = reflect.TypeOf(Interface{}).Name()
 	InterfaceListKind          = reflect.TypeOf(InterfaceList{}).Name()
@@ -478,4 +508,5 @@ var (
 	NeighborNatKind            = reflect.TypeOf(NeighborNat{}).Name()
 	FirewallRuleKind           = reflect.TypeOf(FirewallRule{}).Name()
 	FirewallRuleListKind       = reflect.TypeOf(FirewallRuleList{}).Name()
+	VniKind                    = reflect.TypeOf(Vni{}).Name()
 )
