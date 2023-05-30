@@ -93,7 +93,7 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	iface, err := client.CreateInterface(ctx, &api.Interface{
 		InterfaceMeta: api.InterfaceMeta{
 			ID:  opts.ID,
-			PXE: api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
+			PXE: &api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
 		},
 		Spec: api.InterfaceSpec{
 			VNI:    opts.VNI,

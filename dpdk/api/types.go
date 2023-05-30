@@ -248,12 +248,12 @@ type Interface struct {
 
 type InterfaceMeta struct {
 	ID  string `json:"id"`
-	PXE PXE    `json:"pxe"`
+	PXE *PXE   `json:"pxe,omitempty"`
 }
 
 type PXE struct {
-	Server   string `json:"server"`
-	FileName string `json:"fileName"`
+	Server   string `json:"server,omitempty"`
+	FileName string `json:"fileName,omitempty"`
 }
 
 func (m *InterfaceMeta) GetName() string {

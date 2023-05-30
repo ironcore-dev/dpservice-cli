@@ -70,4 +70,13 @@ This client uses golang bindings from repo [net-dpservice-go](https://github.com
 
 Definition go files in [proto](https://github.com/onmetal/net-dpservice-go/tree/main/proto) folder are auto-generated from [dpdk.proto](https://github.com/onmetal/net-dpservice/blob/osc/main/proto/dpdk.proto) file in [net-dpservice](https://github.com/onmetal/net-dpservice/) repo.
 
+In case of upgrade of net-dpservice-go, it is needed to pull the latest version:
+```
+go get github.com/onmetal/net-dpservice-go@[<version>|latest]
+```
+In order to pull from private repository set the **GOPRIVATE** variable:
+```
+export GOPRIVATE=github.com/onmetal/*
+```
+
 More info about gRPC can be found [here](https://grpc.io/docs/what-is-grpc/introduction/).

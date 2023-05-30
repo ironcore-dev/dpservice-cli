@@ -1,22 +1,21 @@
-## dpservice-cli list prefixes
+## dpservice-cli list nats
 
-List prefix(es) on interface.
+List all nats
 
 ```
-dpservice-cli list prefixes <--interface-id> [flags]
+dpservice-cli list nats [flags]
 ```
 
 ### Examples
 
 ```
-dpservice-cli list prefixes --interface-id=vm1
+dpservice-cli list nats
 ```
 
 ### Options
 
 ```
-  -h, --help                  help for prefixes
-      --interface-id string   Interface ID of the prefix.
+  -h, --help   help for nats
 ```
 
 ### Options inherited from parent commands
