@@ -34,7 +34,7 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 	cmd := &cobra.Command{
 		Use:     "natinfo <--nat-ip> <--nat-type>",
 		Short:   "List all machines that are behind this IP",
-		Example: "dpservice-cli get natinfo --nat-ip=10.20.30.40 --nat-type=1",
+		Example: "dpservice-cli get natinfo --nat-ip=10.20.30.40 --info-type=1",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -61,11 +61,11 @@ type GetNatInfoOptions struct {
 
 func (o *GetNatInfoOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
-	fs.StringVar(&o.NatInfoType, "info-type", o.NatInfoType, "NAT Info type: Local = 1/Neigh(bor) = 2")
+	fs.StringVar(&o.NatInfoType, "info-type", o.NatInfoType, "NAT Info type: Any = 0/Local = 1/Neigh(bor) = 2")
 }
 
 func (o *GetNatInfoOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"nat-ip", "info-type"} {
+	for _, name := range []string{"nat-ip"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}

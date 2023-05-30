@@ -656,18 +656,40 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType st
 		nType = 1
 	case "neigh", "2", "neighbor":
 		nType = 2
+	case "any", "0", "":
+		nType = 0
 	default:
-		return nil, fmt.Errorf("nat info type can be only: Local = 1/Neigh(bor) = 2")
+		return nil, fmt.Errorf("nat info type can be only: Any = 0/Local = 1/Neigh(bor) = 2")
 	}
 
-	res, err := c.DPDKonmetalClient.GetNATInfo(ctx, &dpdkproto.GetNATInfoRequest{
+	req := dpdkproto.GetNATInfoRequest{
 		NatVIPIP: &dpdkproto.NATIP{IpVersion: api.NetIPAddrToProtoIPVersion(natVIPIP),
 			Address: []byte(natVIPIP.String()),
 		},
 		NatInfoType: dpdkproto.NATInfoType(nType),
-	})
-	if err != nil {
-		return nil, err
+	}
+	// nat info type not defined, try both types
+	res := &dpdkproto.GetNATInfoResponse{NatVIPIP: &dpdkproto.NATIP{}}
+	var err error
+	if nType == 0 {
+		req.NatInfoType = 1
+		res1, err1 := c.DPDKonmetalClient.GetNATInfo(ctx, &req)
+		if err1 != nil {
+			return nil, err1
+		}
+		req.NatInfoType = 2
+		res2, err2 := c.DPDKonmetalClient.GetNATInfo(ctx, &req)
+		if err2 != nil {
+			return nil, err2
+		}
+		res.NatInfoEntries = append(res.NatInfoEntries, res1.NatInfoEntries...)
+		res.NatInfoEntries = append(res.NatInfoEntries, res2.NatInfoEntries...)
+		res.NatVIPIP.Address = []byte(natVIPIP.String())
+	} else {
+		res, err = c.DPDKonmetalClient.GetNATInfo(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var nats = make([]api.Nat, len(res.NatInfoEntries))
@@ -675,7 +697,7 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType st
 	for i, natInfoEntry := range res.GetNatInfoEntries() {
 
 		var underlayRoute, vipIP netip.Addr
-		if res.NatInfoType == 2 {
+		if natInfoEntry.UnderlayRoute != nil {
 			underlayRoute, err = netip.ParseAddr(string(natInfoEntry.GetUnderlayRoute()))
 			if err != nil {
 				return nil, fmt.Errorf("error parsing underlay route: %w", err)
@@ -686,7 +708,7 @@ func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType st
 				return nil, fmt.Errorf("error parsing vip ip: %w", err)
 			}
 			nat.Spec.NatVIPIP = &vipIP
-		} else if res.NatInfoType == 1 {
+		} else if natInfoEntry.Address != nil {
 			vipIP, err = netip.ParseAddr(string(natInfoEntry.GetAddress()))
 			if err != nil {
 				return nil, fmt.Errorf("error parsing vip ip: %w", err)
@@ -784,7 +806,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 		return &api.FirewallRule{}, fmt.Errorf("ip version can be only: IPv4 = 0/IPv6 = 1")
 	}
 
-	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &dpdkproto.AddFirewallRuleRequest{
+	req := dpdkproto.AddFirewallRuleRequest{
 		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
 		Rule: &dpdkproto.FirewallRule{
 			RuleID:    []byte(fwRule.FirewallRuleMeta.RuleID),
@@ -804,7 +826,9 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 			},
 			ProtocolFilter: fwRule.Spec.ProtocolFilter,
 		},
-	})
+	}
+
+	res, err := c.DPDKonmetalClient.AddFirewallRule(ctx, &req)
 	if err != nil {
 		return &api.FirewallRule{}, err
 	}

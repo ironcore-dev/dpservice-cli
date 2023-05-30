@@ -203,10 +203,7 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 		return nil, fmt.Errorf("error parsing dpdk prefix address: %w", err)
 	}
 
-	prefix, err := addr.Prefix(int(dpdkPrefix.PrefixLength))
-	if err != nil {
-		return nil, fmt.Errorf("invalid dpdk prefix length %d for address %s", dpdkPrefix.PrefixLength, addr)
-	}
+	prefix := netip.PrefixFrom(addr, int(dpdkPrefix.GetPrefixLength()))
 
 	underlayRoute, err := netip.ParseAddr(string(dpdkPrefix.UnderlayRoute))
 	if err != nil {

@@ -18,7 +18,7 @@
             //"args": ["add", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
             //"args": ["add", "lbtarget", "--target-ip=ff80::5", "--lb-id=1"]
             //"args": ["get", "lbtarget", "--lb-id=4"]
-            //"args": ["get", "natinfo", "--nat-ip=10.20.30.40", "--nat-type=Local"]
+            "args": ["get", "natinfo", "--nat-ip=10.20.30.40", "--info-type=0"]
             //"args": ["get", "fwrule", "vm1", "--rule-id=4"]
             //"args": ["add", "fwrule", "vm1", "--action=1", "--direction=1", "--dst=5.5.5.0/24", "--ipv=0",
             // "--priority=100", "--rule-id=9", "--src=1.1.1.1/32", "--protocol=tcp"]
@@ -27,7 +27,8 @@
             //"args": ["add", "-f", "/tmp/addint.json"]
             //"args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=11"]
             //"args": ["list", "nats"]
-            "args": ["get", "vni", "--vni=100", "--vni-type=0"]
+            //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
+            //"args": ["list", "prefixes","--interface-id=vm1"]
         }
     ]
 }

@@ -104,12 +104,12 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix (0.0.0.0 with prefix length 0 matches all source IPs).")
 	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix (0.0.0.0 with prefix length 0 matches all destination IPs).")
 	fs.StringVar(&o.ProtocolFilter, "protocol", o.ProtocolFilter, "Protocol used icmp/tcp/udp (Not defining a protocol filter matches all protocols).")
-	fs.Int32Var(&o.SrcPortLower, "src-port-min", o.SrcPortLower, "Source Ports start (-1 matches all source ports).")
-	fs.Int32Var(&o.SrcPortUpper, "src-port-max", o.SrcPortUpper, "Source Ports end.")
-	fs.Int32Var(&o.DstPortLower, "dst-port-min", o.DstPortLower, "Destination Ports start (-1 matches all destination ports).")
-	fs.Int32Var(&o.DstPortUpper, "dst-port-max", o.DstPortUpper, "Destination Ports end.")
-	fs.Int32Var(&o.IcmpType, "icmp-type", o.IcmpType, "ICMP type (-1 matches all ICMP Types).")
-	fs.Int32Var(&o.IcmpCode, "icmp-code", o.IcmpCode, "ICMP code (-1 matches all ICMP Codes).")
+	fs.Int32Var(&o.SrcPortLower, "src-port-min", -1, "Source Ports start (-1 matches all source ports).")
+	fs.Int32Var(&o.SrcPortUpper, "src-port-max", -1, "Source Ports end.")
+	fs.Int32Var(&o.DstPortLower, "dst-port-min", -1, "Destination Ports start (-1 matches all destination ports).")
+	fs.Int32Var(&o.DstPortUpper, "dst-port-max", -1, "Destination Ports end.")
+	fs.Int32Var(&o.IcmpType, "icmp-type", -1, "ICMP type (-1 matches all ICMP Types).")
+	fs.Int32Var(&o.IcmpCode, "icmp-code", -1, "ICMP code (-1 matches all ICMP Codes).")
 
 }
 
@@ -148,9 +148,9 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			IcmpCode: opts.IcmpCode}}
 	case "tcp", "6":
 		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
-			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
+			opts.SrcPortUpper < -1 || opts.SrcPortUpper == 0 || opts.SrcPortUpper > 65535 ||
 			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||
-			opts.DstPortUpper < 1 || opts.DstPortUpper > 65535 {
+			opts.DstPortUpper < -1 || opts.DstPortUpper == 0 || opts.DstPortUpper > 65535 {
 			return fmt.Errorf("ports can only be -1 or <1,65535>")
 		}
 		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {
@@ -164,9 +164,9 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		}}
 	case "udp", "17":
 		if opts.SrcPortLower < -1 || opts.SrcPortLower == 0 || opts.SrcPortLower > 65535 ||
-			opts.SrcPortUpper < 1 || opts.SrcPortUpper > 65535 ||
+			opts.SrcPortUpper < -1 || opts.SrcPortUpper == 0 || opts.SrcPortUpper > 65535 ||
 			opts.DstPortLower < -1 || opts.DstPortLower == 0 || opts.DstPortLower > 65535 ||
-			opts.DstPortUpper < 1 || opts.DstPortUpper > 65535 {
+			opts.DstPortUpper < -1 || opts.DstPortUpper == 0 || opts.DstPortUpper > 65535 {
 			return fmt.Errorf("ports can only be -1 or <1,65535>")
 		}
 		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {

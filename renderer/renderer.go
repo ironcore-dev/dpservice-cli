@@ -183,6 +183,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.initTable(*obj)
 	case *api.Initialized:
 		return t.initializedTable(*obj)
+	case *api.Vni:
+		return t.vniTable(*obj)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -306,24 +308,25 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 }
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
-	var headers []any
-	if nats[0].Spec.UnderlayRoute == nil {
+	// TODO clean up table output
+	//var headers []any
+	/*if len(nats) != 0 && nats[0].Spec.UnderlayRoute == nil {
 		headers = []any{"NatIP", "MinPort", "MaxPort", "Status"}
-	} else if nats[0].NatMeta.InterfaceID == "" {
+	} else if len(nats) != 0 && nats[0].NatMeta.InterfaceID == "" {
 		headers = []any{"NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
-	} else {
-		headers = []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
-	}
+	} else {*/
+	headers := []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
+	//}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		if nats[0].Spec.UnderlayRoute == nil {
+		/*if len(nats) != 0 && nats[0].Spec.UnderlayRoute == nil {
 			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Status.String()}
-		} else if nats[0].NatMeta.InterfaceID == "" {
+		} else if len(nats) != 0 && nats[0].NatMeta.InterfaceID == "" {
 			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
-		} else {
-			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
-		}
+		} else {*/
+		columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
+		//}
 	}
 
 	return &TableData{
@@ -381,6 +384,17 @@ func (t defaultTableConverter) initTable(init api.Init) (*TableData, error) {
 	headers := []any{"Error", "Message"}
 	columns := make([][]any, 1)
 	columns[0] = []any{init.Status.Error, init.Status.Message}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
+	headers := []any{"VNI", "VniType", "inUse", "Error", "Message"}
+	columns := make([][]any, 1)
+	columns[0] = []any{vni.VniMeta.VNI, vni.VniMeta.VniType, vni.Spec.InUse, vni.Status.Error, vni.Status.Message}
 
 	return &TableData{
 		Headers: headers,

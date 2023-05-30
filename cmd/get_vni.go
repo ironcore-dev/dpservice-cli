@@ -62,7 +62,7 @@ type GetVniOptions struct {
 
 func (o *GetVniOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to check.")
-	fs.Uint8Var(&o.VniType, "vni-type", o.VniType, "VNI Type.")
+	fs.Uint8Var(&o.VniType, "vni-type", o.VniType, "VNI Type: VniIpv4 = 0/VniIpv6 = 1.")
 }
 
 func (o *GetVniOptions) MarkRequiredFlags(cmd *cobra.Command) error {
