@@ -88,6 +88,6 @@ func RunDeleteFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 
 	fwrule.TypeMeta.Kind = api.FirewallRuleKind
 	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
-	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
+	fwrule.Spec.RuleID = opts.RuleID
 	return rendererFactory.RenderObject("deleted", os.Stdout, fwrule)
 }

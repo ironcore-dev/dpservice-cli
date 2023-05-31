@@ -32,9 +32,9 @@ func ListLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactor
 	)
 
 	cmd := &cobra.Command{
-		Use:     "lbtarget <--lb-id>",
+		Use:     "lbtargets <--lb-id>",
 		Short:   "List LoadBalancer Targets",
-		Example: "dpservice-cli list lbtarget --lb-id=1",
+		Example: "dpservice-cli list lbtargets --lb-id=1",
 		Aliases: LoadBalancerTargetAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {

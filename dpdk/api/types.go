@@ -76,13 +76,11 @@ type Route struct {
 }
 
 type RouteMeta struct {
-	VNI     uint32       `json:"vni"`
-	Prefix  netip.Prefix `json:"prefix"`
-	NextHop RouteNextHop `json:"nextHop"`
+	VNI uint32 `json:"vni"`
 }
 
-func (m *RouteMeta) GetName() string {
-	return fmt.Sprintf("%s-%d:%s", m.Prefix, m.NextHop.VNI, m.NextHop.IP)
+func (m *Route) GetName() string {
+	return fmt.Sprintf("%s-%d:%s", m.Spec.Prefix, m.Spec.NextHop.VNI, m.Spec.NextHop.IP)
 }
 
 func (m *Route) GetStatus() int32 {
@@ -90,10 +88,12 @@ func (m *Route) GetStatus() int32 {
 }
 
 type RouteSpec struct {
+	Prefix  *netip.Prefix `json:"prefix,omitempty"`
+	NextHop *RouteNextHop `json:"nextHop,omitempty"`
 }
 
 type RouteNextHop struct {
-	VNI uint32      `json:"vni"`
+	VNI uint32      `json:"vni,omitempty"`
 	IP  *netip.Addr `json:"ip,omitempty"`
 }
 
@@ -124,12 +124,11 @@ type Prefix struct {
 }
 
 type PrefixMeta struct {
-	InterfaceID string       `json:"interfaceID"`
-	Prefix      netip.Prefix `json:"prefix"`
+	InterfaceID string `json:"interfaceID"`
 }
 
-func (m *PrefixMeta) GetName() string {
-	return m.Prefix.String()
+func (m *Prefix) GetName() string {
+	return m.Spec.Prefix.String()
 }
 
 func (m *Prefix) GetStatus() int32 {
@@ -137,7 +136,8 @@ func (m *Prefix) GetStatus() int32 {
 }
 
 type PrefixSpec struct {
-	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
+	Prefix        netip.Prefix `json:"prefix"`
+	UnderlayRoute *netip.Addr  `json:"underlayRoute,omitempty"`
 }
 
 type VirtualIP struct {
@@ -148,12 +148,11 @@ type VirtualIP struct {
 }
 
 type VirtualIPMeta struct {
-	InterfaceID string     `json:"interfaceID"`
-	IP          netip.Addr `json:"ip"`
+	InterfaceID string `json:"interfaceID"`
 }
 
-func (m *VirtualIPMeta) GetName() string {
-	return m.IP.String()
+func (m *VirtualIP) GetName() string {
+	return m.Spec.IP.String()
 }
 
 func (m *VirtualIP) GetStatus() int32 {
@@ -161,6 +160,7 @@ func (m *VirtualIP) GetStatus() int32 {
 }
 
 type VirtualIPSpec struct {
+	IP            netip.Addr  `json:"ip"`
 	UnderlayRoute *netip.Addr `json:"underlayRoute,omitempty"`
 }
 
@@ -247,8 +247,7 @@ type Interface struct {
 }
 
 type InterfaceMeta struct {
-	ID  string `json:"id"`
-	PXE *PXE   `json:"pxe,omitempty"`
+	ID string `json:"id"`
 }
 
 type PXE struct {
@@ -270,6 +269,7 @@ type InterfaceSpec struct {
 	IPs             []netip.Addr     `json:"ips,omitempty"`
 	UnderlayRoute   *netip.Addr      `json:"underlayRoute,omitempty"`
 	VirtualFunction *VirtualFunction `json:"virtualFunction,omitempty"`
+	PXE             *PXE             `json:"pxe,omitempty"`
 }
 
 type VirtualFunction struct {
@@ -385,11 +385,10 @@ type FirewallRule struct {
 
 type FirewallRuleMeta struct {
 	InterfaceID string `json:"interfaceID"`
-	RuleID      string `json:"ruleID"`
 }
 
-func (m *FirewallRuleMeta) GetName() string {
-	return m.InterfaceID + "/" + m.RuleID
+func (m *FirewallRule) GetName() string {
+	return m.FirewallRuleMeta.InterfaceID + "/" + m.Spec.RuleID
 }
 
 func (m *FirewallRule) GetStatus() int32 {
@@ -397,6 +396,7 @@ func (m *FirewallRule) GetStatus() int32 {
 }
 
 type FirewallRuleSpec struct {
+	RuleID            string                `json:"ruleID"`
 	TrafficDirection  string                `json:"trafficDirection,omitempty"`
 	FirewallAction    string                `json:"firewallAction,omitempty"`
 	Priority          uint32                `json:"priority,omitempty"`

@@ -99,14 +99,14 @@ func ObjectKeyFromObject(obj any) ObjectKey {
 	case *api.Prefix:
 		return PrefixKey{
 			InterfaceID: obj.InterfaceID,
-			Prefix:      obj.Prefix,
+			Prefix:      obj.Spec.Prefix,
 		}
 	case *api.Route:
 		return RouteKey{
 			VNI:        obj.VNI,
-			Prefix:     obj.Prefix,
-			NextHopVNI: obj.NextHop.VNI,
-			NextHopIP:  *obj.NextHop.IP,
+			Prefix:     *obj.Spec.Prefix,
+			NextHopVNI: obj.Spec.NextHop.VNI,
+			NextHopIP:  *obj.Spec.NextHop.IP,
 		}
 	case *api.VirtualIP:
 		return VirtualIPKey{
@@ -171,10 +171,10 @@ func (c *client) Delete(ctx context.Context, obj any) error {
 		_, err := c.structured.DeleteInterface(ctx, obj.ID)
 		return err
 	case *api.Prefix:
-		_, err := c.structured.DeletePrefix(ctx, obj.InterfaceID, obj.Prefix)
+		_, err := c.structured.DeletePrefix(ctx, obj.InterfaceID, obj.Spec.Prefix)
 		return err
 	case *api.Route:
-		_, err := c.structured.DeleteRoute(ctx, obj.VNI, obj.Prefix)
+		_, err := c.structured.DeleteRoute(ctx, obj.VNI, *obj.Spec.Prefix)
 		return err
 	case *api.VirtualIP:
 		_, err := c.structured.DeleteVirtualIP(ctx, obj.InterfaceID)

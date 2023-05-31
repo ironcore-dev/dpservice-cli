@@ -262,7 +262,7 @@ func (t defaultTableConverter) prefixTable(prefixes []api.Prefix) (*TableData, e
 	}
 	columns := make([][]any, len(prefixes))
 	for i, prefix := range prefixes {
-		columns[i] = []any{prefix.Prefix, prefix.Spec.UnderlayRoute}
+		columns[i] = []any{prefix.Spec.Prefix, prefix.Spec.UnderlayRoute}
 		if len(prefixes) == 1 {
 			columns[i] = append(columns[i], prefix.Status.String())
 		}
@@ -281,7 +281,7 @@ func (t defaultTableConverter) routeTable(routes []api.Route) (*TableData, error
 	}
 	columns := make([][]any, len(routes))
 	for i, route := range routes {
-		columns[i] = []any{route.Prefix, route.VNI, route.NextHop.VNI, route.NextHop.IP}
+		columns[i] = []any{route.Spec.Prefix, route.VNI, route.Spec.NextHop.VNI, route.Spec.NextHop.IP}
 		if len(routes) == 1 {
 			columns[i] = append(columns[i], route.Status.String())
 		}
@@ -298,7 +298,7 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 
 	columns := make([][]any, len(virtualIPs))
 	for i, virtualIP := range virtualIPs {
-		columns[i] = []any{virtualIP.InterfaceID, virtualIP.IP, virtualIP.Spec.UnderlayRoute, virtualIP.Status.String()}
+		columns[i] = []any{virtualIP.InterfaceID, virtualIP.Spec.IP, virtualIP.Spec.UnderlayRoute, virtualIP.Status.String()}
 	}
 
 	return &TableData{
@@ -308,25 +308,20 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 }
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
-	// TODO clean up table output
-	//var headers []any
-	/*if len(nats) != 0 && nats[0].Spec.UnderlayRoute == nil {
-		headers = []any{"NatIP", "MinPort", "MaxPort", "Status"}
-	} else if len(nats) != 0 && nats[0].NatMeta.InterfaceID == "" {
+	var headers []any
+	if nats[0].InterfaceID != "" {
+		headers = []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
+	} else {
 		headers = []any{"NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
-	} else {*/
-	headers := []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute", "Status"}
-	//}
+	}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		/*if len(nats) != 0 && nats[0].Spec.UnderlayRoute == nil {
-			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Status.String()}
-		} else if len(nats) != 0 && nats[0].NatMeta.InterfaceID == "" {
+		if nats[0].InterfaceID != "" {
+			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
+		} else {
 			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
-		} else {*/
-		columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute, nat.Status.String()}
-		//}
+		}
 	}
 
 	return &TableData{
@@ -361,7 +356,7 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 	for i, fwrule := range fwrules {
 		columns[i] = []any{
 			fwrule.FirewallRuleMeta.InterfaceID,
-			fwrule.FirewallRuleMeta.RuleID,
+			fwrule.Spec.RuleID,
 			fwrule.Spec.TrafficDirection,
 			fwrule.Spec.SourcePrefix,
 			fwrule.Spec.DestinationPrefix,

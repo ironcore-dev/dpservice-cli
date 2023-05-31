@@ -90,6 +90,6 @@ func RunDeletePrefix(ctx context.Context, dpdkClientFactory DPDKClientFactory, r
 
 	prefix.TypeMeta.Kind = api.PrefixKind
 	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
-	prefix.PrefixMeta.Prefix = opts.Prefix
+	prefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("deleted", os.Stdout, prefix)
 }

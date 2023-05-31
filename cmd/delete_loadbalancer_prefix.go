@@ -89,6 +89,6 @@ func RunDeleteLoadBalancerPrefix(ctx context.Context, dpdkClientFactory DPDKClie
 
 	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
 	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
-	lbprefix.PrefixMeta.Prefix = opts.Prefix
+	lbprefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("deleted", os.Stdout, lbprefix)
 }

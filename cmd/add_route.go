@@ -94,14 +94,13 @@ func RunAddRoute(
 
 	route, err := client.AddRoute(ctx, &api.Route{
 		RouteMeta: api.RouteMeta{
-			VNI:    opts.VNI,
-			Prefix: opts.Prefix,
-			NextHop: api.RouteNextHop{
+			VNI: opts.VNI,
+		},
+		Spec: api.RouteSpec{Prefix: &opts.Prefix,
+			NextHop: &api.RouteNextHop{
 				VNI: opts.NextHopVNI,
 				IP:  &opts.NextHopIP,
-			},
-		},
-		Spec: api.RouteSpec{},
+			}},
 	})
 	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding route: %w", err)
@@ -109,6 +108,7 @@ func RunAddRoute(
 
 	route.TypeMeta.Kind = api.RouteKind
 	route.RouteMeta.VNI = opts.VNI
-	route.RouteMeta.Prefix = opts.Prefix
+	route.Spec.Prefix = &opts.Prefix
+	route.Spec.NextHop = &api.RouteNextHop{}
 	return rendererFactory.RenderObject("added", os.Stdout, route)
 }

@@ -189,10 +189,10 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	fwrule, err := client.AddFirewallRule(ctx, &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
-			RuleID:      opts.RuleID,
 			InterfaceID: opts.InterfaceID,
 		},
 		Spec: api.FirewallRuleSpec{
+			RuleID:            opts.RuleID,
 			TrafficDirection:  opts.TrafficDirection,
 			FirewallAction:    opts.FirewallAction,
 			Priority:          opts.Priority,
@@ -209,6 +209,6 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 
 	fwrule.TypeMeta.Kind = api.FirewallRuleKind
 	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
-	fwrule.FirewallRuleMeta.RuleID = opts.RuleID
+	fwrule.Spec.RuleID = opts.RuleID
 	return rendererFactory.RenderObject("added", os.Stdout, fwrule)
 }

@@ -259,7 +259,7 @@ var (
 	VirtualIPAliases          = []string{"virtualips", "vip", "vips"}
 	LoadBalancerAliases       = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
 	LoadBalancerPrefixAliases = []string{"loadbalancer-prefixes", "lbprfx", "lbprfxs"}
-	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts"}
+	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts", "lbtarget"}
 	NatAliases                = []string{"translation"}
 	NeighborNatAliases        = []string{"nnat", "ngbnat", "neighnat"}
 	FirewallRuleAliases       = []string{"fwrule", "fw-rule", "firewallrules", "fwrules", "fw-rules"}

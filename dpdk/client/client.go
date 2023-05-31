@@ -168,9 +168,9 @@ func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefi
 			InterfaceID: []byte(prefix.InterfaceID),
 		},
 		Prefix: &dpdkproto.Prefix{
-			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Prefix.Addr()),
-			Address:      []byte(prefix.Prefix.Addr().String()),
-			PrefixLength: uint32(prefix.Prefix.Bits()),
+			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Spec.Prefix.Addr()),
+			Address:      []byte(prefix.Spec.Prefix.Addr().String()),
+			PrefixLength: uint32(prefix.Spec.Prefix.Bits()),
 		},
 	})
 	if err != nil {
@@ -317,8 +317,8 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 		Ipv6Config:    api.NetIPAddrToProtoIPConfig(netiputil.FindIPv6(iface.Spec.IPs)),
 		DeviceName:    iface.Spec.Device,
 	}
-	req.Ipv4Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.PXE.Server, BootFileName: iface.PXE.FileName}
-	req.Ipv6Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.PXE.Server, BootFileName: iface.PXE.FileName}
+	req.Ipv4Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
+	req.Ipv6Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
 
 	res, err := c.DPDKonmetalClient.CreateInterface(ctx, &req)
 	if err != nil {
@@ -348,6 +348,7 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 				Slot:     res.Vf.Slot,
 				Function: res.Vf.Function,
 			},
+			PXE: &api.PXE{Server: iface.Spec.PXE.Server, FileName: iface.Spec.PXE.FileName},
 		},
 		Status: api.ProtoStatusToStatus(res.Response.Status),
 	}, nil
@@ -381,8 +382,8 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 	res, err := c.DPDKonmetalClient.AddInterfaceVIP(ctx, &dpdkproto.InterfaceVIPMsg{
 		InterfaceID: []byte(virtualIP.InterfaceID),
 		InterfaceVIPIP: &dpdkproto.InterfaceVIPIP{
-			IpVersion: api.NetIPAddrToProtoIPVersion(virtualIP.IP),
-			Address:   []byte(virtualIP.IP.String()),
+			IpVersion: api.NetIPAddrToProtoIPVersion(virtualIP.Spec.IP),
+			Address:   []byte(virtualIP.Spec.IP.String()),
 		},
 	})
 	if err != nil {
@@ -448,9 +449,9 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 			InterfaceID: []byte(prefix.InterfaceID),
 		},
 		Prefix: &dpdkproto.Prefix{
-			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Prefix.Addr()),
-			Address:      []byte(prefix.Prefix.Addr().String()),
-			PrefixLength: uint32(prefix.Prefix.Bits()),
+			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Spec.Prefix.Addr()),
+			Address:      []byte(prefix.Spec.Prefix.Addr().String()),
+			PrefixLength: uint32(prefix.Spec.Prefix.Bits()),
 		},
 	})
 	if err != nil {
@@ -495,15 +496,15 @@ func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, er
 	res, err := c.DPDKonmetalClient.AddRoute(ctx, &dpdkproto.VNIRouteMsg{
 		Vni: &dpdkproto.VNIMsg{Vni: route.VNI},
 		Route: &dpdkproto.Route{
-			IpVersion: api.NetIPAddrToProtoIPVersion(*route.NextHop.IP),
+			IpVersion: api.NetIPAddrToProtoIPVersion(*route.Spec.NextHop.IP),
 			Weight:    100,
 			Prefix: &dpdkproto.Prefix{
-				IpVersion:    api.NetIPAddrToProtoIPVersion(route.Prefix.Addr()),
-				Address:      []byte(route.Prefix.Addr().String()),
-				PrefixLength: uint32(route.Prefix.Bits()),
+				IpVersion:    api.NetIPAddrToProtoIPVersion(route.Spec.Prefix.Addr()),
+				Address:      []byte(route.Spec.Prefix.Addr().String()),
+				PrefixLength: uint32(route.Spec.Prefix.Bits()),
 			},
-			NexthopVNI:     route.NextHop.VNI,
-			NexthopAddress: []byte(route.NextHop.IP.String()),
+			NexthopVNI:     route.Spec.NextHop.VNI,
+			NexthopAddress: []byte(route.Spec.NextHop.IP.String()),
 		},
 	})
 	if err != nil {
@@ -809,7 +810,7 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 	req := dpdkproto.AddFirewallRuleRequest{
 		InterfaceID: []byte(fwRule.FirewallRuleMeta.InterfaceID),
 		Rule: &dpdkproto.FirewallRule{
-			RuleID:    []byte(fwRule.FirewallRuleMeta.RuleID),
+			RuleID:    []byte(fwRule.Spec.RuleID),
 			Direction: dpdkproto.TrafficDirection(direction),
 			Action:    dpdkproto.FirewallAction(action),
 			Priority:  fwRule.Spec.Priority,
@@ -839,7 +840,6 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 	return &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
-			RuleID:      string(res.RuleID),
 			InterfaceID: fwRule.InterfaceID,
 		},
 		Spec:   fwRule.Spec,

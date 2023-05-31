@@ -189,9 +189,9 @@ func ProtoVirtualIPToVirtualIP(interfaceID string, dpdkVIP *proto.InterfaceVIPIP
 		},
 		VirtualIPMeta: VirtualIPMeta{
 			InterfaceID: interfaceID,
-			IP:          ip,
 		},
 		Spec: VirtualIPSpec{
+			IP:            ip,
 			UnderlayRoute: &underlayRoute,
 		},
 	}, nil
@@ -216,9 +216,11 @@ func ProtoPrefixToPrefix(interfaceID string, dpdkPrefix *proto.Prefix) (*Prefix,
 		},
 		PrefixMeta: PrefixMeta{
 			InterfaceID: interfaceID,
-			Prefix:      prefix,
 		},
-		Spec: PrefixSpec{UnderlayRoute: &underlayRoute},
+		Spec: PrefixSpec{
+			Prefix:        prefix,
+			UnderlayRoute: &underlayRoute,
+		},
 	}, nil
 }
 
@@ -240,14 +242,13 @@ func ProtoRouteToRoute(vni uint32, dpdkRoute *proto.Route) (*Route, error) {
 			RouteKind,
 		},
 		RouteMeta: RouteMeta{
-			VNI:    vni,
-			Prefix: prefix,
-			NextHop: RouteNextHop{
+			VNI: vni,
+		},
+		Spec: RouteSpec{Prefix: &prefix,
+			NextHop: &RouteNextHop{
 				VNI: dpdkRoute.GetNexthopVNI(),
 				IP:  &nextHopIP,
-			},
-		},
-		Spec: RouteSpec{},
+			}},
 	}, nil
 }
 
@@ -330,9 +331,9 @@ func ProtoFwRuleToFwRule(dpdkFwRule *proto.FirewallRule, interfaceID string) (*F
 		TypeMeta: TypeMeta{Kind: FirewallRuleKind},
 		FirewallRuleMeta: FirewallRuleMeta{
 			InterfaceID: interfaceID,
-			RuleID:      string(dpdkFwRule.RuleID),
 		},
 		Spec: FirewallRuleSpec{
+			RuleID:            string(dpdkFwRule.RuleID),
 			TrafficDirection:  direction,
 			FirewallAction:    action,
 			Priority:          dpdkFwRule.Priority,

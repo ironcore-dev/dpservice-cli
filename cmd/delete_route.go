@@ -90,6 +90,7 @@ func RunDeleteRoute(ctx context.Context, dpdkClientFactory DPDKClientFactory, re
 
 	route.TypeMeta.Kind = api.RouteKind
 	route.RouteMeta.VNI = opts.VNI
-	route.RouteMeta.Prefix = opts.Prefix
+	route.Spec.Prefix = &opts.Prefix
+	route.Spec.NextHop = &api.RouteNextHop{}
 	return rendererFactory.RenderObject("deleted", os.Stdout, route)
 }

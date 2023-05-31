@@ -94,7 +94,9 @@ func RunCreateLoadBalancerPrefix(
 	lbprefix, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
 			InterfaceID: opts.InterfaceID,
-			Prefix:      opts.Prefix,
+		},
+		Spec: api.PrefixSpec{
+			Prefix: opts.Prefix,
 		},
 	})
 	if err != nil && err != errors.ErrServerError {
@@ -102,6 +104,6 @@ func RunCreateLoadBalancerPrefix(
 	}
 	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
 	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
-	lbprefix.PrefixMeta.Prefix = opts.Prefix
+	lbprefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("added", os.Stdout, lbprefix)
 }

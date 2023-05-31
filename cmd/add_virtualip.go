@@ -91,7 +91,9 @@ func RunAddVirtualIP(
 	virtualIP, err := client.AddVirtualIP(ctx, &api.VirtualIP{
 		VirtualIPMeta: api.VirtualIPMeta{
 			InterfaceID: opts.InterfaceID,
-			IP:          opts.Vip,
+		},
+		Spec: api.VirtualIPSpec{
+			IP: opts.Vip,
 		},
 	})
 	if err != nil && err != errors.ErrServerError {
@@ -99,7 +101,7 @@ func RunAddVirtualIP(
 	}
 
 	virtualIP.TypeMeta.Kind = api.RouteKind
-	virtualIP.VirtualIPMeta.IP = opts.Vip
+	virtualIP.Spec.IP = opts.Vip
 	virtualIP.VirtualIPMeta.InterfaceID = opts.InterfaceID
 	return rendererFactory.RenderObject("added", os.Stdout, virtualIP)
 }

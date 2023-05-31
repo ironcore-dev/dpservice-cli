@@ -94,7 +94,9 @@ func RunAddPrefix(
 	prefix, err := client.AddPrefix(ctx, &api.Prefix{
 		PrefixMeta: api.PrefixMeta{
 			InterfaceID: opts.InterfaceID,
-			Prefix:      opts.Prefix,
+		},
+		Spec: api.PrefixSpec{
+			Prefix: opts.Prefix,
 		},
 	})
 	if err != nil && err != errors.ErrServerError {
@@ -103,6 +105,6 @@ func RunAddPrefix(
 
 	prefix.TypeMeta.Kind = api.PrefixKind
 	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
-	prefix.PrefixMeta.Prefix = opts.Prefix
+	prefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("added", os.Stdout, prefix)
 }
