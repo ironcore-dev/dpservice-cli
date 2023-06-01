@@ -317,8 +317,10 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 		Ipv6Config:    api.NetIPAddrToProtoIPConfig(netiputil.FindIPv6(iface.Spec.IPs)),
 		DeviceName:    iface.Spec.Device,
 	}
-	req.Ipv4Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
-	req.Ipv6Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
+	if iface.Spec.PXE.FileName != "" && iface.Spec.PXE.Server != "" {
+		req.Ipv4Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
+		req.Ipv6Config.PxeConfig = &dpdkproto.PXEConfig{NextServer: iface.Spec.PXE.Server, BootFileName: iface.Spec.PXE.FileName}
+	}
 
 	res, err := c.DPDKonmetalClient.CreateInterface(ctx, &req)
 	if err != nil {

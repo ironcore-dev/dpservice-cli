@@ -143,6 +143,9 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Object) error {
 	if obj.GetStatus().Error != 0 {
 		operation = fmt.Sprintf("server error: %d, %s", obj.GetStatus().Error, obj.GetStatus().Message)
+		if o.Output == "table" {
+			o.Output = "name"
+		}
 	}
 	renderer, err := o.NewRenderer(operation, w)
 	if err != nil {
