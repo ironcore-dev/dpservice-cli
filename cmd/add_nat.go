@@ -103,5 +103,5 @@ func RunAddNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendere
 
 	nat.TypeMeta.Kind = api.NatKind
 	nat.NatMeta.InterfaceID = opts.InterfaceID
-	return rendererFactory.RenderObject("added", os.Stdout, nat)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", nat.Spec.UnderlayRoute), os.Stdout, nat)
 }

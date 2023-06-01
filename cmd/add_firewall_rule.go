@@ -114,7 +114,6 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	// TODO if protocol is not specified it should match all protocols
 	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipver", "src", "dst"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
@@ -139,7 +138,6 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("error parsing dst prefix: %w", err)
 	}
 
-	// TODO add cases if icmp type or code is -1
 	var protocolFilter dpdkproto.ProtocolFilter
 	switch opts.ProtocolFilter {
 	case "icmp", "1":

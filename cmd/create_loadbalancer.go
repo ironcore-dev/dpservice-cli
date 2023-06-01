@@ -111,5 +111,5 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 
 	lb.TypeMeta.Kind = api.LoadBalancerKind
 	lb.LoadBalancerMeta.ID = opts.Id
-	return rendererFactory.RenderObject("added", os.Stdout, lb)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", lb.Spec.UnderlayRoute), os.Stdout, lb)
 }

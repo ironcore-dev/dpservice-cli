@@ -107,5 +107,5 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 
 	nnat.TypeMeta.Kind = api.NeighborNatKind
 	nnat.NeighborNatMeta.NatVIPIP = &opts.NatIP
-	return rendererFactory.RenderObject("added", os.Stdout, nnat)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", nnat.Spec.UnderlayRoute), os.Stdout, nnat)
 }

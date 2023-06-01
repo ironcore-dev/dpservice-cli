@@ -106,5 +106,5 @@ func RunAddPrefix(
 	prefix.TypeMeta.Kind = api.PrefixKind
 	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
 	prefix.Spec.Prefix = opts.Prefix
-	return rendererFactory.RenderObject("added", os.Stdout, prefix)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", prefix.Spec.UnderlayRoute), os.Stdout, prefix)
 }

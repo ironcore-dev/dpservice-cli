@@ -21,7 +21,7 @@ import (
 )
 
 func List(factory DPDKClientFactory) *cobra.Command {
-	rendererOptions := &RendererOptions{}
+	rendererOptions := &RendererOptions{Output: "table"}
 
 	cmd := &cobra.Command{
 		Use:  "list",

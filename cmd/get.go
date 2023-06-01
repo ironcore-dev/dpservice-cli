@@ -21,7 +21,7 @@ import (
 )
 
 func Get(factory DPDKClientFactory) *cobra.Command {
-	rendererOptions := &RendererOptions{}
+	rendererOptions := &RendererOptions{Output: "json"}
 
 	cmd := &cobra.Command{
 		Use:  "get",

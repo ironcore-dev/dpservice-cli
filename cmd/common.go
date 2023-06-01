@@ -141,8 +141,8 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 }
 
 func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Object) error {
-	if obj.GetStatus() != 0 {
-		operation = "server error"
+	if obj.GetStatus().Error != 0 {
+		operation = fmt.Sprintf("server error: %d, %s", obj.GetStatus().Error, obj.GetStatus().Message)
 	}
 	renderer, err := o.NewRenderer(operation, w)
 	if err != nil {
@@ -151,7 +151,7 @@ func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Ob
 	if err := renderer.Render(obj); err != nil {
 		return fmt.Errorf("error rendering %s: %w", obj.GetKind(), err)
 	}
-	if obj.GetStatus() != 0 {
+	if obj.GetStatus().Error != 0 {
 		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
 	}
 	return nil

@@ -25,7 +25,7 @@ import (
 type Object interface {
 	GetKind() string
 	GetName() string
-	GetStatus() int32
+	GetStatus() Status
 }
 
 type List interface {
@@ -41,11 +41,14 @@ func (m *TypeMeta) GetKind() string {
 }
 
 type Status struct {
-	Error   int32  `json:"error"`
+	Error   int32  `json:"error,omitempty"`
 	Message string `json:"message"`
 }
 
 func (status *Status) String() string {
+	if status.Error == 0 {
+		return status.Message
+	}
 	return fmt.Sprintf("Error: %d, Message: %s", status.Error, status.Message)
 }
 
@@ -83,8 +86,8 @@ func (m *Route) GetName() string {
 	return fmt.Sprintf("%s-%d:%s", m.Spec.Prefix, m.Spec.NextHop.VNI, m.Spec.NextHop.IP)
 }
 
-func (m *Route) GetStatus() int32 {
-	return m.Status.Error
+func (m *Route) GetStatus() Status {
+	return m.Status
 }
 
 type RouteSpec struct {
@@ -93,7 +96,7 @@ type RouteSpec struct {
 }
 
 type RouteNextHop struct {
-	VNI uint32      `json:"vni,omitempty"`
+	VNI uint32      `json:"vni"`
 	IP  *netip.Addr `json:"ip,omitempty"`
 }
 
@@ -131,8 +134,8 @@ func (m *Prefix) GetName() string {
 	return m.Spec.Prefix.String()
 }
 
-func (m *Prefix) GetStatus() int32 {
-	return m.Status.Error
+func (m *Prefix) GetStatus() Status {
+	return m.Status
 }
 
 type PrefixSpec struct {
@@ -155,8 +158,8 @@ func (m *VirtualIP) GetName() string {
 	return m.Spec.IP.String()
 }
 
-func (m *VirtualIP) GetStatus() int32 {
-	return m.Status.Error
+func (m *VirtualIP) GetStatus() Status {
+	return m.Status
 }
 
 type VirtualIPSpec struct {
@@ -180,8 +183,8 @@ func (m *LoadBalancerMeta) GetName() string {
 	return m.ID
 }
 
-func (m *LoadBalancer) GetStatus() int32 {
-	return m.Status.Error
+func (m *LoadBalancer) GetStatus() Status {
+	return m.Status
 }
 
 type LoadBalancerSpec struct {
@@ -211,8 +214,8 @@ func (m *LoadBalancerTargetMeta) GetName() string {
 	return m.LoadbalancerID
 }
 
-func (m *LoadBalancerTarget) GetStatus() int32 {
-	return m.Status.Error
+func (m *LoadBalancerTarget) GetStatus() Status {
+	return m.Status
 }
 
 type LoadBalancerTargetSpec struct {
@@ -259,8 +262,8 @@ func (m *InterfaceMeta) GetName() string {
 	return m.ID
 }
 
-func (m *Interface) GetStatus() int32 {
-	return m.Status.Error
+func (m *Interface) GetStatus() Status {
+	return m.Status
 }
 
 type InterfaceSpec struct {
@@ -318,8 +321,8 @@ func (m *NatMeta) GetName() string {
 	return m.InterfaceID
 }
 
-func (m *Nat) GetStatus() int32 {
-	return m.Status.Error
+func (m *Nat) GetStatus() Status {
+	return m.Status
 }
 
 type NatSpec struct {
@@ -364,8 +367,8 @@ func (m *NeighborNatMeta) GetName() string {
 	return m.NatVIPIP.String()
 }
 
-func (m *NeighborNat) GetStatus() int32 {
-	return m.Status.Error
+func (m *NeighborNat) GetStatus() Status {
+	return m.Status
 }
 
 type NeighborNatSpec struct {
@@ -391,8 +394,8 @@ func (m *FirewallRule) GetName() string {
 	return m.FirewallRuleMeta.InterfaceID + "/" + m.Spec.RuleID
 }
 
-func (m *FirewallRule) GetStatus() int32 {
-	return m.Status.Error
+func (m *FirewallRule) GetStatus() Status {
+	return m.Status
 }
 
 type FirewallRuleSpec struct {
@@ -442,8 +445,8 @@ func (m *InitMeta) GetName() string {
 	return "init"
 }
 
-func (m *Init) GetStatus() int32 {
-	return m.Status.Error
+func (m *Init) GetStatus() Status {
+	return m.Status
 }
 
 type Initialized struct {
@@ -464,8 +467,8 @@ func (m *InitializedMeta) GetName() string {
 	return "initialized"
 }
 
-func (m *Initialized) GetStatus() int32 {
-	return 0
+func (m *Initialized) GetStatus() Status {
+	return Status{}
 }
 
 type Vni struct {
@@ -488,8 +491,8 @@ func (m *VniMeta) GetName() string {
 	return "vni"
 }
 
-func (m *Vni) GetStatus() int32 {
-	return 0
+func (m *Vni) GetStatus() Status {
+	return Status{}
 }
 
 var (
