@@ -41,7 +41,7 @@ func (m *TypeMeta) GetKind() string {
 }
 
 type Status struct {
-	Error   int32  `json:"error,omitempty"`
+	Error   int32  `json:"error"`
 	Message string `json:"message"`
 }
 
