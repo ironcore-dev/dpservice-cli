@@ -109,6 +109,5 @@ func RunAddRoute(
 	route.TypeMeta.Kind = api.RouteKind
 	route.RouteMeta.VNI = opts.VNI
 	route.Spec.Prefix = &opts.Prefix
-	route.Spec.NextHop = &api.RouteNextHop{}
-	return rendererFactory.RenderObject("added", os.Stdout, route)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, Next Hop IP: %s", opts.NextHopIP), os.Stdout, route)
 }

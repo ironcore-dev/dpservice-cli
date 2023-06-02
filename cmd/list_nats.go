@@ -70,16 +70,16 @@ func RunListNats(
 		return fmt.Errorf("error listing interfaces: %w", err)
 	}
 	interfaces := interfaceList.Items
-	nats := make([]api.Nat, len(interfaceList.Items))
-	for i, iface := range interfaces {
+	var nats []api.Nat
+	for _, iface := range interfaces {
 		nat, err := client.GetNat(ctx, iface.InterfaceMeta.ID)
 		if err == errors.ErrServerError {
-			nat.InterfaceID = iface.InterfaceMeta.ID
+			continue
 		}
 		if err != nil && err != errors.ErrServerError {
 			return fmt.Errorf("error getting nat: %w", err)
 		}
-		nats[i] = *nat
+		nats = append(nats, *nat)
 	}
 
 	natList := api.NatList{

@@ -100,7 +100,5 @@ func RunAddLoadBalancerTarget(
 		return fmt.Errorf("error adding loadbalancer target: %w", err)
 	}
 
-	lbtarget.TypeMeta.Kind = api.LoadBalancerKind
-	lbtarget.LoadBalancerTargetMeta.LoadbalancerID = opts.LoadBalancerID
 	return rendererFactory.RenderObject("added", os.Stdout, lbtarget)
 }

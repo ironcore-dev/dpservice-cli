@@ -13,7 +13,7 @@
             //"program": "${fileDirname}",
             //"args": ["add", "loadbalancer", "--id=4", "--lbports", "tcp/389", "--vip", "10.3.4.5", "--vni", "100"]
             //"args": ["delete", "loadbalancer", "--id=4"]
-            "args": ["add", "route", "--prefix=10.100.3.0/24", "--next-hop-vni=0", "--next-hop-ip=fc00:2::64:0:1", "--vni=100"]
+            //"args": ["add", "route", "--prefix=10.100.3.0/24", "--next-hop-vni=0", "--next-hop-ip=fc00:2::64:0:1", "--vni=100"]
             //"args": ["delete", "route", "10.200.2.0/24", "0", "ff80::1", "--vni", "100"]
             //"args": ["add", "lbprefix", "1.1.1.1/24", "--interface-id", "vm1"]
             //"args": ["add", "lbtarget", "--target-ip=ff80::5", "--lb-id=1"]
@@ -29,6 +29,7 @@
             //"args": ["list", "nats"]
             //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
             //"args": ["list", "prefixes","--interface-id=vm1"]
+            "args": ["list", "lbtargets","--lb-id=4"]
         }
     ]
 }

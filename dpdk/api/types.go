@@ -83,7 +83,7 @@ type RouteMeta struct {
 }
 
 func (m *Route) GetName() string {
-	return fmt.Sprintf("%s-%d:%s", m.Spec.Prefix, m.Spec.NextHop.VNI, m.Spec.NextHop.IP)
+	return fmt.Sprintf("%s-%d", m.Spec.Prefix, m.Spec.NextHop.VNI)
 }
 
 func (m *Route) GetStatus() Status {
@@ -155,7 +155,7 @@ type VirtualIPMeta struct {
 }
 
 func (m *VirtualIP) GetName() string {
-	return m.Spec.IP.String()
+	return "on interface: " + m.VirtualIPMeta.InterfaceID
 }
 
 func (m *VirtualIP) GetStatus() Status {
@@ -210,8 +210,8 @@ type LoadBalancerTargetMeta struct {
 	LoadbalancerID string `json:"loadbalancerId"`
 }
 
-func (m *LoadBalancerTargetMeta) GetName() string {
-	return m.LoadbalancerID
+func (m *LoadBalancerTarget) GetName() string {
+	return "on loadbalancer: " + m.LoadBalancerTargetMeta.LoadbalancerID
 }
 
 func (m *LoadBalancerTarget) GetStatus() Status {

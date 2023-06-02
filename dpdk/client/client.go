@@ -250,7 +250,10 @@ func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBa
 		return &api.LoadBalancerTarget{}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.LoadBalancerTarget{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+		return &api.LoadBalancerTarget{
+			TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
+			LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
+			Status:                 api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
 	}
 
 	return &api.LoadBalancerTarget{
@@ -513,7 +516,10 @@ func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, er
 		return &api.Route{}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Route{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+		return &api.Route{
+			Spec:   api.RouteSpec{NextHop: &api.RouteNextHop{}},
+			Status: api.ProtoStatusToStatus(res),
+		}, apierrors.ErrServerError
 	}
 	return &api.Route{
 		TypeMeta:  api.TypeMeta{Kind: api.RouteKind},

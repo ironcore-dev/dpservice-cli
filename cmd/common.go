@@ -64,6 +64,7 @@ func (o *DPDKClientOptions) NewClient(ctx context.Context) (client.Client, func(
 	cleanup := conn.Close
 	return c, cleanup, nil
 }
+
 func DpdkClose(cleanup func() error) {
 	if err := cleanup(); err != nil {
 		fmt.Printf("error cleaning up client: %s", err)
@@ -97,11 +98,13 @@ func CommandNames(cmds []*cobra.Command) []string {
 type RendererOptions struct {
 	Output string
 	Pretty bool
+	Wide   bool
 }
 
 func (o *RendererOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format. [json|yaml|table|name]")
 	fs.BoolVar(&o.Pretty, "pretty", o.Pretty, "Whether to render pretty output.")
+	fs.BoolVar(&o.Wide, "wide", o.Wide, "Whether to render more info.")
 }
 
 func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.Renderer, error) {
@@ -127,6 +130,7 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 	}
 
 	if err := registry.Register("table", func(w io.Writer) renderer.Renderer {
+		renderer.DefaultTableConverter.SetWide(o.Wide)
 		return renderer.NewTable(w, renderer.DefaultTableConverter)
 	}); err != nil {
 		return nil, err
