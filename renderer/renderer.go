@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -232,22 +233,37 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 }
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {
-	var headers []any
-	if len(ifaces) > 0 && ifaces[0].Spec.VirtualFunction == nil {
-		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute"}
-	} else {
-		headers = []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute", "VirtualFunction"}
+	headers := []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute"}
+	vfNeeded := isColumnNeeded(ifaces, "Spec.VirtualFunction")
+	if vfNeeded {
+		headers = append(headers, "VirtualFunction")
 	}
-	if t.Wide {
-		headers = append(headers, "Wide")
+	natNeeded := isColumnNeeded(ifaces, "Spec.Nat")
+	if t.Wide && natNeeded {
+		headers = append(headers, "Nat")
+	}
+	vipNeeded := isColumnNeeded(ifaces, "Spec.VIP")
+	if t.Wide && vipNeeded {
+		headers = append(headers, "VirtualIP")
 	}
 
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
-		if len(ifaces) > 0 && ifaces[0].Spec.VirtualFunction == nil {
-			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
-		} else {
-			columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute, iface.Spec.VirtualFunction.String()}
+		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
+		if iface.Spec.VirtualFunction != nil {
+			columns[i] = append(columns[i], iface.Spec.VirtualFunction.String())
+		} else if vfNeeded {
+			columns[i] = append(columns[i], "")
+		}
+		if t.Wide && iface.Spec.Nat != nil {
+			columns[i] = append(columns[i], iface.Spec.Nat.String())
+		} else if natNeeded {
+			columns[i] = append(columns[i], "")
+		}
+		if t.Wide && iface.Spec.VIP != nil {
+			columns[i] = append(columns[i], iface.Spec.VIP.Spec.IP)
+		} else if vipNeeded {
+			columns[i] = append(columns[i], "")
 		}
 	}
 
@@ -301,7 +317,7 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	var headers []any
-	// if command was nat
+	// if command was nat or there are no nats
 	if len(nats) > 0 && nats[0].InterfaceID != "" {
 		headers = []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute"}
 		// if command was natinfo
@@ -311,7 +327,7 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		// if command was nat
+		// if command was nat or there are no nats
 		if len(nats) > 0 && nats[0].InterfaceID != "" {
 			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 			// if command was natinfo
@@ -475,4 +491,21 @@ func (r *Registry) New(name string, w io.Writer) (Renderer, error) {
 	}
 
 	return newFunc(w), nil
+}
+
+// iterate over objects to check if it has any non nil value in given field
+func isColumnNeeded(objs interface{}, field string) bool {
+	fields := strings.Split(field, ".")
+	v := reflect.ValueOf(objs)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	for i := 0; i < v.Len(); i++ {
+		r := reflect.ValueOf(v.Index(i).Interface())
+		f := reflect.Indirect(r).FieldByName(fields[0]).FieldByName(fields[1])
+		if !f.IsZero() {
+			return true
+		}
+	}
+	return false
 }

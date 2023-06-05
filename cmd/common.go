@@ -104,7 +104,11 @@ type RendererOptions struct {
 func (o *RendererOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format. [json|yaml|table|name]")
 	fs.BoolVar(&o.Pretty, "pretty", o.Pretty, "Whether to render pretty output.")
-	fs.BoolVar(&o.Wide, "wide", o.Wide, "Whether to render more info.")
+	fs.BoolVarP(&o.Wide, "wide", "w", o.Wide, "Whether to render more info in table output.")
+}
+
+func (o *RendererOptions) GetWide() bool {
+	return o.Wide
 }
 
 func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.Renderer, error) {
@@ -182,6 +186,7 @@ type RendererFactory interface {
 	NewRenderer(operation string, w io.Writer) (renderer.Renderer, error)
 	RenderObject(operation string, w io.Writer, obj api.Object) error
 	RenderList(operation string, w io.Writer, list api.List) error
+	GetWide() bool
 }
 
 type SourcesOptions struct {

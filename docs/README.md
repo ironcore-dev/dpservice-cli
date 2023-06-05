@@ -1,6 +1,6 @@
 # Documentation - dpservice-cli
 
-## All available commands can be found [here](/docs/commands/).
+## All available commands can be found [here](/docs/commands/README.md).
 
 To generate current command tree add this at the start of main.go:
 ```

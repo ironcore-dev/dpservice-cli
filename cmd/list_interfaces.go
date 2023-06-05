@@ -68,5 +68,20 @@ func RunListInterfaces(
 		return fmt.Errorf("error listing interfaces: %w", err)
 	}
 
+	if rendererFactory.GetWide() {
+		for i, iface := range interfaceList.Items {
+			nat, err := client.GetNat(ctx, iface.ID)
+			if err == nil {
+				interfaceList.Items[i].Spec.Nat = nat
+			}
+		}
+		for i, iface := range interfaceList.Items {
+			vip, err := client.GetVirtualIP(ctx, iface.ID)
+			if err == nil {
+				interfaceList.Items[i].Spec.VIP = vip
+			}
+		}
+	}
+
 	return rendererFactory.RenderList("", os.Stdout, interfaceList)
 }

@@ -273,6 +273,8 @@ type InterfaceSpec struct {
 	UnderlayRoute   *netip.Addr      `json:"underlayRoute,omitempty"`
 	VirtualFunction *VirtualFunction `json:"virtualFunction,omitempty"`
 	PXE             *PXE             `json:"pxe,omitempty"`
+	Nat             *Nat             `json:"-"`
+	VIP             *VirtualIP       `json:"-"`
 }
 
 type VirtualFunction struct {
@@ -323,6 +325,10 @@ func (m *NatMeta) GetName() string {
 
 func (m *Nat) GetStatus() Status {
 	return m.Status
+}
+
+func (m *Nat) String() string {
+	return fmt.Sprintf("%s <%d, %d>", m.Spec.NatVIPIP, m.Spec.MinPort, m.Spec.MaxPort)
 }
 
 type NatSpec struct {

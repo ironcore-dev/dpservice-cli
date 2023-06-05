@@ -34,9 +34,9 @@ func DeleteRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFa
 	)
 
 	cmd := &cobra.Command{
-		Use:     "route <--prefix> <--next-hop-vni> <--next-hop-ip> <--vni>",
+		Use:     "route <--prefix> <--vni>",
 		Short:   "Delete a route",
-		Example: "dpservice-cli delete route --prefix=10.100.2.0/24 --next-hop-vni=0 --next-hop-ip=fc00:2::64:0:1 --vni=100",
+		Example: "dpservice-cli delete route --prefix=10.100.2.0/24 --vni=100",
 		Aliases: RouteAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {

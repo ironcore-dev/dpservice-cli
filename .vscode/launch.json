@@ -26,10 +26,10 @@
             //"args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
             //"args": ["add", "-f", "/tmp/addint.json"]
             //"args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=11"]
-            //"args": ["list", "nats"]
+            "args": ["list", "interfaces", "--wide"]
             //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
             //"args": ["list", "prefixes","--interface-id=vm1"]
-            "args": ["list", "lbtargets","--lb-id=4"]
+            //"args": ["list", "lbtargets","--lb-id=4"]
         }
     ]
 }

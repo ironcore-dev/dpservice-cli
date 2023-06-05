@@ -37,9 +37,9 @@ If dpservice is running on different machine or you changed the default settings
 ```
 To change the output format of commands you can use **-o, --output** flag with one of **json | yaml | table | name**
 
-  -  **json**   - shows output in json (you can use --pretty flag to show formatted json)
+  -  **json**   - shows output in json (you can use **--pretty** flag to show formatted json)
   -  **yaml**   - shows output in yaml
-  -  **table**  - shows output in predefined table format
+  -  **table**  - shows output in predefined table format (you can use **-w, --wide** for more information)
   -  **name**   - shows only short output with type/name
 <br />
 
