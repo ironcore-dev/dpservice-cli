@@ -238,11 +238,11 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 	if vfNeeded {
 		headers = append(headers, "VirtualFunction")
 	}
-	natNeeded := isColumnNeeded(ifaces, "Spec.Nat")
+	natNeeded := true
 	if t.Wide && natNeeded {
 		headers = append(headers, "Nat")
 	}
-	vipNeeded := isColumnNeeded(ifaces, "Spec.VIP")
+	vipNeeded := true
 	if t.Wide && vipNeeded {
 		headers = append(headers, "VirtualIP")
 	}

@@ -88,6 +88,18 @@ func RunGetInterface(
 		return fmt.Errorf("error getting interface: %w", err)
 	}
 
+	if rendererFactory.GetWide() {
+		nat, err := client.GetNat(ctx, iface.ID)
+		if err == nil {
+			iface.Spec.Nat = nat
+		}
+
+		vip, err := client.GetVirtualIP(ctx, iface.ID)
+		if err == nil {
+			iface.Spec.VIP = vip
+		}
+	}
+
 	iface.TypeMeta.Kind = api.InterfaceKind
 	iface.InterfaceMeta.ID = opts.ID
 	return rendererFactory.RenderObject("", os.Stdout, iface)
