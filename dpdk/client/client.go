@@ -32,8 +32,8 @@ type Client interface {
 	DeleteLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error)
 
 	ListLoadBalancerPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error)
-	CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error)
-	DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.Prefix, error)
+	CreateLoadBalancerPrefix(ctx context.Context, prefix *api.LoadBalancerPrefix) (*api.LoadBalancerPrefix, error)
+	DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.LoadBalancerPrefix, error)
 
 	GetLoadBalancerTargets(ctx context.Context, interfaceID string) (*api.LoadBalancerTargetList, error)
 	AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBalancerTarget) (*api.LoadBalancerTarget, error)
@@ -148,6 +148,7 @@ func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID strin
 	prefixes := make([]api.Prefix, len(res.GetPrefixes()))
 	for i, dpdkPrefix := range res.GetPrefixes() {
 		prefix, err := api.ProtoPrefixToPrefix(interfaceID, api.ProtoLBPrefixToProtoPrefix(*dpdkPrefix))
+		prefix.Kind = api.LoadBalancerPrefixKind
 		if err != nil {
 			return nil, err
 		}
@@ -162,36 +163,39 @@ func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID strin
 	}, nil
 }
 
-func (c *client) CreateLoadBalancerPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix, error) {
+func (c *client) CreateLoadBalancerPrefix(ctx context.Context, lbprefix *api.LoadBalancerPrefix) (*api.LoadBalancerPrefix, error) {
 	res, err := c.DPDKonmetalClient.CreateInterfaceLoadBalancerPrefix(ctx, &dpdkproto.CreateInterfaceLoadBalancerPrefixRequest{
 		InterfaceID: &dpdkproto.InterfaceIDMsg{
-			InterfaceID: []byte(prefix.InterfaceID),
+			InterfaceID: []byte(lbprefix.InterfaceID),
 		},
 		Prefix: &dpdkproto.Prefix{
-			IpVersion:    api.NetIPAddrToProtoIPVersion(prefix.Spec.Prefix.Addr()),
-			Address:      []byte(prefix.Spec.Prefix.Addr().String()),
-			PrefixLength: uint32(prefix.Spec.Prefix.Bits()),
+			IpVersion:    api.NetIPAddrToProtoIPVersion(lbprefix.Spec.Prefix.Addr()),
+			Address:      []byte(lbprefix.Spec.Prefix.Addr().String()),
+			PrefixLength: uint32(lbprefix.Spec.Prefix.Bits()),
 		},
 	})
 	if err != nil {
-		return &api.Prefix{}, err
+		return &api.LoadBalancerPrefix{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
 	if err != nil {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
+		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	return &api.Prefix{
-		TypeMeta:   api.TypeMeta{Kind: "LoadBalancerPrefix"},
-		PrefixMeta: prefix.PrefixMeta,
-		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
-		Status:     api.ProtoStatusToStatus(res.Status),
+	return &api.LoadBalancerPrefix{
+		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerPrefixKind},
+		LoadBalancerPrefixMeta: lbprefix.LoadBalancerPrefixMeta,
+		Spec: api.LoadBalancerPrefixSpec{
+			Prefix:        lbprefix.Spec.Prefix,
+			UnderlayRoute: &underlayRoute,
+		},
+		Status: api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
-func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.Prefix, error) {
+func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.LoadBalancerPrefix, error) {
 	res, err := c.DPDKonmetalClient.DeleteInterfaceLoadBalancerPrefix(ctx, &dpdkproto.DeleteInterfaceLoadBalancerPrefixRequest{
 		InterfaceID: &dpdkproto.InterfaceIDMsg{
 			InterfaceID: []byte(interfaceID),
@@ -203,12 +207,12 @@ func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID strin
 		},
 	})
 	if err != nil {
-		return &api.Prefix{}, err
+		return &api.LoadBalancerPrefix{}, err
 	}
 	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
 	}
-	return &api.Prefix{Status: api.ProtoStatusToStatus(res)}, nil
+	return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res)}, nil
 }
 
 func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID string) (*api.LoadBalancerTargetList, error) {
@@ -405,8 +409,11 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 	return &api.VirtualIP{
 		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
 		VirtualIPMeta: virtualIP.VirtualIPMeta,
-		Spec:          api.VirtualIPSpec{UnderlayRoute: &underlayRoute},
-		Status:        api.ProtoStatusToStatus(res.Status),
+		Spec: api.VirtualIPSpec{
+			IP:            virtualIP.Spec.IP,
+			UnderlayRoute: &underlayRoute,
+		},
+		Status: api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 
@@ -472,8 +479,10 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 	return &api.Prefix{
 		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
 		PrefixMeta: prefix.PrefixMeta,
-		Spec:       api.PrefixSpec{UnderlayRoute: &underlayRoute},
-		Status:     api.ProtoStatusToStatus(res.Status),
+		Spec: api.PrefixSpec{
+			Prefix:        prefix.Spec.Prefix,
+			UnderlayRoute: &underlayRoute},
+		Status: api.ProtoStatusToStatus(res.Status),
 	}, nil
 }
 

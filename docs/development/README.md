@@ -41,6 +41,13 @@ To change the output format of commands you can use **-o, --output** flag with o
   -  **yaml**   - shows output in yaml
   -  **table**  - shows output in predefined table format (you can use **-w, --wide** for more information)
   -  **name**   - shows only short output with type/name
+
+Add and Delete commands also support file input with **-f, --filename** flag:
+```bash
+./bin/dpservice-cli [add|delete] -f /<path>/<filename>.[json|yaml]
+```
+Filename, directory, or URL can be used.
+One file can contain multiple objects of any kind.
 <br />
 
 
@@ -57,6 +64,7 @@ Basic steps when implementing new type (similar to Interface, Route, LoadBalance
     - add function to Client interface
     - implement the function
 - Add new \<type\> to DefaultScheme in [/dpdk/api/register.go](/dpdk/api/register.go)
+- Add new \<type\>Key structs and methods in [/dpdk/client/dynamic/dynamic.go](/dpdk/client/dynamic/dynamic.go) and add new \<type\> to switch in Create and Delete methods
 - If needed create new conversion function(s) between dpdk struct and local struct in [/dpdk/api/conversion.go](/dpdk/api/conversion.go)
 - Add new function to show \<type\> as table in [/renderer/renderer.go](/renderer/renderer.go)
     - add new \<type\> to ConvertToTable method

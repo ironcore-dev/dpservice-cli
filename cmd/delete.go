@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
 	"github.com/onmetal/dpservice-cli/sources"
 	"github.com/spf13/cobra"
@@ -100,8 +102,17 @@ func RunDelete(
 	for _, obj := range objs {
 		key := dynamic.ObjectKeyFromObject(obj)
 
-		if err := dc.Delete(ctx, obj); err != nil {
-			fmt.Printf("Error deleting %T %s: %v\n", obj, key, err)
+		res, err := dc.Delete(ctx, obj)
+		if err == errors.ErrServerError {
+			r := reflect.ValueOf(res)
+			err := reflect.Indirect(r).FieldByName("Status").FieldByName("Error")
+			msg := reflect.Indirect(r).FieldByName("Status").FieldByName("Message")
+			fmt.Printf("Error deleting %T %s: Server error: %v %v\n", res, key, err, msg)
+			continue
+		}
+		if err != nil {
+			fmt.Printf("Error deleting %T %s: %v\n", res, key, err)
+			continue
 		}
 
 		if err := renderer.Render(obj); err != nil {

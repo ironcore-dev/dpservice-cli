@@ -67,9 +67,17 @@ Flags:
   -h, --help                       help for dpservice-cli
   -o, --output string              Output format. [json|yaml|table|name]
       --pretty                     Whether to render pretty output.
+  -w, --wide                       Whether to render more info in table output.
 
 Use "dpservice-cli [command] --help" for more information about a command.
 ```
+Add and Delete commands also support file input with **-f, --filename** flag:
+```bash
+dpservice-cli [add|delete] -f /<path>/<filename>.[json|yaml]
+```
+Filename, directory, or URL can be used.
+One file can contain multiple objects of any kind.
+
 All commands can be found in [docs](/docs/commands/dpservice-cli.md)
 
 <br />

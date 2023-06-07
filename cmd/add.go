@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
 	"github.com/onmetal/dpservice-cli/sources"
 	"github.com/spf13/cobra"
@@ -99,11 +101,20 @@ func RunAdd(
 	}
 
 	for _, obj := range objs {
-		if err := dc.Create(ctx, obj); err != nil {
-			fmt.Printf("Error creating %T: %v\n", obj, err)
+		res, err := dc.Create(ctx, obj)
+		if err == errors.ErrServerError {
+			r := reflect.ValueOf(res)
+			err := reflect.Indirect(r).FieldByName("Status").FieldByName("Error")
+			msg := reflect.Indirect(r).FieldByName("Status").FieldByName("Message")
+			fmt.Printf("Error adding %T: Server error: %v %v\n", res, err, msg)
+			continue
+		}
+		if err != nil {
+			fmt.Printf("Error adding %T: %v\n", obj, err)
+			continue
 		}
 
-		if err := renderer.Render(obj); err != nil {
+		if err := renderer.Render(res); err != nil {
 			return fmt.Errorf("error rendering %T: %w", obj, err)
 		}
 	}

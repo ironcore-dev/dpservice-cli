@@ -31,6 +31,7 @@ func init() {
 		&VirtualIP{},
 		&LoadBalancer{},
 		&LoadBalancerTarget{},
+		&LoadBalancerPrefix{},
 		&LoadBalancerTargetList{},
 		&Nat{},
 		&NatList{},

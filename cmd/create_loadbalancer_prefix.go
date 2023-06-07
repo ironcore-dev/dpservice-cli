@@ -91,19 +91,19 @@ func RunCreateLoadBalancerPrefix(
 	}
 	defer DpdkClose(cleanup)
 
-	lbprefix, err := client.CreateLoadBalancerPrefix(ctx, &api.Prefix{
-		PrefixMeta: api.PrefixMeta{
+	lbprefix, err := client.CreateLoadBalancerPrefix(ctx, &api.LoadBalancerPrefix{
+		LoadBalancerPrefixMeta: api.LoadBalancerPrefixMeta{
 			InterfaceID: opts.InterfaceID,
 		},
-		Spec: api.PrefixSpec{
+		Spec: api.LoadBalancerPrefixSpec{
 			Prefix: opts.Prefix,
 		},
 	})
 	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding loadbalancer prefix: %w", err)
 	}
-	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
-	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	lbprefix.TypeMeta.Kind = api.LoadBalancerPrefixKind
+	lbprefix.LoadBalancerPrefixMeta.InterfaceID = opts.InterfaceID
 	lbprefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("added", os.Stdout, lbprefix)
 }

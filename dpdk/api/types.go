@@ -241,6 +241,30 @@ func (l *LoadBalancerTargetList) GetItems() []Object {
 	return res
 }
 
+type LoadBalancerPrefix struct {
+	TypeMeta               `json:",inline"`
+	LoadBalancerPrefixMeta `json:"metadata"`
+	Spec                   LoadBalancerPrefixSpec `json:"spec"`
+	Status                 Status                 `json:"status"`
+}
+
+type LoadBalancerPrefixMeta struct {
+	InterfaceID string `json:"interfaceID"`
+}
+
+func (m *LoadBalancerPrefix) GetName() string {
+	return m.Spec.Prefix.String()
+}
+
+func (m *LoadBalancerPrefix) GetStatus() Status {
+	return m.Status
+}
+
+type LoadBalancerPrefixSpec struct {
+	Prefix        netip.Prefix `json:"prefix"`
+	UnderlayRoute *netip.Addr  `json:"underlayRoute,omitempty"`
+}
+
 // Interface section
 type Interface struct {
 	TypeMeta      `json:",inline"`
@@ -507,6 +531,7 @@ var (
 	LoadBalancerKind           = reflect.TypeOf(LoadBalancer{}).Name()
 	LoadBalancerTargetKind     = reflect.TypeOf(LoadBalancerTarget{}).Name()
 	LoadBalancerTargetListKind = reflect.TypeOf(LoadBalancerTargetList{}).Name()
+	LoadBalancerPrefixKind     = reflect.TypeOf(LoadBalancerPrefix{}).Name()
 	PrefixKind                 = reflect.TypeOf(Prefix{}).Name()
 	PrefixListKind             = reflect.TypeOf(PrefixList{}).Name()
 	VirtualIPKind              = reflect.TypeOf(VirtualIP{}).Name()

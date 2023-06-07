@@ -20,6 +20,7 @@ import (
 	"net/netip"
 	"os"
 
+	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -87,8 +88,8 @@ func RunDeleteLoadBalancerPrefix(ctx context.Context, dpdkClientFactory DPDKClie
 		return fmt.Errorf("error deleting loadbalancer prefix: %w", err)
 	}
 
-	lbprefix.TypeMeta.Kind = "LoadBalancerPrefix"
-	lbprefix.PrefixMeta.InterfaceID = opts.InterfaceID
+	lbprefix.TypeMeta.Kind = api.LoadBalancerPrefixKind
+	lbprefix.LoadBalancerPrefixMeta.InterfaceID = opts.InterfaceID
 	lbprefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("deleted", os.Stdout, lbprefix)
 }
