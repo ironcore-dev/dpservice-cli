@@ -105,7 +105,5 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("error adding interface: %w", err)
 	}
 
-	iface.TypeMeta.Kind = api.InterfaceKind
-	iface.InterfaceMeta.ID = opts.ID
 	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", iface.Spec.UnderlayRoute), os.Stdout, iface)
 }

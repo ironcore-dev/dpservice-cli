@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -84,7 +83,5 @@ func RunDeleteVirtualIP(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("error deleting virtual ip: %w", err)
 	}
 
-	vip.TypeMeta.Kind = api.VirtualIPKind
-	vip.VirtualIPMeta.InterfaceID = opts.InterfaceID
 	return rendererFactory.RenderObject("deleted", os.Stdout, vip)
 }

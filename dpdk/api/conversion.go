@@ -194,6 +194,7 @@ func ProtoVirtualIPToVirtualIP(interfaceID string, dpdkVIP *proto.InterfaceVIPIP
 			IP:            ip,
 			UnderlayRoute: &underlayRoute,
 		},
+		Status: ProtoStatusToStatus(dpdkVIP.Status),
 	}, nil
 }
 

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -84,7 +83,5 @@ func RunDeleteLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 		return fmt.Errorf("error deleting loadbalancer: %w", err)
 	}
 
-	lb.TypeMeta.Kind = api.LoadBalancerKind
-	lb.LoadBalancerMeta.ID = opts.ID
 	return rendererFactory.RenderObject("deleted", os.Stdout, lb)
 }

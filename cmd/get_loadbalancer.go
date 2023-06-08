@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -89,7 +88,5 @@ func RunGetLoadBalancer(
 		return fmt.Errorf("error getting loadbalancer: %w", err)
 	}
 
-	lb.TypeMeta.Kind = api.LoadBalancerKind
-	lb.LoadBalancerMeta.ID = opts.ID
 	return rendererFactory.RenderObject("", os.Stdout, lb)
 }

@@ -100,8 +100,5 @@ func RunAddVirtualIP(
 		return fmt.Errorf("error adding virtual ip: %w", err)
 	}
 
-	virtualIP.TypeMeta.Kind = api.VirtualIPKind
-	virtualIP.Spec.IP = opts.Vip
-	virtualIP.VirtualIPMeta.InterfaceID = opts.InterfaceID
 	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", virtualIP.Spec.UnderlayRoute), os.Stdout, virtualIP)
 }

@@ -205,8 +205,5 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("error adding firewall rule: %w", err)
 	}
 
-	fwrule.TypeMeta.Kind = api.FirewallRuleKind
-	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
-	fwrule.Spec.RuleID = opts.RuleID
 	return rendererFactory.RenderObject("added", os.Stdout, fwrule)
 }

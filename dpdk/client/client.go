@@ -87,8 +87,13 @@ func (c *client) GetLoadBalancer(ctx context.Context, id string) (*api.LoadBalan
 	if err != nil {
 		return &api.LoadBalancer{}, err
 	}
+	retLoadBalancer := &api.LoadBalancer{
+		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
+		LoadBalancerMeta: api.LoadBalancerMeta{ID: id},
+		Status:           api.ProtoStatusToStatus(res.Status),
+	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.LoadBalancer{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return retLoadBalancer, apierrors.ErrServerError
 	}
 	return api.ProtoLoadBalancerToLoadBalancer(res, id)
 }
@@ -108,22 +113,23 @@ func (c *client) CreateLoadBalancer(ctx context.Context, lb *api.LoadBalancer) (
 	if err != nil {
 		return &api.LoadBalancer{}, err
 	}
+	retLoadBalancer := &api.LoadBalancer{
+		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
+		LoadBalancerMeta: lb.LoadBalancerMeta,
+		Status:           api.ProtoStatusToStatus(res.Status),
+	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.LoadBalancer{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return retLoadBalancer, apierrors.ErrServerError
 	}
 
 	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
 	if err != nil {
-		return &api.LoadBalancer{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
+		return retLoadBalancer, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	lb.Spec.UnderlayRoute = &underlayRoute
+	retLoadBalancer.Spec = lb.Spec
+	retLoadBalancer.Spec.UnderlayRoute = &underlayRoute
 
-	return &api.LoadBalancer{
-		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
-		LoadBalancerMeta: lb.LoadBalancerMeta,
-		Spec:             lb.Spec,
-		Status:           api.ProtoStatusToStatus(res.Status),
-	}, nil
+	return retLoadBalancer, nil
 }
 
 func (c *client) DeleteLoadBalancer(ctx context.Context, id string) (*api.LoadBalancer, error) {
@@ -131,10 +137,15 @@ func (c *client) DeleteLoadBalancer(ctx context.Context, id string) (*api.LoadBa
 	if err != nil {
 		return &api.LoadBalancer{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.LoadBalancer{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retLoadBalancer := &api.LoadBalancer{
+		TypeMeta:         api.TypeMeta{Kind: api.LoadBalancerKind},
+		LoadBalancerMeta: api.LoadBalancerMeta{ID: id},
+		Status:           api.ProtoStatusToStatus(res),
 	}
-	return &api.LoadBalancer{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retLoadBalancer, apierrors.ErrServerError
+	}
+	return retLoadBalancer, nil
 }
 
 func (c *client) ListLoadBalancerPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error) {
@@ -177,22 +188,23 @@ func (c *client) CreateLoadBalancerPrefix(ctx context.Context, lbprefix *api.Loa
 	if err != nil {
 		return &api.LoadBalancerPrefix{}, err
 	}
-	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
-	}
-	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
-	if err != nil {
-		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
-	}
-	return &api.LoadBalancerPrefix{
+	retLBPrefix := &api.LoadBalancerPrefix{
 		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerPrefixKind},
 		LoadBalancerPrefixMeta: lbprefix.LoadBalancerPrefixMeta,
 		Spec: api.LoadBalancerPrefixSpec{
-			Prefix:        lbprefix.Spec.Prefix,
-			UnderlayRoute: &underlayRoute,
+			Prefix: lbprefix.Spec.Prefix,
 		},
 		Status: api.ProtoStatusToStatus(res.Status),
-	}, nil
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return retLBPrefix, apierrors.ErrServerError
+	}
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return retLBPrefix, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+	retLBPrefix.Spec.UnderlayRoute = &underlayRoute
+	return retLBPrefix, nil
 }
 
 func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.LoadBalancerPrefix, error) {
@@ -209,10 +221,16 @@ func (c *client) DeleteLoadBalancerPrefix(ctx context.Context, interfaceID strin
 	if err != nil {
 		return &api.LoadBalancerPrefix{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retLBPrefix := &api.LoadBalancerPrefix{
+		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerPrefixKind},
+		LoadBalancerPrefixMeta: api.LoadBalancerPrefixMeta{InterfaceID: interfaceID},
+		Spec:                   api.LoadBalancerPrefixSpec{Prefix: prefix},
+		Status:                 api.ProtoStatusToStatus(res),
 	}
-	return &api.LoadBalancerPrefix{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retLBPrefix, apierrors.ErrServerError
+	}
+	return retLBPrefix, nil
 }
 
 func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID string) (*api.LoadBalancerTargetList, error) {
@@ -223,7 +241,9 @@ func (c *client) GetLoadBalancerTargets(ctx context.Context, loadBalancerID stri
 		return &api.LoadBalancerTargetList{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.LoadBalancerTargetList{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.LoadBalancerTargetList{
+			TypeMeta: api.TypeMeta{Kind: api.LoadBalancerTargetListKind},
+			Status:   api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 
 	lbtargets := make([]api.LoadBalancerTarget, len(res.GetTargetIPs()))
@@ -253,42 +273,47 @@ func (c *client) AddLoadBalancerTarget(ctx context.Context, lbtarget *api.LoadBa
 	if err != nil {
 		return &api.LoadBalancerTarget{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.LoadBalancerTarget{
-			TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
-			LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
-			Status:                 api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
-	}
-
-	return &api.LoadBalancerTarget{
+	retLBTarget := &api.LoadBalancerTarget{
 		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
 		LoadBalancerTargetMeta: lbtarget.LoadBalancerTargetMeta,
-		Spec:                   lbtarget.Spec,
 		Status:                 api.ProtoStatusToStatus(res),
-	}, nil
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retLBTarget, apierrors.ErrServerError
+	}
+	retLBTarget.Spec = lbtarget.Spec
+	return retLBTarget, nil
 }
 
-func (c *client) DeleteLoadBalancerTarget(ctx context.Context, id string, targetIP netip.Addr) (*api.LoadBalancerTarget, error) {
+func (c *client) DeleteLoadBalancerTarget(ctx context.Context, lbid string, targetIP netip.Addr) (*api.LoadBalancerTarget, error) {
 	res, err := c.DPDKonmetalClient.DeleteLoadBalancerTarget(ctx, &dpdkproto.DeleteLoadBalancerTargetRequest{
-		LoadBalancerID: []byte(id),
+		LoadBalancerID: []byte(lbid),
 		TargetIP:       api.LbipToProtoLbip(targetIP),
 	})
 	if err != nil {
 		return &api.LoadBalancerTarget{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.LoadBalancerTarget{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retLBTarget := &api.LoadBalancerTarget{
+		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
+		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{LoadbalancerID: lbid},
+		Status:                 api.ProtoStatusToStatus(res),
 	}
-	return &api.LoadBalancerTarget{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retLBTarget, apierrors.ErrServerError
+	}
+	return retLBTarget, nil
 }
 
-func (c *client) GetInterface(ctx context.Context, name string) (*api.Interface, error) {
-	res, err := c.DPDKonmetalClient.GetInterface(ctx, &dpdkproto.InterfaceIDMsg{InterfaceID: []byte(name)})
+func (c *client) GetInterface(ctx context.Context, id string) (*api.Interface, error) {
+	res, err := c.DPDKonmetalClient.GetInterface(ctx, &dpdkproto.InterfaceIDMsg{InterfaceID: []byte(id)})
 	if err != nil {
 		return &api.Interface{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Interface{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.Interface{
+			TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
+			InterfaceMeta: api.InterfaceMeta{ID: id},
+			Status:        api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 	return api.ProtoInterfaceToInterface(res.GetInterface())
 }
@@ -333,13 +358,18 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 	if err != nil {
 		return &api.Interface{}, err
 	}
+	retInterface := &api.Interface{
+		TypeMeta:      iface.TypeMeta,
+		InterfaceMeta: iface.InterfaceMeta,
+		Status:        api.ProtoStatusToStatus(res.Response.Status),
+	}
 	if errorCode := res.GetResponse().GetStatus().GetError(); errorCode != 0 {
-		return &api.Interface{Status: api.ProtoStatusToStatus(res.Response.Status)}, apierrors.ErrServerError
+		return retInterface, apierrors.ErrServerError
 	}
 
 	underlayRoute, err := netip.ParseAddr(string(res.GetResponse().GetUnderlayRoute()))
 	if err != nil {
-		return &api.Interface{Status: api.ProtoStatusToStatus(res.Response.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
+		return retInterface, fmt.Errorf("error parsing underlay route: %w", err)
 	}
 
 	return &api.Interface{
@@ -363,28 +393,36 @@ func (c *client) CreateInterface(ctx context.Context, iface *api.Interface) (*ap
 	}, nil
 }
 
-func (c *client) DeleteInterface(ctx context.Context, name string) (*api.Interface, error) {
-	res, err := c.DPDKonmetalClient.DeleteInterface(ctx, &dpdkproto.InterfaceIDMsg{InterfaceID: []byte(name)})
+func (c *client) DeleteInterface(ctx context.Context, id string) (*api.Interface, error) {
+	res, err := c.DPDKonmetalClient.DeleteInterface(ctx, &dpdkproto.InterfaceIDMsg{InterfaceID: []byte(id)})
 	if err != nil {
 		return &api.Interface{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Interface{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retInterface := &api.Interface{
+		TypeMeta:      api.TypeMeta{Kind: api.InterfaceKind},
+		InterfaceMeta: api.InterfaceMeta{ID: id},
+		Status:        api.ProtoStatusToStatus(res),
 	}
-	return &api.Interface{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retInterface, apierrors.ErrServerError
+	}
+	return retInterface, nil
 }
 
-func (c *client) GetVirtualIP(ctx context.Context, interfaceName string) (*api.VirtualIP, error) {
+func (c *client) GetVirtualIP(ctx context.Context, interfaceID string) (*api.VirtualIP, error) {
 	res, err := c.DPDKonmetalClient.GetInterfaceVIP(ctx, &dpdkproto.InterfaceIDMsg{
-		InterfaceID: []byte(interfaceName),
+		InterfaceID: []byte(interfaceID),
 	})
 	if err != nil {
 		return &api.VirtualIP{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.VirtualIP{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.VirtualIP{
+			TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
+			VirtualIPMeta: api.VirtualIPMeta{InterfaceID: interfaceID},
+			Status:        api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
-	return api.ProtoVirtualIPToVirtualIP(interfaceName, res)
+	return api.ProtoVirtualIPToVirtualIP(interfaceID, res)
 }
 
 func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*api.VirtualIP, error) {
@@ -398,23 +436,23 @@ func (c *client) AddVirtualIP(ctx context.Context, virtualIP *api.VirtualIP) (*a
 	if err != nil {
 		return &api.VirtualIP{}, err
 	}
-	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.VirtualIP{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
-	}
-	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
-	if err != nil {
-		return &api.VirtualIP{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
-	}
-
-	return &api.VirtualIP{
+	retVirtualIP := &api.VirtualIP{
 		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
 		VirtualIPMeta: virtualIP.VirtualIPMeta,
 		Spec: api.VirtualIPSpec{
-			IP:            virtualIP.Spec.IP,
-			UnderlayRoute: &underlayRoute,
+			IP: virtualIP.Spec.IP,
 		},
 		Status: api.ProtoStatusToStatus(res.Status),
-	}, nil
+	}
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return retVirtualIP, apierrors.ErrServerError
+	}
+	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
+	if err != nil {
+		return retVirtualIP, fmt.Errorf("error parsing underlay route: %w", err)
+	}
+	retVirtualIP.Spec.UnderlayRoute = &underlayRoute
+	return retVirtualIP, nil
 }
 
 func (c *client) DeleteVirtualIP(ctx context.Context, interfaceID string) (*api.VirtualIP, error) {
@@ -424,10 +462,14 @@ func (c *client) DeleteVirtualIP(ctx context.Context, interfaceID string) (*api.
 	if err != nil {
 		return &api.VirtualIP{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.VirtualIP{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retVirtualIP := &api.VirtualIP{
+		TypeMeta:      api.TypeMeta{Kind: api.VirtualIPKind},
+		VirtualIPMeta: api.VirtualIPMeta{InterfaceID: interfaceID},
 	}
-	return &api.VirtualIP{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retVirtualIP, apierrors.ErrServerError
+	}
+	return retVirtualIP, nil
 }
 
 func (c *client) ListPrefixes(ctx context.Context, interfaceID string) (*api.PrefixList, error) {
@@ -469,21 +511,22 @@ func (c *client) AddPrefix(ctx context.Context, prefix *api.Prefix) (*api.Prefix
 	if err != nil {
 		return &api.Prefix{}, err
 	}
+	retPrefix := &api.Prefix{
+		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
+		PrefixMeta: prefix.PrefixMeta,
+		Spec:       api.PrefixSpec{Prefix: prefix.Spec.Prefix},
+		Status:     api.ProtoStatusToStatus(res.Status),
+	}
+
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return retPrefix, apierrors.ErrServerError
 	}
 	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
 	if err != nil {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
+		return retPrefix, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	return &api.Prefix{
-		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
-		PrefixMeta: prefix.PrefixMeta,
-		Spec: api.PrefixSpec{
-			Prefix:        prefix.Spec.Prefix,
-			UnderlayRoute: &underlayRoute},
-		Status: api.ProtoStatusToStatus(res.Status),
-	}, nil
+	retPrefix.Spec.UnderlayRoute = &underlayRoute
+	return retPrefix, nil
 }
 
 func (c *client) DeletePrefix(ctx context.Context, interfaceID string, prefix netip.Prefix) (*api.Prefix, error) {
@@ -500,10 +543,16 @@ func (c *client) DeletePrefix(ctx context.Context, interfaceID string, prefix ne
 	if err != nil {
 		return &api.Prefix{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Prefix{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retPrefix := &api.Prefix{
+		TypeMeta:   api.TypeMeta{Kind: api.PrefixKind},
+		PrefixMeta: api.PrefixMeta{InterfaceID: interfaceID},
+		Spec:       api.PrefixSpec{Prefix: prefix},
+		Status:     api.ProtoStatusToStatus(res),
 	}
-	return &api.Prefix{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retPrefix, apierrors.ErrServerError
+	}
+	return retPrefix, nil
 }
 
 func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, error) {
@@ -524,18 +573,19 @@ func (c *client) AddRoute(ctx context.Context, route *api.Route) (*api.Route, er
 	if err != nil {
 		return &api.Route{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Route{
-			Spec:   api.RouteSpec{NextHop: &api.RouteNextHop{}},
-			Status: api.ProtoStatusToStatus(res),
-		}, apierrors.ErrServerError
-	}
-	return &api.Route{
+	retRoute := &api.Route{
 		TypeMeta:  api.TypeMeta{Kind: api.RouteKind},
 		RouteMeta: route.RouteMeta,
-		Spec:      route.Spec,
-		Status:    api.ProtoStatusToStatus(res),
-	}, nil
+		Spec: api.RouteSpec{
+			Prefix:  route.Spec.Prefix,
+			NextHop: &api.RouteNextHop{}},
+		Status: api.ProtoStatusToStatus(res),
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retRoute, apierrors.ErrServerError
+	}
+	retRoute.Spec = route.Spec
+	return retRoute, nil
 }
 
 func (c *client) DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefix) (*api.Route, error) {
@@ -554,10 +604,19 @@ func (c *client) DeleteRoute(ctx context.Context, vni uint32, prefix netip.Prefi
 	if err != nil {
 		return &api.Route{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Route{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retRoute := &api.Route{
+		TypeMeta:  api.TypeMeta{Kind: api.RouteKind},
+		RouteMeta: api.RouteMeta{VNI: vni},
+		Spec: api.RouteSpec{
+			Prefix:  &prefix,
+			NextHop: &api.RouteNextHop{},
+		},
+		Status: api.ProtoStatusToStatus(res),
 	}
-	return &api.Route{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retRoute, apierrors.ErrServerError
+	}
+	return retRoute, nil
 }
 
 func (c *client) ListRoutes(ctx context.Context, vni uint32) (*api.RouteList, error) {
@@ -591,7 +650,10 @@ func (c *client) GetNat(ctx context.Context, interfaceID string) (*api.Nat, erro
 		return &api.Nat{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Nat{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.Nat{
+			TypeMeta: api.TypeMeta{Kind: api.NatKind},
+			NatMeta:  api.NatMeta{InterfaceID: interfaceID},
+			Status:   api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 	return api.ProtoNatToNat(res, interfaceID)
 }
@@ -609,23 +671,23 @@ func (c *client) AddNat(ctx context.Context, nat *api.Nat) (*api.Nat, error) {
 	if err != nil {
 		return &api.Nat{}, err
 	}
+	retNat := &api.Nat{
+		TypeMeta: api.TypeMeta{Kind: api.NatKind},
+		NatMeta:  nat.NatMeta,
+		Status:   api.ProtoStatusToStatus(res.Status),
+	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Nat{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return retNat, apierrors.ErrServerError
 	}
 
 	underlayRoute, err := netip.ParseAddr(string(res.GetUnderlayRoute()))
 	if err != nil {
-		return &api.Nat{Status: api.ProtoStatusToStatus(res.Status)}, fmt.Errorf("error parsing underlay route: %w", err)
+		return retNat, fmt.Errorf("error parsing underlay route: %w", err)
 	}
-	nat.Spec.UnderlayRoute = &underlayRoute
-	status := api.ProtoStatusToStatus(res.Status)
 
-	return &api.Nat{
-		TypeMeta: api.TypeMeta{Kind: api.NatKind},
-		NatMeta:  nat.NatMeta,
-		Spec:     nat.Spec,
-		Status:   status,
-	}, nil
+	retNat.Spec = nat.Spec
+	retNat.Spec.UnderlayRoute = &underlayRoute
+	return retNat, nil
 }
 
 func (c *client) DeleteNat(ctx context.Context, interfaceID string) (*api.Nat, error) {
@@ -635,10 +697,15 @@ func (c *client) DeleteNat(ctx context.Context, interfaceID string) (*api.Nat, e
 	if err != nil {
 		return &api.Nat{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.Nat{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retNat := &api.Nat{
+		TypeMeta: api.TypeMeta{Kind: api.NatKind},
+		NatMeta:  api.NatMeta{InterfaceID: interfaceID},
+		Status:   api.ProtoStatusToStatus(res),
 	}
-	return &api.Nat{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retNat, apierrors.ErrServerError
+	}
+	return retNat, nil
 }
 
 func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) (*api.NeighborNat, error) {
@@ -656,15 +723,16 @@ func (c *client) AddNeighborNat(ctx context.Context, nNat *api.NeighborNat) (*ap
 	if err != nil {
 		return &api.NeighborNat{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.NeighborNat{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
-	}
-	return &api.NeighborNat{
+	retnNat := &api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NeighborNatKind},
 		NeighborNatMeta: nNat.NeighborNatMeta,
-		Spec:            nNat.Spec,
 		Status:          api.ProtoStatusToStatus(res),
-	}, nil
+	}
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retnNat, apierrors.ErrServerError
+	}
+	retnNat.Spec = nNat.Spec
+	return retnNat, nil
 }
 
 func (c *client) GetNATInfo(ctx context.Context, natVIPIP netip.Addr, natType string) (*api.NatList, error) {
@@ -758,10 +826,15 @@ func (c *client) DeleteNeighborNat(ctx context.Context, neigbhorNat api.Neighbor
 	if err != nil {
 		return &api.NeighborNat{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.NeighborNat{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	nnat := &api.NeighborNat{
+		TypeMeta:        api.TypeMeta{Kind: api.NeighborNatKind},
+		NeighborNatMeta: neigbhorNat.NeighborNatMeta,
+		Status:          api.ProtoStatusToStatus(res),
 	}
-	return &api.NeighborNat{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return nnat, apierrors.ErrServerError
+	}
+	return nnat, nil
 }
 
 func (c *client) ListFirewallRules(ctx context.Context, interfaceID string) (*api.FirewallRuleList, error) {
@@ -850,18 +923,16 @@ func (c *client) AddFirewallRule(ctx context.Context, fwRule *api.FirewallRule) 
 	if err != nil {
 		return &api.FirewallRule{}, err
 	}
+	retFwrule := &api.FirewallRule{
+		TypeMeta:         api.TypeMeta{Kind: api.FirewallRuleKind},
+		FirewallRuleMeta: api.FirewallRuleMeta{InterfaceID: fwRule.InterfaceID},
+		Spec:             api.FirewallRuleSpec{RuleID: fwRule.Spec.RuleID},
+		Status:           api.ProtoStatusToStatus(res.Status)}
 	if res.Status.Error != 0 {
-		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return retFwrule, apierrors.ErrServerError
 	}
-
-	return &api.FirewallRule{
-		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
-		FirewallRuleMeta: api.FirewallRuleMeta{
-			InterfaceID: fwRule.InterfaceID,
-		},
-		Spec:   fwRule.Spec,
-		Status: api.ProtoStatusToStatus(res.Status),
-	}, nil
+	retFwrule.Spec = fwRule.Spec
+	return retFwrule, nil
 }
 
 func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID string) (*api.FirewallRule, error) {
@@ -873,7 +944,11 @@ func (c *client) GetFirewallRule(ctx context.Context, ruleID string, interfaceID
 		return &api.FirewallRule{}, err
 	}
 	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+		return &api.FirewallRule{
+			TypeMeta:         api.TypeMeta{Kind: api.FirewallRuleKind},
+			FirewallRuleMeta: api.FirewallRuleMeta{InterfaceID: interfaceID},
+			Spec:             api.FirewallRuleSpec{RuleID: ruleID},
+			Status:           api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
 	}
 
 	return api.ProtoFwRuleToFwRule(res.Rule, interfaceID)
@@ -887,10 +962,16 @@ func (c *client) DeleteFirewallRule(ctx context.Context, interfaceID string, rul
 	if err != nil {
 		return &api.FirewallRule{}, err
 	}
-	if errorCode := res.GetError(); errorCode != 0 {
-		return &api.FirewallRule{Status: api.ProtoStatusToStatus(res)}, apierrors.ErrServerError
+	retFwrule := &api.FirewallRule{
+		TypeMeta:         api.TypeMeta{Kind: api.FirewallRuleKind},
+		FirewallRuleMeta: api.FirewallRuleMeta{InterfaceID: interfaceID},
+		Spec:             api.FirewallRuleSpec{RuleID: ruleID},
+		Status:           api.ProtoStatusToStatus(res),
 	}
-	return &api.FirewallRule{Status: api.ProtoStatusToStatus(res)}, nil
+	if errorCode := res.GetError(); errorCode != 0 {
+		return retFwrule, apierrors.ErrServerError
+	}
+	return retFwrule, nil
 }
 
 func (c *client) Initialized(ctx context.Context) (string, error) {
@@ -920,13 +1001,14 @@ func (c *client) GetVni(ctx context.Context, vni uint32, vniType uint8) (*api.Vn
 	if err != nil {
 		return &api.Vni{}, err
 	}
-	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
-		return &api.Vni{Status: api.ProtoStatusToStatus(res.Status)}, apierrors.ErrServerError
+	retVni := &api.Vni{
+		TypeMeta: api.TypeMeta{Kind: api.VniKind},
+		VniMeta:  api.VniMeta{VNI: vni, VniType: vniType},
+		Status:   api.ProtoStatusToStatus(res.Status),
 	}
-
-	return &api.Vni{TypeMeta: api.TypeMeta{Kind: api.VniKind},
-		VniMeta: api.VniMeta{VNI: vni, VniType: vniType},
-		Spec:    api.VniSpec{InUse: res.InUse},
-		Status:  api.ProtoStatusToStatus(res.Status),
-	}, nil
+	if errorCode := res.GetStatus().GetError(); errorCode != 0 {
+		return retVni, apierrors.ErrServerError
+	}
+	retVni.Spec.InUse = res.InUse
+	return retVni, nil
 }

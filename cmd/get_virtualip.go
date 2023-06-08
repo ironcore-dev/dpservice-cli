@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -89,7 +88,5 @@ func RunGetVirtualIP(
 		return fmt.Errorf("error getting virtual ip: %w", err)
 	}
 
-	virtualIP.TypeMeta.Kind = api.VirtualIPKind
-	virtualIP.VirtualIPMeta.InterfaceID = opts.InterfaceID
 	return rendererFactory.RenderObject("", os.Stdout, virtualIP)
 }

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -86,8 +85,5 @@ func RunDeleteFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 		return fmt.Errorf("error deleting firewall rule: %w", err)
 	}
 
-	fwrule.TypeMeta.Kind = api.FirewallRuleKind
-	fwrule.FirewallRuleMeta.InterfaceID = opts.InterfaceID
-	fwrule.Spec.RuleID = opts.RuleID
 	return rendererFactory.RenderObject("deleted", os.Stdout, fwrule)
 }

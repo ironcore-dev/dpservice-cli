@@ -20,7 +20,6 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -88,9 +87,5 @@ func RunDeleteRoute(ctx context.Context, dpdkClientFactory DPDKClientFactory, re
 		return fmt.Errorf("error deleting route: %w", err)
 	}
 
-	route.TypeMeta.Kind = api.RouteKind
-	route.RouteMeta.VNI = opts.VNI
-	route.Spec.Prefix = &opts.Prefix
-	route.Spec.NextHop = &api.RouteNextHop{}
 	return rendererFactory.RenderObject("deleted", os.Stdout, route)
 }

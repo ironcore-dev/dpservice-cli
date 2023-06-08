@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -100,7 +99,5 @@ func RunGetInterface(
 		}
 	}
 
-	iface.TypeMeta.Kind = api.InterfaceKind
-	iface.InterfaceMeta.ID = opts.ID
 	return rendererFactory.RenderObject("", os.Stdout, iface)
 }

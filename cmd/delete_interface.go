@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -84,7 +83,5 @@ func RunDeleteInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("error deleting interface: %w", err)
 	}
 
-	iface.TypeMeta.Kind = api.InterfaceKind
-	iface.InterfaceMeta.ID = opts.ID
 	return rendererFactory.RenderObject("deleted", os.Stdout, iface)
 }

@@ -101,7 +101,5 @@ func RunDeleteNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFacto
 		return fmt.Errorf("error deleting neighbor nat: %w", err)
 	}
 
-	nnat.TypeMeta.Kind = api.NeighborNatKind
-	nnat.NeighborNatMeta.NatVIPIP = &opts.NatIP
 	return rendererFactory.RenderObject("deleted", os.Stdout, nnat)
 }

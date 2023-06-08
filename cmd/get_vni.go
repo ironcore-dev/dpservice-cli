@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -91,8 +90,5 @@ func RunGetVni(
 		return fmt.Errorf("error getting vni: %w", err)
 	}
 
-	vni.TypeMeta.Kind = api.VniKind
-	vni.VniMeta.VNI = opts.VNI
-	vni.VniMeta.VniType = opts.VniType
 	return rendererFactory.RenderObject("", os.Stdout, vni)
 }

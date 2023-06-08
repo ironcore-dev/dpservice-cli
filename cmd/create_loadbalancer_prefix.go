@@ -102,8 +102,6 @@ func RunCreateLoadBalancerPrefix(
 	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error adding loadbalancer prefix: %w", err)
 	}
-	lbprefix.TypeMeta.Kind = api.LoadBalancerPrefixKind
-	lbprefix.LoadBalancerPrefixMeta.InterfaceID = opts.InterfaceID
-	lbprefix.Spec.Prefix = opts.Prefix
+
 	return rendererFactory.RenderObject("added", os.Stdout, lbprefix)
 }

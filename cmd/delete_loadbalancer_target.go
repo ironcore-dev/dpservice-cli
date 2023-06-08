@@ -20,7 +20,6 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -88,7 +87,5 @@ func RunDeleteLoadBalancerTarget(ctx context.Context, dpdkClientFactory DPDKClie
 		return fmt.Errorf("error deleting neighbor nat: %w", err)
 	}
 
-	lbtarget.TypeMeta.Kind = api.LoadBalancerTargetKind
-	lbtarget.LoadBalancerTargetMeta.LoadbalancerID = opts.LoadBalancerID
 	return rendererFactory.RenderObject("deleted", os.Stdout, lbtarget)
 }

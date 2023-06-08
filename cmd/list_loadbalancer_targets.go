@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -89,6 +88,5 @@ func RunListLoadBalancerTargets(
 		return fmt.Errorf("error listing loadbalancer targets: %w", err)
 	}
 
-	lbtargets.TypeMeta.Kind = api.LoadBalancerTargetListKind
 	return rendererFactory.RenderList("", os.Stdout, lbtargets)
 }

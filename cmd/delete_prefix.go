@@ -20,7 +20,6 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
 	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -88,8 +87,5 @@ func RunDeletePrefix(ctx context.Context, dpdkClientFactory DPDKClientFactory, r
 		return fmt.Errorf("error deleting prefix: %w", err)
 	}
 
-	prefix.TypeMeta.Kind = api.PrefixKind
-	prefix.PrefixMeta.InterfaceID = opts.InterfaceID
-	prefix.Spec.Prefix = opts.Prefix
 	return rendererFactory.RenderObject("deleted", os.Stdout, prefix)
 }
