@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -56,16 +57,16 @@ func ResetVni(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFacto
 
 type ResetVniOptions struct {
 	VNI     uint32
-	VniType uint8
+	VniType string
 }
 
 func (o *ResetVniOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to check.")
-	fs.Uint8Var(&o.VniType, "vni-type", o.VniType, "VNI Type: VniIpv4 = 0/VniIpv6 = 1.")
+	fs.StringVar(&o.VniType, "vni-type", "both", "VNI Type: ipv4 = 0/ipv6 = 1/both = 2.")
 }
 
 func (o *ResetVniOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni", "vni-type"} {
+	for _, name := range []string{"vni"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -85,7 +86,19 @@ func RunResetVni(
 	}
 	defer DpdkClose(cleanup)
 
-	vni, err := client.ResetVni(ctx, opts.VNI, opts.VniType)
+	var vniType uint8
+	switch strings.ToLower(opts.VniType) {
+	case "ipv4", "0":
+		vniType = 0
+	case "ipv6", "1":
+		vniType = 1
+	case "both", "2":
+		vniType = 2
+	default:
+		return fmt.Errorf("VNI type can be only: ipv4 = 0/ipv6 = 1/both = 2")
+	}
+
+	vni, err := client.ResetVni(ctx, opts.VNI, vniType)
 	if err != nil && err != errors.ErrServerError {
 		return fmt.Errorf("error resetting vni: %w", err)
 	}

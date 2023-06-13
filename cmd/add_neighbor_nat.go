@@ -34,9 +34,9 @@ func AddNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory Rendere
 	)
 
 	cmd := &cobra.Command{
-		Use:     "neighbornat <--natip> <--vni> <--minport> <--maxport> <--underlayroute>",
+		Use:     "neighbornat <--nat-ip> <--vni> <--minport> <--maxport> <--underlayroute>",
 		Short:   "Add a Neighbor NAT",
-		Example: "dpservice-cli add neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1",
+		Example: "dpservice-cli add neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1",
 		Aliases: NeighborNatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -66,7 +66,7 @@ type AddNeighborNatOptions struct {
 }
 
 func (o *AddNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
-	flag.AddrVar(fs, &o.NatIP, "natip", o.NatIP, "Neighbor NAT IP.")
+	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "Neighbor NAT IP.")
 	fs.Uint32Var(&o.Vni, "vni", o.Vni, "VNI of neighbor NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of neighbor NAT.")
 	fs.Uint32Var(&o.MaxPort, "maxport", o.MaxPort, "MaxPort of neighbor NAT.")
@@ -74,7 +74,7 @@ func (o *AddNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *AddNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"natip", "vni", "minport", "maxport", "underlayroute"} {
+	for _, name := range []string{"nat-ip", "vni", "minport", "maxport", "underlayroute"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}

@@ -34,9 +34,9 @@ func DeleteNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory Rend
 	)
 
 	cmd := &cobra.Command{
-		Use:     "neighbornat <--natip> <--vni> <--minport> <--maxport>",
+		Use:     "neighbornat <--nat-ip> <--vni> <--minport> <--maxport>",
 		Short:   "Delete neighbor nat",
-		Example: "dpservice-cli delete neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100",
+		Example: "dpservice-cli delete neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100",
 		Aliases: NeighborNatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,14 +65,14 @@ type DeleteNeighborNatOptions struct {
 }
 
 func (o *DeleteNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
-	flag.AddrVar(fs, &o.NatIP, "natip", o.NatIP, "Neighbor NAT IP.")
+	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "Neighbor NAT IP.")
 	fs.Uint32Var(&o.Vni, "vni", o.Vni, "VNI of neighbor NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of neighbor NAT.")
 	fs.Uint32Var(&o.MaxPort, "maxport", o.MaxPort, "MaxPort of neighbor NAT.")
 }
 
 func (o *DeleteNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"natip", "vni", "minport", "maxport"} {
+	for _, name := range []string{"nat-ip", "vni", "minport", "maxport"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}

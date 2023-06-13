@@ -34,9 +34,9 @@ func AddNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory
 	)
 
 	cmd := &cobra.Command{
-		Use:     "nat <interface-id> <--natip> <--minport> <--maxport>",
+		Use:     "nat <--interface-id> <--nat-ip> <--minport> <--maxport>",
 		Short:   "Add a NAT to interface",
-		Example: "dpservice-cli add nat --interface-id=vm1 --natip=10.20.30.40 --minport=30000 --maxport=30100",
+		Example: "dpservice-cli add nat --interface-id=vm1 --nat-ip=10.20.30.40 --minport=30000 --maxport=30100",
 		Aliases: NatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,11 +68,11 @@ func (o *AddNatOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID where to add NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of NAT.")
 	fs.Uint32Var(&o.MaxPort, "maxport", o.MaxPort, "MaxPort of NAT.")
-	flag.AddrVar(fs, &o.NATVipIP, "natip", o.NATVipIP, "NAT IP to assign to the interface.")
+	flag.AddrVar(fs, &o.NATVipIP, "nat-ip", o.NATVipIP, "NAT IP to assign to the interface.")
 }
 
 func (o *AddNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id", "minport", "maxport", "natip"} {
+	for _, name := range []string{"interface-id", "minport", "maxport", "nat-ip"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}

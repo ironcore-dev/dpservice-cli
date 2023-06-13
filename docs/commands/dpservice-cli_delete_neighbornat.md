@@ -3,13 +3,13 @@
 Delete neighbor nat
 
 ```
-dpservice-cli delete neighbornat <--natip> <--vni> <--minport> <--maxport> [flags]
+dpservice-cli delete neighbornat <--nat-ip> <--vni> <--minport> <--maxport> [flags]
 ```
 
 ### Examples
 
 ```
-dpservice-cli delete neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100
+dpservice-cli delete neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100
 ```
 
 ### Options
@@ -18,7 +18,7 @@ dpservice-cli delete neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 -
   -h, --help             help for neighbornat
       --maxport uint32   MaxPort of neighbor NAT.
       --minport uint32   MinPort of neighbor NAT.
-      --natip ip         Neighbor NAT IP. (default invalid IP)
+      --nat-ip ip         Neighbor NAT IP. (default invalid IP)
       --vni uint32       VNI of neighbor NAT.
 ```
 

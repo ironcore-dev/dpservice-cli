@@ -3,13 +3,13 @@
 Add a Neighbor NAT
 
 ```
-dpservice-cli add neighbornat <--natip> <--vni> <--minport> <--maxport> <--underlayroute> [flags]
+dpservice-cli add neighbornat <--nat-ip> <--vni> <--minport> <--maxport> <--underlayroute> [flags]
 ```
 
 ### Examples
 
 ```
-dpservice-cli add neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1
+dpservice-cli add neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1
 ```
 
 ### Options
@@ -18,7 +18,7 @@ dpservice-cli add neighbornat --natip=10.20.30.40 --vni=100 --minport=30000 --ma
   -h, --help               help for neighbornat
       --maxport uint32     MaxPort of neighbor NAT.
       --minport uint32     MinPort of neighbor NAT.
-      --natip ip           Neighbor NAT IP. (default invalid IP)
+      --nat-ip ip           Neighbor NAT IP. (default invalid IP)
       --underlayroute ip   Underlay route of neighbor NAT. (default invalid IP)
       --vni uint32         VNI of neighbor NAT.
 ```

@@ -3,13 +3,13 @@
 Add a NAT to interface
 
 ```
-dpservice-cli add nat <interface-id> <--natip> <--minport> <--maxport> [flags]
+dpservice-cli add nat <interface-id> <--nat-ip> <--minport> <--maxport> [flags]
 ```
 
 ### Examples
 
 ```
-dpservice-cli add nat --interface-id=vm1 --natip=10.20.30.40 --minport=30000 --maxport=30100
+dpservice-cli add nat --interface-id=vm1 --nat-ip=10.20.30.40 --minport=30000 --maxport=30100
 ```
 
 ### Options
@@ -19,7 +19,7 @@ dpservice-cli add nat --interface-id=vm1 --natip=10.20.30.40 --minport=30000 --m
       --interface-id string   Interface ID where to add NAT.
       --maxport uint32        MaxPort of NAT.
       --minport uint32        MinPort of NAT.
-      --natip ip              NAT IP to assign to the interface. (default invalid IP)
+      --nat-ip ip              NAT IP to assign to the interface. (default invalid IP)
 ```
 
 ### Options inherited from parent commands

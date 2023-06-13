@@ -67,7 +67,7 @@ get virtualip --interface-id=<string>
 
 ## Add/delete/list NAT IP (with port range) for the interface:
 ```
-add nat --interface-id=<string> --natip=<netip.Addr> --minport=<uint32> --maxport=<uint32>
+add nat --interface-id=<string> --nat-ip=<netip.Addr> --minport=<uint32> --maxport=<uint32>
 delete nat --interface-id=<string>
 get nat --interface-id=<string>
 list nats
@@ -75,8 +75,8 @@ list nats
 
 ## Add/delete/list neighbors (dp-services) with the same NAT IP:
 ```
-add neighbornat --natip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32> --underlayroute=<netip.Addr>
-delete neighbornat --natip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32>
+add neighbornat --nat-ip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32> --underlayroute=<netip.Addr>
+delete neighbornat --nat-ip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32>
 get natinfo --nat-ip=<netip.Addr> --info-type=<string>
 ```
 
