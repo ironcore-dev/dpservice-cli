@@ -20,10 +20,10 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
-	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
 	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
+	"github.com/onmetal/dpservice-cli/dpdk/runtime"
 	"github.com/onmetal/dpservice-cli/sources"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +95,7 @@ func RunAdd(
 		return fmt.Errorf("error creating sources iterator: %w", err)
 	}
 
-	objs, err := sources.CollectObjects(iterator, api.DefaultScheme)
+	objs, err := sources.CollectObjects(iterator, runtime.DefaultScheme)
 	if err != nil {
 		return fmt.Errorf("error collecting objects: %w", err)
 	}

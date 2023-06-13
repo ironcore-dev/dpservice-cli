@@ -12,33 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package api
+package cmd
 
 import (
-	"github.com/onmetal/dpservice-cli/dpdk/runtime"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-var DefaultScheme = runtime.NewScheme()
+func Reset(factory DPDKClientFactory) *cobra.Command {
+	rendererOptions := &RendererOptions{Output: "name"}
 
-func init() {
-	if err := DefaultScheme.Add(
-		&Interface{},
-		&InterfaceList{},
-		&Prefix{},
-		&PrefixList{},
-		&Route{},
-		&RouteList{},
-		&VirtualIP{},
-		&LoadBalancer{},
-		&LoadBalancerTarget{},
-		&LoadBalancerPrefix{},
-		&LoadBalancerTargetList{},
-		&Nat{},
-		&NatList{},
-		&NeighborNat{},
-		&FirewallRule{},
-		&Vni{},
-	); err != nil {
-		panic(err)
+	cmd := &cobra.Command{
+		Use:  "reset",
+		Args: cobra.NoArgs,
+		RunE: SubcommandRequired,
 	}
+
+	rendererOptions.AddFlags(cmd.PersistentFlags())
+
+	subcommands := []*cobra.Command{
+		ResetVni(factory, rendererOptions),
+	}
+
+	cmd.Short = fmt.Sprintf("Resets one of %v", CommandNames(subcommands))
+	cmd.Long = fmt.Sprintf("Resets one of %v", CommandNames(subcommands))
+
+	cmd.AddCommand(
+		subcommands...,
+	)
+
+	return cmd
 }

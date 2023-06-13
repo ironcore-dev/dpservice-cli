@@ -21,8 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
-	runtime2 "github.com/onmetal/dpservice-cli/dpdk/runtime"
+	"github.com/onmetal/dpservice-cli/dpdk/runtime"
 )
 
 type Iterator struct {
@@ -140,7 +139,7 @@ func (s *DirSource) Next() (ReadCloserExt, error) {
 	return nil, io.EOF
 }
 
-func IterateObjects(iterator *Iterator, scheme *runtime2.Scheme, f func(obj any) error) error {
+func IterateObjects(iterator *Iterator, scheme *runtime.Scheme, f func(obj any) error) error {
 	for {
 		src, err := iterator.Next()
 		if err != nil {
@@ -159,12 +158,12 @@ func IterateObjects(iterator *Iterator, scheme *runtime2.Scheme, f func(obj any)
 				break
 			}
 
-			newDecoder, err := runtime2.NewExtDecoderFactory(rce.Ext())
+			newDecoder, err := runtime.NewExtDecoderFactory(rce.Ext())
 			if err != nil {
 				return err
 			}
 
-			decoder := runtime2.NewKindDecoder(api.DefaultScheme, runtime2.NewPeekDecoder(rce, newDecoder))
+			decoder := runtime.NewKindDecoder(runtime.DefaultScheme, runtime.NewPeekDecoder(rce, newDecoder))
 			for {
 				obj, err := decoder.Next()
 				if err != nil {
@@ -183,7 +182,7 @@ func IterateObjects(iterator *Iterator, scheme *runtime2.Scheme, f func(obj any)
 	return nil
 }
 
-func CollectObjects(iterator *Iterator, scheme *runtime2.Scheme) ([]any, error) {
+func CollectObjects(iterator *Iterator, scheme *runtime.Scheme) ([]any, error) {
 	var objs []any
 	if err := IterateObjects(iterator, scheme, func(obj any) error {
 		objs = append(objs, obj)

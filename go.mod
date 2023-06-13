@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/addlicense v1.1.1
 	github.com/jedib0t/go-pretty/v6 v6.3.9
-	github.com/onmetal/net-dpservice-go v0.1.11
+	github.com/onmetal/net-dpservice-go v0.1.13-0.20230613080142-e5672d5fcbd0
 	github.com/onsi/ginkgo/v2 v2.2.0
 	github.com/onsi/gomega v1.20.2
 	github.com/spf13/cobra v1.4.0
@@ -32,5 +32,3 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/onmetal/net-dpservice-go v0.1.1 => github.com/onmetal/net-dpservice-go v0.1.3-0.20220901075245-e11be6221ddd

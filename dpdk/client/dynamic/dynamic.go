@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
-	structured "github.com/onmetal/dpservice-cli/dpdk/client"
+	"github.com/onmetal/net-dpservice-go/api"
+	structured "github.com/onmetal/net-dpservice-go/client"
 )
 
 type ObjectKey interface {

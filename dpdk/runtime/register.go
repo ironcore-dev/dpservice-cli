@@ -12,24 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package netiputil
+package runtime
 
-import "net/netip"
+import "github.com/onmetal/net-dpservice-go/api"
 
-func FindIPv4(ips []netip.Addr) netip.Addr {
-	for _, ip := range ips {
-		if ip.Is4() {
-			return ip
-		}
+var DefaultScheme = NewScheme()
+
+func init() {
+	if err := DefaultScheme.Add(
+		&api.Interface{},
+		&api.InterfaceList{},
+		&api.Prefix{},
+		&api.PrefixList{},
+		&api.Route{},
+		&api.RouteList{},
+		&api.VirtualIP{},
+		&api.LoadBalancer{},
+		&api.LoadBalancerTarget{},
+		&api.LoadBalancerPrefix{},
+		&api.LoadBalancerTargetList{},
+		&api.Nat{},
+		&api.NatList{},
+		&api.NeighborNat{},
+		&api.FirewallRule{},
+		&api.Vni{},
+	); err != nil {
+		panic(err)
 	}
-	return netip.Addr{}
-}
-
-func FindIPv6(ips []netip.Addr) netip.Addr {
-	for _, ip := range ips {
-		if ip.Is6() {
-			return ip
-		}
-	}
-	return netip.Addr{}
 }

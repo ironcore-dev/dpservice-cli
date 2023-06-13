@@ -25,7 +25,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/net-dpservice-go/api"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 )
 

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/dpdk/api"
+	"github.com/onmetal/net-dpservice-go/api"
 	"github.com/spf13/cobra"
 )
 

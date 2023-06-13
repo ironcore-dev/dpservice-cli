@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/onmetal/dpservice-cli/cmd"
-	"github.com/onmetal/dpservice-cli/dpdk/api/errors"
+	"github.com/onmetal/net-dpservice-go/errors"
 )
 
 func main() {

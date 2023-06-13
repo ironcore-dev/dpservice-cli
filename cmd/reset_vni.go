@@ -25,20 +25,20 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func DeleteInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func ResetVni(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts DeleteInterfaceOptions
+		opts ResetVniOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface <--id>",
-		Short:   "Delete interface",
-		Example: "dpservice-cli delete interface --id=vm1",
-		Aliases: InterfaceAliases,
+		Use:     "vni <--vni> <--vni-type>",
+		Short:   "Reset vni usage information",
+		Example: "dpservice-cli reset vni --vni=vm1 --vni-type=0",
+		Aliases: NatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunDeleteInterface(
+			return RunResetVni(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -54,16 +54,18 @@ func DeleteInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	return cmd
 }
 
-type DeleteInterfaceOptions struct {
-	ID string
+type ResetVniOptions struct {
+	VNI     uint32
+	VniType uint8
 }
 
-func (o *DeleteInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.ID, "id", o.ID, "Interface ID to delete.")
+func (o *ResetVniOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to check.")
+	fs.Uint8Var(&o.VniType, "vni-type", o.VniType, "VNI Type: VniIpv4 = 0/VniIpv6 = 1.")
 }
 
-func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"id"} {
+func (o *ResetVniOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"vni", "vni-type"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -71,17 +73,22 @@ func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteInterfaceOptions) error {
+func RunResetVni(
+	ctx context.Context,
+	dpdkClientFactory DPDKClientFactory,
+	rendererFactory RendererFactory,
+	opts ResetVniOptions,
+) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer DpdkClose(cleanup)
 
-	iface, err := client.DeleteInterface(ctx, opts.ID)
+	vni, err := client.ResetVni(ctx, opts.VNI, opts.VniType)
 	if err != nil && err != errors.ErrServerError {
-		return fmt.Errorf("error deleting interface: %w", err)
+		return fmt.Errorf("error resetting vni: %w", err)
 	}
 
-	return rendererFactory.RenderObject("deleted", os.Stdout, iface)
+	return rendererFactory.RenderObject("reset", os.Stdout, vni)
 }
