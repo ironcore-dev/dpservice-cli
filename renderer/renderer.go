@@ -319,10 +319,10 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	var headers []any
 	// if command was nat or there are no nats
 	if len(nats) > 0 && nats[0].InterfaceID != "" {
-		headers = []any{"InterfaceID", "NatIP", "MinPort", "MaxPort", "UnderlayRoute"}
+		headers = []any{"InterfaceID", "IP", "MinPort", "MaxPort", "UnderlayRoute"}
 		// if command was natinfo
 	} else {
-		headers = []any{"NatIP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
+		headers = []any{"IP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
 	}
 
 	columns := make([][]any, len(nats))
