@@ -333,7 +333,7 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 			// if command was natinfo
 		} else {
 			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
-			if len(nats) > 0 && nats[0].Spec.UnderlayRoute == nil {
+			if len(nats) > 0 && nats[i].Spec.UnderlayRoute == nil {
 				columns[i] = append(columns[i], "Local")
 			} else {
 				columns[i] = append(columns[i], "Neighbor")
