@@ -103,5 +103,5 @@ func RunCreateLoadBalancerPrefix(
 		return fmt.Errorf("error adding loadbalancer prefix: %w", err)
 	}
 
-	return rendererFactory.RenderObject("added", os.Stdout, lbprefix)
+	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", lbprefix.Spec.UnderlayRoute), os.Stdout, lbprefix)
 }
