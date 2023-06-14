@@ -87,3 +87,9 @@ delete firewallrule --rule-id=<string> --interface-id=<string>
 get fwrule --rule-id=<string> --interface-id=<string>
 list firewallrules --interface-id=<string>
 ```
+
+## Get/reset vni:
+```
+get vni --vni=<uint32> --vni-type=<uint8>
+reset vni --vni=<uint32> --vni-type=<uint8>
+```
