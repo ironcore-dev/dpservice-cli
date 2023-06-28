@@ -99,7 +99,7 @@ func RunResetVni(
 	}
 
 	vni, err := client.ResetVni(ctx, opts.VNI, vniType)
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error resetting vni: %w", err)
 	}
 

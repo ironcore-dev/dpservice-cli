@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
 	"github.com/onmetal/dpservice-cli/dpdk/runtime"
@@ -103,7 +104,7 @@ func RunDelete(
 		key := dynamic.ObjectKeyFromObject(obj)
 
 		res, err := dc.Delete(ctx, obj)
-		if err == errors.ErrServerError {
+		if strings.Contains(err.Error(), errors.StatusErrorString) {
 			r := reflect.ValueOf(res)
 			err := reflect.Indirect(r).FieldByName("Status").FieldByName("Error")
 			msg := reflect.Indirect(r).FieldByName("Status").FieldByName("Message")

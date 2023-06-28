@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -84,7 +85,7 @@ func RunGetNat(
 	defer DpdkClose(cleanup)
 
 	nat, err := client.GetNat(ctx, opts.InterfaceID)
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error getting nat: %w", err)
 	}
 
