@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -86,7 +87,7 @@ func RunInit(
 	}
 
 	init, err := client.Init(ctx, dpdkproto.InitConfig{})
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error init: %w", err)
 	}
 

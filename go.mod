@@ -32,3 +32,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/onmetal/net-dpservice-go v0.1.13-0.20230613133937-066e40ed0eb3 => github.com/onmetal/net-dpservice-go v0.1.13-0.20230628093433-d66087375dd2

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -83,7 +84,7 @@ func RunDeleteLoadBalancerPrefix(ctx context.Context, dpdkClientFactory DPDKClie
 	defer DpdkClose(cleanup)
 
 	lbprefix, err := client.DeleteLoadBalancerPrefix(ctx, opts.InterfaceID, opts.Prefix)
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error deleting loadbalancer prefix: %w", err)
 	}
 

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -79,7 +80,7 @@ func RunDeleteNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rend
 	defer DpdkClose(cleanup)
 
 	nat, err := client.DeleteNat(ctx, opts.InterfaceID)
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error deleting nat: %w", err)
 	}
 
