@@ -41,22 +41,34 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(0),
 		// if protocol flag is set, require also additional flags
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			filter, _ := cmd.Flags().GetString("protocol")
 			switch filter {
 			case "icmp", "1":
-				cmd.MarkFlagRequired("icmp-type")
-				cmd.MarkFlagRequired("icmp-code")
-			case "tcp", "6", "udp", "17":
-				cmd.MarkFlagRequired("src-port-min")
-				if src, _ := cmd.Flags().GetInt32("src-port-min"); src != -1 {
-					cmd.MarkFlagRequired("src-port-max")
+				for _, name := range []string{"icmp-type", "icmp-code"} {
+					if err := cmd.MarkFlagRequired(name); err != nil {
+						return err
+					}
 				}
-				cmd.MarkFlagRequired("dst-port-min")
+			case "tcp", "6", "udp", "17":
+				if err := cmd.MarkFlagRequired("src-port-min"); err != nil {
+					return err
+				}
+				if src, _ := cmd.Flags().GetInt32("src-port-min"); src != -1 {
+					if err := cmd.MarkFlagRequired("src-port-max"); err != nil {
+						return err
+					}
+				}
+				if err := cmd.MarkFlagRequired("dst-port-min"); err != nil {
+					return err
+				}
 				if dst, _ := cmd.Flags().GetInt32("dst-port-min"); dst != -1 {
-					cmd.MarkFlagRequired("dst-port-max")
+					if err := cmd.MarkFlagRequired("dst-port-max"); err != nil {
+						return err
+					}
 				}
 			}
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 

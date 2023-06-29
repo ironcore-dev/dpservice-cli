@@ -93,7 +93,7 @@ func (d *KindDecoder) Next() (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling %s: %w", obj.Kind, err)
 	}
-	json.Unmarshal(jsonObj, res)
+	err = json.Unmarshal(jsonObj, res)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling %s: %w", obj.Kind, err)
 	}
