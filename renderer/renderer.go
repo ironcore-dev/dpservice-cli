@@ -322,7 +322,7 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 		headers = []any{"InterfaceID", "IP", "MinPort", "MaxPort", "UnderlayRoute"}
 		// if command was natinfo
 	} else {
-		headers = []any{"IP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
+		headers = []any{"VNI", "IP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
 	}
 
 	columns := make([][]any, len(nats))
@@ -332,7 +332,7 @@ func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 			// if command was natinfo
 		} else {
-			columns[i] = []any{nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			columns[i] = []any{nat.Spec.Vni, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 			if len(nats) > 0 && nats[i].Spec.UnderlayRoute == nil {
 				columns[i] = append(columns[i], "Local")
 			} else {
