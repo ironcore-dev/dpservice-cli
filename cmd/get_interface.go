@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -30,16 +31,16 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface",
-		Short:   "Get or list interface(s)",
+		Use:     "interface <--id>",
+		Short:   "Get interface",
+		Example: "dpservice-cli get interface --id=vm1",
 		Aliases: InterfaceAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
+
 			return RunGetInterface(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
 				opts,
 			)
 		},
@@ -53,12 +54,19 @@ func GetInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 }
 
 type GetInterfaceOptions struct {
+	ID string
 }
 
 func (o *GetInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "ID of the interface.")
 }
 
 func (o *GetInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -66,45 +74,30 @@ func RunGetInterface(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
 	opts GetInterfaceOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
+	iface, err := client.GetInterface(ctx, opts.ID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error getting interface: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		ifaceList, err := client.ListInterfaces(ctx)
-		if err != nil {
-			return fmt.Errorf("error listing interfaces: %w", err)
+	if rendererFactory.GetWide() {
+		nat, err := client.GetNat(ctx, iface.ID)
+		if err == nil {
+			iface.Spec.Nat = nat
 		}
 
-		if err := renderer.Render(ifaceList); err != nil {
-			return fmt.Errorf("error rendering list: %w", err)
+		vip, err := client.GetVirtualIP(ctx, iface.ID)
+		if err == nil {
+			iface.Spec.VIP = vip
 		}
-		return nil
 	}
 
-	for _, interfaceID := range interfaceIDs {
-		iface, err := client.GetInterface(ctx, interfaceID)
-		if err != nil {
-			return fmt.Errorf("error getting interface: %w", err)
-		}
-
-		if err := renderer.Render(iface); err != nil {
-			return fmt.Errorf("error rendering interface %s: %w", interfaceID, err)
-		}
-	}
-	return nil
+	return rendererFactory.RenderObject("", os.Stdout, iface)
 }

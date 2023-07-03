@@ -17,25 +17,33 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
+func DeleteVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteVirtualIPOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip <interface-id> [<interface-ids>...]",
-		Short:   "Delete virtual ip(s)",
+		Use:     "virtualip <--interface-id>",
+		Short:   "Delete virtual IP from interface",
+		Example: "dpservice-cli delete virtualip --interface-id=vm1",
 		Aliases: VirtualIPAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunDeleteVirtualIP(cmd.Context(), factory, interfaceIDs, opts)
+
+			return RunDeleteVirtualIP(
+				cmd.Context(),
+				dpdkClientFactory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -47,32 +55,33 @@ func DeleteVirtualIP(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteVirtualIPOptions struct {
+	InterfaceID string
 }
 
 func (o *DeleteVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the Virtual IP.")
 }
 
 func (o *DeleteVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteVirtualIP(ctx context.Context, factory DPDKClientFactory, interfaceIDs []string, opts DeleteVirtualIPOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteVirtualIP(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteVirtualIPOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	for _, interfaceID := range interfaceIDs {
-		if err := client.DeleteVirtualIP(ctx, interfaceID); err != nil {
-			fmt.Printf("Error deleting virtual ip of interface %s: %v\n", interfaceID, err)
-		}
-
-		fmt.Printf("Deleted virtual ip of interface %s\n", interfaceID)
+	vip, err := client.DeleteVirtualIP(ctx, opts.InterfaceID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting virtual ip: %w", err)
 	}
-	return nil
+
+	return rendererFactory.RenderObject("deleted", os.Stdout, vip)
 }

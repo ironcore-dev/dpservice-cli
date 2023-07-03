@@ -23,9 +23,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/client"
-	"github.com/onmetal/dpservice-go-library/renderer"
-	"github.com/onmetal/dpservice-go-library/sources"
+	"github.com/onmetal/dpservice-cli/renderer"
+	"github.com/onmetal/dpservice-cli/sources"
+	"github.com/onmetal/net-dpservice-go/api"
+	"github.com/onmetal/net-dpservice-go/client"
+	apierrors "github.com/onmetal/net-dpservice-go/errors"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -63,6 +65,12 @@ func (o *DPDKClientOptions) NewClient(ctx context.Context) (client.Client, func(
 	return c, cleanup, nil
 }
 
+func DpdkClose(cleanup func() error) {
+	if err := cleanup(); err != nil {
+		fmt.Printf("error cleaning up client: %s", err)
+	}
+}
+
 func SubcommandRequired(cmd *cobra.Command, args []string) error {
 	if err := cmd.Help(); err != nil {
 		return err
@@ -90,11 +98,17 @@ func CommandNames(cmds []*cobra.Command) []string {
 type RendererOptions struct {
 	Output string
 	Pretty bool
+	Wide   bool
 }
 
 func (o *RendererOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format.")
+	fs.StringVarP(&o.Output, "output", "o", o.Output, "Output format. [json|yaml|table|name]")
 	fs.BoolVar(&o.Pretty, "pretty", o.Pretty, "Whether to render pretty output.")
+	fs.BoolVarP(&o.Wide, "wide", "w", o.Wide, "Whether to render more info in table output.")
+}
+
+func (o *RendererOptions) GetWide() bool {
+	return o.Wide
 }
 
 func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.Renderer, error) {
@@ -120,6 +134,7 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 	}
 
 	if err := registry.Register("table", func(w io.Writer) renderer.Renderer {
+		renderer.DefaultTableConverter.SetWide(o.Wide)
 		return renderer.NewTable(w, renderer.DefaultTableConverter)
 	}); err != nil {
 		return nil, err
@@ -133,8 +148,45 @@ func (o *RendererOptions) NewRenderer(operation string, w io.Writer) (renderer.R
 	return registry.New(output, w)
 }
 
+func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Object) error {
+	if obj.GetStatus().Error != 0 {
+		operation = fmt.Sprintf("server error: %d, %s", obj.GetStatus().Error, obj.GetStatus().Message)
+		if o.Output == "table" {
+			o.Output = "name"
+		}
+	}
+	renderer, err := o.NewRenderer(operation, w)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(obj); err != nil {
+		return fmt.Errorf("error rendering %s: %w", obj.GetKind(), err)
+	}
+	if obj.GetStatus().Error != 0 {
+		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
+	}
+	return nil
+}
+
+func (o *RendererOptions) RenderList(operation string, w io.Writer, list api.List) error {
+	renderer, err := o.NewRenderer("", w)
+	if err != nil {
+		return fmt.Errorf("error creating renderer: %w", err)
+	}
+	if err := renderer.Render(list); err != nil {
+		return fmt.Errorf("error rendering %s: %w", list.GetItems()[0].GetKind(), err)
+	}
+	if operation == "server error" {
+		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
+	}
+	return nil
+}
+
 type RendererFactory interface {
 	NewRenderer(operation string, w io.Writer) (renderer.Renderer, error)
+	RenderObject(operation string, w io.Writer, obj api.Object) error
+	RenderList(operation string, w io.Writer, list api.List) error
+	GetWide() bool
 }
 
 type SourcesOptions struct {
@@ -187,7 +239,7 @@ func ParseRouteKeyArgs(args []string) ([]RouteKey, error) {
 		return nil, fmt.Errorf("expected args to be a multiple of 3 but got %d", len(args))
 	}
 
-	keys := make([]RouteKey, len(args)%3)
+	keys := make([]RouteKey, len(args)/3)
 	for i := 0; i < len(args); i += 3 {
 		key, err := ParseRouteKey(args[i], args[i+1], args[i+2])
 		if err != nil {
@@ -213,8 +265,14 @@ func ParsePrefixArgs(args []string) ([]netip.Prefix, error) {
 }
 
 var (
-	InterfaceAliases = []string{"interfaces", "iface", "ifaces"}
-	PrefixAliases    = []string{"prefixes", "prfx", "prfxs"}
-	RouteAliases     = []string{"routes", "rt", "rts"}
-	VirtualIPAliases = []string{"virtualips", "vip", "vips"}
+	InterfaceAliases          = []string{"interfaces", "iface", "ifaces"}
+	PrefixAliases             = []string{"prefixes", "prfx", "prfxs"}
+	RouteAliases              = []string{"routes", "rt", "rts"}
+	VirtualIPAliases          = []string{"virtualips", "vip", "vips"}
+	LoadBalancerAliases       = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
+	LoadBalancerPrefixAliases = []string{"loadbalancer-prefixes", "lbprfx", "lbprfxs"}
+	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts", "lbtarget"}
+	NatAliases                = []string{"translation"}
+	NeighborNatAliases        = []string{"nnat", "ngbnat", "neighnat"}
+	FirewallRuleAliases       = []string{"fwrule", "fw-rule", "firewallrules", "fwrules", "fw-rules"}
 )

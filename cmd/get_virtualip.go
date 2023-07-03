@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -30,16 +31,17 @@ func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip [<interface-ids>...]",
-		Short:   "Get or list virtualip(s)",
+		Use:     "virtualip <--interface-id>",
+		Short:   "Get Virtual IP on interface",
+		Example: "dpservice-cli get virtualip --interface-id=vm1",
 		Aliases: VirtualIPAliases,
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
+
 			return RunGetVirtualIP(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
-				interfaceIDs,
 				opts,
 			)
 		},
@@ -53,12 +55,19 @@ func GetVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 }
 
 type GetVirtualIPOptions struct {
+	InterfaceID string
 }
 
 func (o *GetVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the Virtual IP.")
 }
 
 func (o *GetVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -66,37 +75,18 @@ func RunGetVirtualIP(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	interfaceIDs []string,
 	opts GetVirtualIPOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	renderer, err := rendererFactory.NewRenderer("", os.Stdout)
-	if err != nil {
-		return fmt.Errorf("error creating renderer: %w", err)
+	virtualIP, err := client.GetVirtualIP(ctx, opts.InterfaceID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error getting virtual ip: %w", err)
 	}
 
-	if len(interfaceIDs) == 0 {
-		return fmt.Errorf("listing virtual ips is not implemented")
-	}
-
-	for _, interfaceID := range interfaceIDs {
-		virtualIP, err := client.GetVirtualIP(ctx, interfaceID)
-		if err != nil {
-			fmt.Printf("Error getting virtual ip for interface %s: %v\n", interfaceID, err)
-		}
-
-		if err := renderer.Render(virtualIP); err != nil {
-			return fmt.Errorf("error rendering virtual ip: %w", err)
-		}
-	}
-	return nil
+	return rendererFactory.RenderObject("", os.Stdout, virtualIP)
 }

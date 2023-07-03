@@ -20,19 +20,28 @@ import (
 
 func Command() *cobra.Command {
 	dpdkClientOptions := &DPDKClientOptions{}
+	rendererOptions := &RendererOptions{}
 
 	cmd := &cobra.Command{
-		Use:  "dpservice-cli",
-		Args: cobra.NoArgs,
-		RunE: SubcommandRequired,
+		Use:           "dpservice-cli",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          SubcommandRequired,
 	}
 
+	rendererOptions.AddFlags(cmd.PersistentFlags())
 	dpdkClientOptions.AddFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(
-		Create(dpdkClientOptions),
+		Add(dpdkClientOptions),
 		Get(dpdkClientOptions),
+		List(dpdkClientOptions),
 		Delete(dpdkClientOptions),
+		Reset(dpdkClientOptions),
+		Initialized(dpdkClientOptions, rendererOptions),
+		Init(dpdkClientOptions, rendererOptions),
+		completionCmd,
 	)
 
 	return cmd

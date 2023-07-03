@@ -17,7 +17,7 @@ package io_test
 import (
 	"bytes"
 
-	. "github.com/onmetal/dpservice-go-library/io"
+	. "github.com/onmetal/dpservice-cli/io"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

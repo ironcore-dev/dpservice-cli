@@ -17,29 +17,35 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/netip"
+	"os"
 
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/flag"
+	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
+func DeleteRoute(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteRouteOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "route <prefix> <next-hop-vni> <next-hop-ip> [<prefix-n> <next-hop-ip-n> <next-hop-ip-n>...]",
+		Use:     "route <--prefix> <--vni>",
 		Short:   "Delete a route",
+		Example: "dpservice-cli delete route --prefix=10.100.2.0/24 --vni=100",
 		Aliases: RouteAliases,
-		Args:    MultipleOfArgs(3),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			keys, err := ParseRouteKeyArgs(args)
-			if err != nil {
-				return err
-			}
 
-			return RunDeleteRoute(cmd.Context(), factory, keys, opts)
+			return RunDeleteRoute(
+				cmd.Context(),
+				dpdkClientFactory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -51,15 +57,17 @@ func DeleteRoute(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteRouteOptions struct {
-	VNI uint32
+	Prefix netip.Prefix
+	VNI    uint32
 }
 
 func (o *DeleteRouteOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix of the route.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI of the route.")
 }
 
 func (o *DeleteRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vni"} {
+	for _, name := range []string{"prefix", "vni"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -67,23 +75,17 @@ func (o *DeleteRouteOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunDeleteRoute(ctx context.Context, factory DPDKClientFactory, keys []RouteKey, opts DeleteRouteOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteRoute(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteRouteOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error deleting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	for _, key := range keys {
-		if err := client.DeleteRoute(ctx, opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP); err != nil {
-			fmt.Printf("Error deleting route %d-%v:%d-%v: %v\n", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP, err)
-		}
-		fmt.Printf("Deleted route %d-%v:%d-%v\n", opts.VNI, key.Prefix, key.NextHopVNI, key.NextHopIP)
+	route, err := client.DeleteRoute(ctx, opts.VNI, opts.Prefix)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting route: %w", err)
 	}
 
-	return nil
+	return rendererFactory.RenderObject("deleted", os.Stdout, route)
 }

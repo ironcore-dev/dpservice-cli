@@ -17,25 +17,33 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/onmetal/dpservice-go-library/util"
+	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
+func DeleteInterface(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
 		opts DeleteInterfaceOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "interface <id> [<ids> ...]",
-		Short:   "Delete interface(s)",
+		Use:     "interface <--id>",
+		Short:   "Delete interface",
+		Example: "dpservice-cli delete interface --id=vm1",
 		Aliases: InterfaceAliases,
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceIDs := args
-			return RunDeleteInterface(cmd.Context(), factory, interfaceIDs, opts)
+
+			return RunDeleteInterface(
+				cmd.Context(),
+				dpdkClientFactory,
+				rendererFactory,
+				opts,
+			)
 		},
 	}
 
@@ -47,32 +55,33 @@ func DeleteInterface(factory DPDKClientFactory) *cobra.Command {
 }
 
 type DeleteInterfaceOptions struct {
+	ID string
 }
 
 func (o *DeleteInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.ID, "id", o.ID, "Interface ID to delete.")
 }
 
 func (o *DeleteInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"id"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func RunDeleteInterface(ctx context.Context, factory DPDKClientFactory, interfaceIDs []string, opts DeleteInterfaceOptions) error {
-	client, cleanup, err := factory.NewClient(ctx)
+func RunDeleteInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts DeleteInterfaceOptions) error {
+	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
-	defer func() {
-		if err := cleanup(); err != nil {
-			fmt.Printf("Error cleaning up client: %v\n", err)
-		}
-	}()
+	defer DpdkClose(cleanup)
 
-	for _, interfaceID := range interfaceIDs {
-		if err := client.DeleteInterface(ctx, interfaceID); err != nil {
-			fmt.Printf("Error deleting interface %s: %v\n", interfaceID, err)
-		}
-
-		fmt.Println("Deleted interface", interfaceID)
+	iface, err := client.DeleteInterface(ctx, opts.ID)
+	if err != nil && err != errors.ErrServerError {
+		return fmt.Errorf("error deleting interface: %w", err)
 	}
-	return nil
+
+	return rendererFactory.RenderObject("deleted", os.Stdout, iface)
 }

@@ -20,7 +20,7 @@ import (
 	"io"
 
 	yaml2 "github.com/ghodss/yaml"
-	dpsvcio "github.com/onmetal/dpservice-go-library/io"
+	dpsvcio "github.com/onmetal/dpservice-cli/io"
 	"gopkg.in/yaml.v2"
 )
 
@@ -77,25 +77,27 @@ func NewPeekDecoder(rd io.Reader, newDecoder func(rd io.Reader) Decoder) PeekDec
 }
 
 func (d *KindDecoder) Next() (any, error) {
-	typeMeta := &struct {
-		Kind string `json:"kind"`
+	obj := &struct {
+		Kind     string `json:"kind" yaml:"kind"`
+		Metadata any    `json:"metadata" yaml:"metadata"`
+		Spec     any    `json:"spec" yaml:"spec"`
 	}{}
-	if err := d.decoder.Decode(typeMeta); err != nil {
-		return nil, fmt.Errorf("error decoding type meta: %w", err)
+	if err := d.decoder.Decode(&obj); err != nil {
+		return nil, err
 	}
-
-	if err := d.decoder.Undecode(); err != nil {
-		return nil, fmt.Errorf("error reversing decoder: %w", err)
-	}
-
-	res, err := d.scheme.New(typeMeta.Kind)
+	res, err := d.scheme.New(obj.Kind)
 	if err != nil {
-		return nil, fmt.Errorf("error creating new %s: %w", typeMeta.Kind, err)
+		return nil, fmt.Errorf("error creating new %s: %w", obj.Kind, err)
+	}
+	jsonObj, err := json.Marshal(obj)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling %s: %w", obj.Kind, err)
+	}
+	err = json.Unmarshal(jsonObj, res)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling %s: %w", obj.Kind, err)
 	}
 
-	if err = d.decoder.Decode(res); err != nil {
-		return nil, fmt.Errorf("error decoding %s: %w", typeMeta.Kind, err)
-	}
 	return res, nil
 }
 
@@ -123,12 +125,16 @@ func NewYAMLToJSONDecoder(rd io.Reader) *YAMLToJSONDecoder {
 }
 
 func (d *YAMLToJSONDecoder) Decode(v any) error {
-	var yamlValue any
-	if err := d.decoder.Decode(&yamlValue); err != nil {
+	obj := &struct {
+		Kind     string `yaml:"kind"`
+		Metadata any    `yaml:"metadata"`
+		Spec     any    `yaml:"spec"`
+	}{}
+	if err := d.decoder.Decode(obj); err != nil {
 		return err
 	}
 
-	yamlData, err := yaml2.Marshal(yamlValue)
+	yamlData, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
 	}
@@ -138,5 +144,5 @@ func (d *YAMLToJSONDecoder) Decode(v any) error {
 		return err
 	}
 
-	return json.Unmarshal(jsonData, v)
+	return json.Unmarshal(jsonData, &v)
 }

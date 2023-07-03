@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 
-	"github.com/onmetal/dpservice-go-library/dpdk/api"
-	"github.com/onmetal/dpservice-go-library/dpdk/client/dynamic"
-	"github.com/onmetal/dpservice-go-library/sources"
+	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
+	"github.com/onmetal/dpservice-cli/dpdk/runtime"
+	"github.com/onmetal/dpservice-cli/sources"
+	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -39,13 +41,21 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 		},
 	}
 
+	rendererOptions.AddFlags(cmd.PersistentFlags())
+
 	sourcesOptions.AddFlags(cmd.Flags())
 
 	subcommands := []*cobra.Command{
-		DeleteInterface(factory),
-		DeletePrefix(factory),
-		DeleteRoute(factory),
-		DeleteVirtualIP(factory),
+		DeleteInterface(factory, rendererOptions),
+		DeletePrefix(factory, rendererOptions),
+		DeleteRoute(factory, rendererOptions),
+		DeleteVirtualIP(factory, rendererOptions),
+		DeleteLoadBalancer(factory, rendererOptions),
+		DeleteLoadBalancerPrefix(factory, rendererOptions),
+		DeleteLoadBalancerTarget(factory, rendererOptions),
+		DeleteNat(factory, rendererOptions),
+		DeleteNeighborNat(factory, rendererOptions),
+		DeleteFirewallRule(factory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Deletes one of %v", CommandNames(subcommands))
@@ -84,7 +94,7 @@ func RunDelete(
 		return fmt.Errorf("error creating sources iterator: %w", err)
 	}
 
-	objs, err := sources.CollectObjects(iterator, api.DefaultScheme)
+	objs, err := sources.CollectObjects(iterator, runtime.DefaultScheme)
 	if err != nil {
 		return fmt.Errorf("error collecting objects: %w", err)
 	}
@@ -92,8 +102,17 @@ func RunDelete(
 	for _, obj := range objs {
 		key := dynamic.ObjectKeyFromObject(obj)
 
-		if err := dc.Delete(ctx, obj); err != nil {
-			fmt.Printf("Error deleting %T %s: %v\n", obj, key, err)
+		res, err := dc.Delete(ctx, obj)
+		if err == errors.ErrServerError {
+			r := reflect.ValueOf(res)
+			err := reflect.Indirect(r).FieldByName("Status").FieldByName("Error")
+			msg := reflect.Indirect(r).FieldByName("Status").FieldByName("Message")
+			fmt.Printf("Error deleting %T %s: Server error: %v %v\n", res, key, err, msg)
+			continue
+		}
+		if err != nil {
+			fmt.Printf("Error deleting %T %s: %v\n", res, key, err)
+			continue
 		}
 
 		if err := renderer.Render(obj); err != nil {
