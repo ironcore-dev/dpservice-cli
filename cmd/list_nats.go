@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/onmetal/net-dpservice-go/api"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -73,10 +74,10 @@ func RunListNats(
 	var nats []api.Nat
 	for _, iface := range interfaces {
 		nat, err := client.GetNat(ctx, iface.InterfaceMeta.ID)
-		if err == errors.ErrServerError {
+		if strings.Contains(err.Error(), errors.StatusErrorString) {
 			continue
 		}
-		if err != nil && err != errors.ErrServerError {
+		if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 			return fmt.Errorf("error getting nat: %w", err)
 		}
 		nats = append(nats, *nat)

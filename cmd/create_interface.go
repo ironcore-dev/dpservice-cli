@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -101,7 +102,7 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			PXE:    &api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
 		},
 	})
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error adding interface: %w", err)
 	}
 

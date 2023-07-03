@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -96,7 +96,7 @@ func RunAddLoadBalancerTarget(
 		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{LoadbalancerID: opts.LoadBalancerID},
 		Spec:                   api.LoadBalancerTargetSpec{TargetIP: &opts.TargetIP},
 	})
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), "error code") {
 		return fmt.Errorf("error adding loadbalancer target: %w", err)
 	}
 

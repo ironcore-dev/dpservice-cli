@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/cmd"
 	"github.com/onmetal/net-dpservice-go/errors"
@@ -26,7 +27,7 @@ import (
 func main() {
 	if err := cmd.Command().Execute(); err != nil {
 		// check if it is Server side error
-		if err.Error() == strconv.Itoa(errors.SERVER_ERROR) {
+		if err.Error() == strconv.Itoa(errors.SERVER_ERROR) || strings.Contains(err.Error(), "error code") {
 			os.Exit(errors.SERVER_ERROR)
 		}
 		// else it is Client side error

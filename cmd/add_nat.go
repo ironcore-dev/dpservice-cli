@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -97,7 +98,7 @@ func RunAddNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendere
 			MaxPort:  opts.MaxPort,
 		},
 	})
-	if err != nil && err != errors.ErrServerError {
+	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error adding nat: %w", err)
 	}
 
