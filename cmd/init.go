@@ -86,7 +86,7 @@ func RunInit(
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
 	}
 
-	init, err := client.Init(ctx, dpdkproto.InitConfig{})
+	init, err := client.Init(ctx, &dpdkproto.InitConfig{})
 	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
 		return fmt.Errorf("error init: %w", err)
 	}
