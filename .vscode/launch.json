@@ -45,9 +45,7 @@
             
             //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
 
-
             //"args": ["list", "prefixes","--interface-id=vm1"]
-            "args": ["list", "lbtargets","--lb-id=6"]
         }
     ]
 }
