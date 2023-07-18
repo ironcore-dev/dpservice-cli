@@ -23,7 +23,7 @@
 
 
             //"args": ["add", "lbtarget", "--target-ip=ff80::5", "--lb-id=1"]
-            "args": ["list", "lbtargets","--lb-id=4"]
+            //"args": ["list", "lbtargets","--lb-id=4"]
 
             //"args": ["get", "natinfo", "--nat-ip=10.20.30.40", "--info-type=0"]
 
@@ -44,7 +44,7 @@
             //"args": ["list", "interfaces", "--wide"]
             
             //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
-
+            "args": ["get", "version"]
             //"args": ["list", "prefixes","--interface-id=vm1"]
         }
     ]

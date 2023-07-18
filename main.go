@@ -26,6 +26,10 @@ import (
 
 func main() {
 	if err := cmd.Command().Execute(); err != nil {
+		if strings.Contains(err.Error(), "Unimplemented desc") {
+			fmt.Println("Error in gRPC, client and server are probably using different proto version")
+			os.Exit(errors.SERVER_ERROR)
+		}
 		// check if it is Server side error
 		if err.Error() == strconv.Itoa(errors.SERVER_ERROR) || strings.Contains(err.Error(), "error code") {
 			os.Exit(errors.SERVER_ERROR)

@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/addlicense v1.1.1
 	github.com/jedib0t/go-pretty/v6 v6.3.9
-	github.com/onmetal/net-dpservice-go v0.1.15
+	github.com/onmetal/net-dpservice-go v0.1.15-0.20230718135452-1a19947b2950
 	github.com/onsi/ginkgo/v2 v2.2.0
 	github.com/onsi/gomega v1.20.2
 	github.com/spf13/cobra v1.7.0

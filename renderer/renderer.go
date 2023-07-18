@@ -192,6 +192,8 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.initializedTable(*obj)
 	case *api.Vni:
 		return t.vniTable(*obj)
+	case *api.Version:
+		return t.versionTable(*obj)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -402,6 +404,17 @@ func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
 	headers := []any{"VNI", "VniType", "inUse"}
 	columns := make([][]any, 1)
 	columns[0] = []any{vni.VniMeta.VNI, vni.VniMeta.VniType, vni.Spec.InUse}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) versionTable(version api.Version) (*TableData, error) {
+	headers := []any{"SvcProto", "SvcVersion"}
+	columns := make([][]any, 1)
+	columns[0] = []any{version.Spec.SvcProto, version.Spec.SvcVer}
 
 	return &TableData{
 		Headers: headers,
