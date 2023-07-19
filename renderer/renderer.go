@@ -88,6 +88,9 @@ func NewName(w io.Writer, operation string) *Name {
 func (n *Name) Render(v any) error {
 	objs, err := getObjs(v)
 	if err != nil {
+		if err.Error() == "empty list" {
+			return n.renderList(v)
+		}
 		return err
 	}
 
@@ -115,11 +118,26 @@ func (n *Name) renderObject(obj api.Object) error {
 	return err
 }
 
+func (n *Name) renderList(list any) error {
+	var parts []string
+
+	parts = append(parts, strings.ToLower(strings.Split(reflect.TypeOf(list).String(), ".")[1]))
+	if n.operation != "" {
+		parts = append(parts, n.operation)
+	}
+
+	_, err := fmt.Fprintf(n.w, "%s\n", strings.Join(parts, " "))
+	return err
+}
+
 func getObjs(v any) ([]api.Object, error) {
 	switch v := v.(type) {
 	case api.Object:
 		return []api.Object{v}, nil
 	case api.List:
+		if v.GetStatus().Error != 0 {
+			return nil, fmt.Errorf("empty list")
+		}
 		return v.GetItems(), nil
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)

@@ -169,14 +169,20 @@ func (o *RendererOptions) RenderObject(operation string, w io.Writer, obj api.Ob
 }
 
 func (o *RendererOptions) RenderList(operation string, w io.Writer, list api.List) error {
-	renderer, err := o.NewRenderer("", w)
+	if list.GetStatus().Error != 0 {
+		operation = fmt.Sprintf("server error: %d, %s", list.GetStatus().Error, list.GetStatus().Message)
+		if o.Output == "table" {
+			o.Output = "name"
+		}
+	}
+	renderer, err := o.NewRenderer(operation, w)
 	if err != nil {
 		return fmt.Errorf("error creating renderer: %w", err)
 	}
 	if err := renderer.Render(list); err != nil {
 		return fmt.Errorf("error rendering %s: %w", list.GetItems()[0].GetKind(), err)
 	}
-	if operation == "server error" {
+	if list.GetStatus().Error != 0 {
 		return fmt.Errorf(strconv.Itoa(apierrors.SERVER_ERROR))
 	}
 	return nil
