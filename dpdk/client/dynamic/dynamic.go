@@ -209,7 +209,7 @@ func ObjectKeyFromObject(obj any) ObjectKey {
 		}
 	case *api.NeighborNat:
 		return NeighborNatKey{
-			NatIP:   *obj.NatVIPIP,
+			NatIP:   *obj.NatIP,
 			Vni:     obj.Spec.Vni,
 			MinPort: obj.Spec.MinPort,
 			MaxPort: obj.Spec.MaxPort,
@@ -243,21 +243,21 @@ func (c *client) Create(ctx context.Context, obj any) (any, error) {
 		*obj = *res
 		return obj, nil
 	case *api.Prefix:
-		res, err := c.structured.AddPrefix(ctx, obj)
+		res, err := c.structured.CreatePrefix(ctx, obj)
 		if err != nil {
 			return res, err
 		}
 		*obj = *res
 		return obj, nil
 	case *api.Route:
-		res, err := c.structured.AddRoute(ctx, obj)
+		res, err := c.structured.CreateRoute(ctx, obj)
 		if err != nil {
 			return res, err
 		}
 		*obj = *res
 		return obj, nil
 	case *api.VirtualIP:
-		res, err := c.structured.AddVirtualIP(ctx, obj)
+		res, err := c.structured.CreateVirtualIP(ctx, obj)
 		if err != nil {
 			return res, err
 		}
@@ -278,28 +278,28 @@ func (c *client) Create(ctx context.Context, obj any) (any, error) {
 		*obj = *res
 		return obj, nil
 	case *api.LoadBalancerTarget:
-		res, err := c.structured.AddLoadBalancerTarget(ctx, obj)
+		res, err := c.structured.CreateLoadBalancerTarget(ctx, obj)
 		if err != nil {
 			return res, err
 		}
 		*obj = *res
 		return obj, nil
 	case *api.Nat:
-		res, err := c.structured.AddNat(ctx, obj)
+		res, err := c.structured.CreateNat(ctx, obj)
 		if err != nil {
 			return res, err
 		}
 		*obj = *res
 		return obj, nil
 	case *api.NeighborNat:
-		res, err := c.structured.AddNeighborNat(ctx, obj)
+		res, err := c.structured.CreateNeighborNat(ctx, obj)
 		if err != nil {
 			return res, err
 		}
 		*obj = *res
 		return obj, nil
 	case *api.FirewallRule:
-		res, err := c.structured.AddFirewallRule(ctx, obj)
+		res, err := c.structured.CreateFirewallRule(ctx, obj)
 		if err != nil {
 			return res, err
 		}
@@ -315,21 +315,21 @@ func (c *client) Delete(ctx context.Context, obj any) (any, error) {
 	case *api.Interface:
 		return c.structured.DeleteInterface(ctx, obj.ID)
 	case *api.Prefix:
-		return c.structured.DeletePrefix(ctx, obj.InterfaceID, obj.Spec.Prefix)
+		return c.structured.DeletePrefix(ctx, obj.InterfaceID, &obj.Spec.Prefix)
 	case *api.Route:
-		return c.structured.DeleteRoute(ctx, obj.VNI, *obj.Spec.Prefix)
+		return c.structured.DeleteRoute(ctx, obj.VNI, obj.Spec.Prefix)
 	case *api.VirtualIP:
 		return c.structured.DeleteVirtualIP(ctx, obj.InterfaceID)
 	case *api.LoadBalancer:
 		return c.structured.DeleteLoadBalancer(ctx, obj.ID)
 	case *api.LoadBalancerPrefix:
-		return c.structured.DeleteLoadBalancerPrefix(ctx, obj.InterfaceID, obj.Spec.Prefix)
+		return c.structured.DeleteLoadBalancerPrefix(ctx, obj.InterfaceID, &obj.Spec.Prefix)
 	case *api.LoadBalancerTarget:
-		return c.structured.DeleteLoadBalancerTarget(ctx, obj.LoadbalancerID, *obj.Spec.TargetIP)
+		return c.structured.DeleteLoadBalancerTarget(ctx, obj.LoadbalancerID, obj.Spec.TargetIP)
 	case *api.Nat:
 		return c.structured.DeleteNat(ctx, obj.InterfaceID)
 	case *api.NeighborNat:
-		return c.structured.DeleteNeighborNat(ctx, *obj)
+		return c.structured.DeleteNeighborNat(ctx, obj)
 	case *api.FirewallRule:
 		return c.structured.DeleteFirewallRule(ctx, obj.InterfaceID, obj.Spec.RuleID)
 	default:

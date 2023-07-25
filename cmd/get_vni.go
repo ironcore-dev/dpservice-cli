@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -87,7 +85,7 @@ func RunGetVni(
 	defer DpdkClose(cleanup)
 
 	vni, err := client.GetVni(ctx, opts.VNI, opts.VniType)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && vni.Status.Code == 0 {
 		return fmt.Errorf("error getting vni: %w", err)
 	}
 

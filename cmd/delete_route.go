@@ -19,11 +19,9 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -83,8 +81,8 @@ func RunDeleteRoute(ctx context.Context, dpdkClientFactory DPDKClientFactory, re
 	}
 	defer DpdkClose(cleanup)
 
-	route, err := client.DeleteRoute(ctx, opts.VNI, opts.Prefix)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	route, err := client.DeleteRoute(ctx, opts.VNI, &opts.Prefix)
+	if err != nil && route.Status.Code == 0 {
 		return fmt.Errorf("error deleting route: %w", err)
 	}
 

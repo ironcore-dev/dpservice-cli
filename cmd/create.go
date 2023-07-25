@@ -28,16 +28,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Add(factory DPDKClientFactory) *cobra.Command {
+func Create(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "name"}
 	sourcesOptions := &SourcesOptions{}
 
 	cmd := &cobra.Command{
-		Use:  "add",
-		Args: cobra.NoArgs,
+		Use:     "create",
+		Aliases: []string{"add"},
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			return RunAdd(ctx, factory, rendererOptions, sourcesOptions)
+			return RunCreate(ctx, factory, rendererOptions, sourcesOptions)
 		},
 	}
 
@@ -47,15 +48,15 @@ func Add(factory DPDKClientFactory) *cobra.Command {
 
 	subcommands := []*cobra.Command{
 		CreateInterface(factory, rendererOptions),
-		AddPrefix(factory, rendererOptions),
-		AddRoute(factory, rendererOptions),
-		AddVirtualIP(factory, rendererOptions),
+		CreatePrefix(factory, rendererOptions),
+		CreateRoute(factory, rendererOptions),
+		CreateVirtualIP(factory, rendererOptions),
 		CreateLoadBalancer(factory, rendererOptions),
 		CreateLoadBalancerPrefix(factory, rendererOptions),
-		AddLoadBalancerTarget(factory, rendererOptions),
-		AddNat(factory, rendererOptions),
-		AddNeighborNat(factory, rendererOptions),
-		AddFirewallRule(factory, rendererOptions),
+		CreateLoadBalancerTarget(factory, rendererOptions),
+		CreateNat(factory, rendererOptions),
+		CreateNeighborNat(factory, rendererOptions),
+		CreateFirewallRule(factory, rendererOptions),
 	}
 
 	cmd.Short = fmt.Sprintf("Creates one of %v", CommandNames(subcommands))
@@ -68,7 +69,7 @@ func Add(factory DPDKClientFactory) *cobra.Command {
 	return cmd
 }
 
-func RunAdd(
+func RunCreate(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
@@ -107,11 +108,11 @@ func RunAdd(
 			r := reflect.ValueOf(res)
 			err := reflect.Indirect(r).FieldByName("Status").FieldByName("Error")
 			msg := reflect.Indirect(r).FieldByName("Status").FieldByName("Message")
-			fmt.Printf("Error adding %T: Server error: %v %v\n", res, err, msg)
+			fmt.Printf("Error creating %T: Server error: %v %v\n", res, err, msg)
 			continue
 		}
 		if err != nil {
-			fmt.Printf("Error adding %T: %v\n", obj, err)
+			fmt.Printf("Error creating %T: %v\n", obj, err)
 			continue
 		}
 

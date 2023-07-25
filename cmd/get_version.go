@@ -18,11 +18,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -81,11 +79,11 @@ func RunGetVersion(
 	svcVersion, err := client.GetVersion(ctx, &api.Version{
 		TypeMeta: api.TypeMeta{Kind: api.VersionKind},
 		VersionMeta: api.VersionMeta{
-			ClientName: "dpservice-cli",
-			ClientVer:  util.BuildVersion,
+			ClientName:    "dpservice-cli",
+			ClientVersion: util.BuildVersion,
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && svcVersion.Status.Code == 0 {
 		return fmt.Errorf("error getting version: %w", err)
 	}
 	return rendererFactory.RenderObject("", os.Stdout, svcVersion)

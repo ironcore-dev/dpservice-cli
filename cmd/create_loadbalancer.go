@@ -19,12 +19,10 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -37,7 +35,7 @@ func CreateLoadBalancer(dpdkClientFactory DPDKClientFactory, rendererFactory Ren
 	cmd := &cobra.Command{
 		Use:     "loadbalancer <--id> <--vni> <--vip> <--lbports>",
 		Short:   "Create a loadbalancer",
-		Example: "dpservice-cli add loadbalancer --id=4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
+		Example: "dpservice-cli create loadbalancer --id=4 --vni=100 --vip=10.20.30.40 --lbports=TCP/443,UDP/53",
 		Aliases: LoadBalancerAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -106,9 +104,9 @@ func RunCreateLoadBalancer(ctx context.Context, dpdkClientFactory DPDKClientFact
 			Lbports: ports,
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding loadbalancer: %w", err)
+	if err != nil && lb.Status.Code == 0 {
+		return fmt.Errorf("error creating loadbalancer: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", lb.Spec.UnderlayRoute), os.Stdout, lb)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", lb.Spec.UnderlayRoute), os.Stdout, lb)
 }

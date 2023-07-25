@@ -19,12 +19,10 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -37,7 +35,7 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "interface <--id> [<--ip>] <--vni> <--device>",
 		Short:   "Create an interface",
-		Example: "dpservice-cli add interface --id=vm4 --ip=10.200.1.4 --ip=2000:200:1::4 --vni=200 --device=net_tap5",
+		Example: "dpservice-cli create interface --id=vm4 --ip=10.200.1.4 --ip=2000:200:1::4 --vni=200 --device=net_tap5",
 		Aliases: InterfaceAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -102,9 +100,9 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			PXE:    &api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding interface: %w", err)
+	if err != nil && iface.Status.Code == 0 {
+		return fmt.Errorf("error creating interface: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", iface.Spec.UnderlayRoute), os.Stdout, iface)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", iface.Spec.UnderlayRoute), os.Stdout, iface)
 }

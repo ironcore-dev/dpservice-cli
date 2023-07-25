@@ -135,7 +135,7 @@ func getObjs(v any) ([]api.Object, error) {
 	case api.Object:
 		return []api.Object{v}, nil
 	case api.List:
-		if v.GetStatus().Error != 0 {
+		if v.GetStatus().Code != 0 {
 			return nil, fmt.Errorf("empty list")
 		}
 		return v.GetItems(), nil
@@ -204,8 +204,6 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
-	case *api.Init:
-		return t.initTable(*obj)
 	case *api.Initialized:
 		return t.initializedTable(*obj)
 	case *api.Vni:
@@ -241,7 +239,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 	columns := make([][]any, len(lbtargets))
 	for i, lbtarget := range lbtargets {
 		columns[i] = []any{
-			api.NetIPAddrToProtoIPVersion(*lbtarget.Spec.TargetIP),
+			api.NetIPAddrToProtoIPVersion(lbtarget.Spec.TargetIP),
 			lbtarget.Spec.TargetIP,
 		}
 	}
@@ -337,22 +335,22 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	var headers []any
-	// if command was nat or there are no nats
+	// if command was get nat or there are no nats
 	if len(nats) > 0 && nats[0].InterfaceID != "" {
 		headers = []any{"InterfaceID", "IP", "MinPort", "MaxPort", "UnderlayRoute"}
-		// if command was natinfo
+		// if command was list nats
 	} else {
-		headers = []any{"VNI", "IP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
+		headers = []any{"VNI", "IP", "MinPort", "MaxPort", "UnderlayRoute", "NatType"}
 	}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		// if command was nat or there are no nats
+		// if command was get nat or there are no nats
 		if len(nats) > 0 && nats[0].InterfaceID != "" {
-			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
-			// if command was natinfo
+			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			// if command was list nats
 		} else {
-			columns[i] = []any{nat.Spec.Vni, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			columns[i] = []any{nat.Spec.Vni, nat.Spec.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 			if len(nats) > 0 && nats[i].Spec.UnderlayRoute == nil {
 				columns[i] = append(columns[i], "Local")
 			} else {
@@ -374,7 +372,7 @@ func (t defaultTableConverter) neighborNatTable(nats []api.NeighborNat) (*TableD
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
 
-		columns[i] = []any{nat.Spec.Vni, nat.NeighborNatMeta.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+		columns[i] = []any{nat.Spec.Vni, nat.NeighborNatMeta.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 
 	}
 
@@ -407,17 +405,6 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 	}, nil
 }
 
-func (t defaultTableConverter) initTable(init api.Init) (*TableData, error) {
-	headers := []any{"Error", "Message"}
-	columns := make([][]any, 1)
-	columns[0] = []any{init.Status.Error, init.Status.Message}
-
-	return &TableData{
-		Headers: headers,
-		Columns: columns,
-	}, nil
-}
-
 func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
 	headers := []any{"VNI", "VniType", "inUse"}
 	columns := make([][]any, 1)
@@ -430,9 +417,15 @@ func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
 }
 
 func (t defaultTableConverter) versionTable(version api.Version) (*TableData, error) {
-	headers := []any{"SvcProto", "SvcVersion"}
+	headers := []any{"ServiceProto", "ServiceVersion", "ClientName", "ClientProto", "ClientVersion"}
 	columns := make([][]any, 1)
-	columns[0] = []any{version.Spec.SvcProto, version.Spec.SvcVer}
+	columns[0] = []any{
+		version.Spec.ServiceProtocol,
+		version.Spec.ServiceVersion,
+		version.ClientName,
+		version.ClientProtocol,
+		version.ClientVersion,
+	}
 
 	return &TableData{
 		Headers: headers,

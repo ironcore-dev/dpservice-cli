@@ -19,33 +19,28 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func AddPrefix(
-	dpdkClientFactory DPDKClientFactory,
-	rendererFactory RendererFactory,
-) *cobra.Command {
+func CreateVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts AddPrefixOptions
+		opts CreateVirtualIPOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "prefix <--prefix> <--interface-id>",
-		Short:   "Add a prefix to interface.",
-		Example: "dpservice-cli add prefix --prefix=10.20.30.0/24 --interface-id=vm1",
+		Use:     "virtualip <--vip> <--interface-id>",
+		Short:   "Create a virtual IP on interface.",
+		Example: "dpservice-cli create virtualip --vip=20.20.20.20 --interface-id=vm1",
+		Aliases: VirtualIPAliases,
 		Args:    cobra.ExactArgs(0),
-		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunAddPrefix(
+			return RunCreateVirtualIP(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -61,18 +56,18 @@ func AddPrefix(
 	return cmd
 }
 
-type AddPrefixOptions struct {
-	Prefix      netip.Prefix
+type CreateVirtualIPOptions struct {
+	Vip         netip.Addr
 	InterfaceID string
 }
 
-func (o *AddPrefixOptions) AddFlags(fs *pflag.FlagSet) {
-	flag.PrefixVar(fs, &o.Prefix, "prefix", o.Prefix, "Prefix to add to the interface.")
-	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "ID of the interface to add the prefix for.")
+func (o *CreateVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.Vip, "vip", o.Vip, "Virtual IP to create on interface.")
+	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID where to create the virtual IP.")
 }
 
-func (o *AddPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"prefix", "interface-id"} {
+func (o *CreateVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"vip", "interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -80,11 +75,11 @@ func (o *AddPrefixOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunAddPrefix(
+func RunCreateVirtualIP(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	opts AddPrefixOptions,
+	opts CreateVirtualIPOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -92,17 +87,17 @@ func RunAddPrefix(
 	}
 	defer DpdkClose(cleanup)
 
-	prefix, err := client.AddPrefix(ctx, &api.Prefix{
-		PrefixMeta: api.PrefixMeta{
+	virtualIP, err := client.CreateVirtualIP(ctx, &api.VirtualIP{
+		VirtualIPMeta: api.VirtualIPMeta{
 			InterfaceID: opts.InterfaceID,
 		},
-		Spec: api.PrefixSpec{
-			Prefix: opts.Prefix,
+		Spec: api.VirtualIPSpec{
+			IP: &opts.Vip,
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding prefix: %w", err)
+	if err != nil && virtualIP.Status.Code == 0 {
+		return fmt.Errorf("error creating virtual ip: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", prefix.Spec.UnderlayRoute), os.Stdout, prefix)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", virtualIP.Spec.UnderlayRoute), os.Stdout, virtualIP)
 }

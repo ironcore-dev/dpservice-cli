@@ -32,20 +32,24 @@
             // "--priority=100", "--rule-id=9", "--src=1.1.1.1/32", "--protocol=tcp"]
             //"args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=11"]
 
-            //"args": ["get", "firewallrule", "--interface-id=vm1", "--rule-id=11"]
+            "args": ["get", "firewallrule", "--interface-id=vm2", "--rule-id=1"]
 
             //"args": ["add", "nnat", "10.20.30.40", "--vni", "100", "--minport", "30000", "--maxport", "30100", "--underlayroute", "ff80::1"]
 
 
-            //"args": ["add", "interface", "--id=vm4", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap5"]
+            //"args": ["add", "interface", "--id=vm2", "--ip=10.200.1.4", "--ip=2000:200:1::4", "--vni=200", "--device=net_tap2"]
             //"args": ["add", "-f", "/tmp/int.json"]
             //"args": ["delete", "-f", "/tmp/vip.yaml"]
             //"args": ["list", "firewallrules", "--interface-id=vm4"]
             //"args": ["list", "interfaces", "--wide"]
+            //"args": ["get", "interface", "--id=vm2"]
             
             //"args": ["get", "vni", "--vni=100", "--vni-type=0"]
-            "args": ["get", "version"]
-            //"args": ["list", "prefixes","--interface-id=vm1"]
+            //"args": ["get", "version"]
+            //"args": ["list", "prefixes","--interface-id=vm2"]
+
+            //"args": ["init"]
+            //"args": ["initialized"]
         }
     ]
 }

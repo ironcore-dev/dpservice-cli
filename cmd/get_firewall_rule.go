@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -87,7 +85,7 @@ func RunGetFirewallRule(
 	defer DpdkClose(cleanup)
 
 	fwrule, err := client.GetFirewallRule(ctx, opts.RuleID, opts.InterfaceID)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && fwrule.Status.Code == 0 {
 		return fmt.Errorf("error getting firewall rule: %w", err)
 	}
 

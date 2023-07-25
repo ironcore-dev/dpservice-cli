@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -82,7 +80,7 @@ func RunDeleteFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFact
 	defer DpdkClose(cleanup)
 
 	fwrule, err := client.DeleteFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && fwrule.Status.Code == 0 {
 		return fmt.Errorf("error deleting firewall rule: %w", err)
 	}
 

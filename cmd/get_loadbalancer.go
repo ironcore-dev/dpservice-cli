@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -85,7 +83,7 @@ func RunGetLoadBalancer(
 	defer DpdkClose(cleanup)
 
 	lb, err := client.GetLoadBalancer(ctx, opts.ID)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && lb.Status.Code == 0 {
 		return fmt.Errorf("error getting loadbalancer: %w", err)
 	}
 
