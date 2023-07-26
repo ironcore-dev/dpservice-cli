@@ -57,8 +57,8 @@ Basic steps when implementing new type (similar to Interface, Route, LoadBalance
 - Create new type in [/dpdk/api/types.go](/dpdk/api/types.go):
     - create structs and methods
 	- at the bottom add new \<type\>Kind variable
-- Create new [add|get|list|delete]\<type\>.go file in /cmd/ folder and implement the logic
-- Add new command function to subcommands of matching parent command in /cmd/[add|get|list|delete].go
+- Create new [create|get|list|delete]\<type\>.go file in /cmd/ folder and implement the logic
+- Add new command function to subcommands of matching parent command in /cmd/[create|get|list|delete].go
 - If needed add aliases for \<type\> at the bottom of [/cmd/common.go](/cmd/common.go)
 - Add new function to [/dpdk/api/client.go](/dpdk/api/client.go):
     - add function to Client interface
