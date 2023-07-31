@@ -86,17 +86,12 @@ func RunInit(
 	// if already initialized, show uuid
 	if err == nil && res != nil {
 		return fmt.Errorf("error dp-service already initialized, uuid: %s", res.Spec.UUID)
-		// else initialize and show uuid
-	} else {
-		res, err = client.Initialize(ctx)
-		if err != nil && res.Status.Code == 0 {
-			return fmt.Errorf("error initializing: %w", err)
-		}
-		init, err := client.CheckInitialized(ctx)
-		if err != nil && init.Status.Code == 0 {
-			return fmt.Errorf("error checking initialization")
-		}
-
-		return rendererFactory.RenderObject("", os.Stdout, init)
 	}
+	// else initialize and show uuid
+	init, err := client.Initialize(ctx)
+	if err != nil && res.Status.Code == 0 {
+		return fmt.Errorf("error initializing: %w", err)
+	}
+
+	return rendererFactory.RenderObject("", os.Stdout, init)
 }
