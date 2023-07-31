@@ -251,7 +251,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 }
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {
-	headers := []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute"}
+	headers := []any{"ID", "VNI", "Device", "IPv4", "IPv6", "UnderlayRoute"}
 	vfNeeded := isColumnNeeded(ifaces, "Spec.VirtualFunction")
 	if vfNeeded {
 		headers = append(headers, "VirtualFunction")
@@ -267,7 +267,7 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
-		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
+		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPv4, iface.Spec.IPv6, iface.Spec.UnderlayRoute}
 		if iface.Spec.VirtualFunction != nil {
 			columns[i] = append(columns[i], iface.Spec.VirtualFunction.String())
 		} else if vfNeeded {
