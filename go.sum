@@ -33,6 +33,8 @@ github.com/onmetal/net-dpservice-go v0.1.16-0.20230731100111-f5cd7849de7d h1:xQc
 github.com/onmetal/net-dpservice-go v0.1.16-0.20230731100111-f5cd7849de7d/go.mod h1:M7dg98Xx54qZqWMCWS5LUra3z0x459Pg4/l3F5He4Jk=
 github.com/onmetal/net-dpservice-go v0.1.16-0.20230731142515-5778654d5f9f h1:f0dt/9D4UsLeFT7mNWC+mxGxk0xzL6QhjEx6mbx7HBs=
 github.com/onmetal/net-dpservice-go v0.1.16-0.20230731142515-5778654d5f9f/go.mod h1:M7dg98Xx54qZqWMCWS5LUra3z0x459Pg4/l3F5He4Jk=
+github.com/onmetal/net-dpservice-go v0.1.16-0.20230801132336-8b1afb1b9661 h1:9Kaj51/JQXwSTUbzJampjRmGTJu9vVNVM87jy3p+lDQ=
+github.com/onmetal/net-dpservice-go v0.1.16-0.20230801132336-8b1afb1b9661/go.mod h1:M7dg98Xx54qZqWMCWS5LUra3z0x459Pg4/l3F5He4Jk=
 github.com/onsi/ginkgo/v2 v2.2.0 h1:3ZNA3L1c5FYDFTTxbFeVGGD8jYvjYauHD30YgLxVsNI=
 github.com/onsi/ginkgo/v2 v2.2.0/go.mod h1:MEH45j8TBi6u9BMogfbp0stKC5cdGjumZj5Y7AG4VIk=
 github.com/onsi/gomega v1.20.2 h1:8uQq0zMgLEfa0vRrrBgaJF2gyW9Da9BmfGV+OyUzfkY=

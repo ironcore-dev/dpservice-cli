@@ -18,7 +18,7 @@ completion [bash|zsh|fish|powershell]
 
 ## Create/delete/list network interfaces:
 ```
-create interface --id=<string> --ip=<netip.Addr> --ip=<netip.Addr> --vni=<uint32> --device=<string>
+create interface --id=<string> --ipv4=<netip.Addr> --ipv6=<netip.Addr> --vni=<uint32> --device=<string>
 delete interface --id=<string>
 get interface --id=<string>
 list interfaces
