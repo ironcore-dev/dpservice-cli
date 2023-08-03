@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,7 @@ func Command() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE:          SubcommandRequired,
+		Version:       util.BuildVersion,
 	}
 
 	rendererOptions.AddFlags(cmd.PersistentFlags())
