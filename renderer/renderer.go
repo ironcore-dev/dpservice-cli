@@ -88,6 +88,9 @@ func NewName(w io.Writer, operation string) *Name {
 func (n *Name) Render(v any) error {
 	objs, err := getObjs(v)
 	if err != nil {
+		if err.Error() == "empty list" {
+			return n.renderList(v)
+		}
 		return err
 	}
 
@@ -115,11 +118,26 @@ func (n *Name) renderObject(obj api.Object) error {
 	return err
 }
 
+func (n *Name) renderList(list any) error {
+	var parts []string
+
+	parts = append(parts, strings.ToLower(strings.Split(reflect.TypeOf(list).String(), ".")[1]))
+	if n.operation != "" {
+		parts = append(parts, n.operation)
+	}
+
+	_, err := fmt.Fprintf(n.w, "%s\n", strings.Join(parts, " "))
+	return err
+}
+
 func getObjs(v any) ([]api.Object, error) {
 	switch v := v.(type) {
 	case api.Object:
 		return []api.Object{v}, nil
 	case api.List:
+		if v.GetStatus().Code != 0 {
+			return nil, fmt.Errorf("empty list")
+		}
 		return v.GetItems(), nil
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
@@ -186,12 +204,12 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.fwruleTable([]api.FirewallRule{*obj})
 	case *api.FirewallRuleList:
 		return t.fwruleTable(obj.Items)
-	case *api.Init:
-		return t.initTable(*obj)
 	case *api.Initialized:
 		return t.initializedTable(*obj)
 	case *api.Vni:
 		return t.vniTable(*obj)
+	case *api.Version:
+		return t.versionTable(*obj)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -221,7 +239,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 	columns := make([][]any, len(lbtargets))
 	for i, lbtarget := range lbtargets {
 		columns[i] = []any{
-			api.NetIPAddrToProtoIPVersion(*lbtarget.Spec.TargetIP),
+			api.NetIPAddrToProtoIPVersion(lbtarget.Spec.TargetIP),
 			lbtarget.Spec.TargetIP,
 		}
 	}
@@ -233,7 +251,7 @@ func (t defaultTableConverter) loadBalancerTargetTable(lbtargets []api.LoadBalan
 }
 
 func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableData, error) {
-	headers := []any{"ID", "VNI", "Device", "IPs", "UnderlayRoute"}
+	headers := []any{"ID", "VNI", "Device", "IPv4", "IPv6", "UnderlayRoute"}
 	vfNeeded := isColumnNeeded(ifaces, "Spec.VirtualFunction")
 	if vfNeeded {
 		headers = append(headers, "VirtualFunction")
@@ -249,7 +267,7 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 
 	columns := make([][]any, len(ifaces))
 	for i, iface := range ifaces {
-		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPs, iface.Spec.UnderlayRoute}
+		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPv4, iface.Spec.IPv6, iface.Spec.UnderlayRoute}
 		if iface.Spec.VirtualFunction != nil {
 			columns[i] = append(columns[i], iface.Spec.VirtualFunction.String())
 		} else if vfNeeded {
@@ -317,22 +335,22 @@ func (t defaultTableConverter) virtualIPTable(virtualIPs []api.VirtualIP) (*Tabl
 
 func (t defaultTableConverter) natTable(nats []api.Nat) (*TableData, error) {
 	var headers []any
-	// if command was nat or there are no nats
+	// if command was get nat or there are no nats
 	if len(nats) > 0 && nats[0].InterfaceID != "" {
 		headers = []any{"InterfaceID", "IP", "MinPort", "MaxPort", "UnderlayRoute"}
-		// if command was natinfo
+		// if command was list nats
 	} else {
-		headers = []any{"VNI", "IP", "MinPort", "MaxPort", "UnderlayRoute", "NatInfoType"}
+		headers = []any{"VNI", "IP", "MinPort", "MaxPort", "UnderlayRoute", "NatType"}
 	}
 
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
-		// if command was nat or there are no nats
+		// if command was get nat or there are no nats
 		if len(nats) > 0 && nats[0].InterfaceID != "" {
-			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
-			// if command was natinfo
+			columns[i] = []any{nat.NatMeta.InterfaceID, nat.Spec.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			// if command was list nats
 		} else {
-			columns[i] = []any{nat.Spec.Vni, nat.Spec.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+			columns[i] = []any{nat.Spec.Vni, nat.Spec.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 			if len(nats) > 0 && nats[i].Spec.UnderlayRoute == nil {
 				columns[i] = append(columns[i], "Local")
 			} else {
@@ -354,7 +372,7 @@ func (t defaultTableConverter) neighborNatTable(nats []api.NeighborNat) (*TableD
 	columns := make([][]any, len(nats))
 	for i, nat := range nats {
 
-		columns[i] = []any{nat.Spec.Vni, nat.NeighborNatMeta.NatVIPIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
+		columns[i] = []any{nat.Spec.Vni, nat.NeighborNatMeta.NatIP, nat.Spec.MinPort, nat.Spec.MaxPort, nat.Spec.UnderlayRoute}
 
 	}
 
@@ -387,10 +405,10 @@ func (t defaultTableConverter) fwruleTable(fwrules []api.FirewallRule) (*TableDa
 	}, nil
 }
 
-func (t defaultTableConverter) initTable(init api.Init) (*TableData, error) {
-	headers := []any{"Error", "Message"}
+func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
+	headers := []any{"VNI", "VniType", "inUse"}
 	columns := make([][]any, 1)
-	columns[0] = []any{init.Status.Error, init.Status.Message}
+	columns[0] = []any{vni.VniMeta.VNI, vni.VniMeta.VniType, vni.Spec.InUse}
 
 	return &TableData{
 		Headers: headers,
@@ -398,10 +416,16 @@ func (t defaultTableConverter) initTable(init api.Init) (*TableData, error) {
 	}, nil
 }
 
-func (t defaultTableConverter) vniTable(vni api.Vni) (*TableData, error) {
-	headers := []any{"VNI", "VniType", "inUse"}
+func (t defaultTableConverter) versionTable(version api.Version) (*TableData, error) {
+	headers := []any{"ServiceProto", "ServiceVersion", "ClientName", "ClientProto", "ClientVersion"}
 	columns := make([][]any, 1)
-	columns[0] = []any{vni.VniMeta.VNI, vni.VniMeta.VniType, vni.Spec.InUse}
+	columns[0] = []any{
+		version.Spec.ServiceProtocol,
+		version.Spec.ServiceVersion,
+		version.ClientName,
+		version.ClientProtocol,
+		version.ClientVersion,
+	}
 
 	return &TableData{
 		Headers: headers,

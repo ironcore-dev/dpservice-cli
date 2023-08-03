@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -79,10 +77,10 @@ func RunDeleteVirtualIP(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	}
 	defer DpdkClose(cleanup)
 
-	vip, err := client.DeleteVirtualIP(ctx, opts.InterfaceID)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	virtualIP, err := client.DeleteVirtualIP(ctx, opts.InterfaceID)
+	if err != nil && virtualIP.Status.Code == 0 {
 		return fmt.Errorf("error deleting virtual ip: %w", err)
 	}
 
-	return rendererFactory.RenderObject("deleted", os.Stdout, vip)
+	return rendererFactory.RenderObject("deleted", os.Stdout, virtualIP)
 }

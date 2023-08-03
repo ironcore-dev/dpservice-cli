@@ -21,8 +21,6 @@ import (
 	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -81,14 +79,18 @@ func RunInit(
 		}
 	}()
 
-	uuid, err := client.Initialized(ctx)
-	if err == nil && uuid != "" {
-		return fmt.Errorf("error dp-service already initialized, uuid: %s", uuid)
+	res, err := client.CheckInitialized(ctx)
+	if err != nil && !strings.Contains(err.Error(), "not initialized") {
+		return fmt.Errorf("error checking initialization")
 	}
-
-	init, err := client.Init(ctx, &dpdkproto.InitConfig{})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error init: %w", err)
+	// if already initialized, show uuid
+	if err == nil && res != nil {
+		return fmt.Errorf("error dp-service already initialized, uuid: %s", res.Spec.UUID)
+	}
+	// else initialize and show uuid
+	init, err := client.Initialize(ctx)
+	if err != nil && res.Status.Code == 0 {
+		return fmt.Errorf("error initializing: %w", err)
 	}
 
 	return rendererFactory.RenderObject("", os.Stdout, init)

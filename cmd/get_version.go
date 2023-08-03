@@ -17,28 +17,28 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
+	"github.com/onmetal/net-dpservice-go/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func GetVersion(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts GetNatInfoOptions
+		opts GetVersionOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "natinfo <--nat-ip> <--nat-type>",
-		Short:   "List all machines that are behind this IP",
-		Example: "dpservice-cli get natinfo --nat-ip=10.20.30.40 --info-type=1",
+		Use:     "version",
+		Short:   "Get version of dpservice and protobuf.",
+		Example: "dpservice-cli get version",
+		Aliases: NatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunGetNatInfo(
+			return RunGetVersion(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -54,30 +54,21 @@ func GetNatInfo(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFac
 	return cmd
 }
 
-type GetNatInfoOptions struct {
-	NatIP       netip.Addr
-	NatInfoType string
+type GetVersionOptions struct {
 }
 
-func (o *GetNatInfoOptions) AddFlags(fs *pflag.FlagSet) {
-	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
-	fs.StringVar(&o.NatInfoType, "info-type", o.NatInfoType, "NAT Info type: Any = 0/Local = 1/Neigh(bor) = 2")
+func (o *GetVersionOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
-func (o *GetNatInfoOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"nat-ip"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
+func (o *GetVersionOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunGetNatInfo(
+func RunGetVersion(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	opts GetNatInfoOptions,
+	opts GetVersionOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -85,10 +76,15 @@ func RunGetNatInfo(
 	}
 	defer DpdkClose(cleanup)
 
-	natinfo, err := client.GetNATInfo(ctx, opts.NatIP, opts.NatInfoType)
-	if err != nil {
-		return fmt.Errorf("error listing nats: %w", err)
+	svcVersion, err := client.GetVersion(ctx, &api.Version{
+		TypeMeta: api.TypeMeta{Kind: api.VersionKind},
+		VersionMeta: api.VersionMeta{
+			ClientName:    "dpservice-cli",
+			ClientVersion: util.BuildVersion,
+		},
+	})
+	if err != nil && svcVersion.Status.Code == 0 {
+		return fmt.Errorf("error getting version: %w", err)
 	}
-
-	return rendererFactory.RenderList("", os.Stdout, natinfo)
+	return rendererFactory.RenderObject("", os.Stdout, svcVersion)
 }

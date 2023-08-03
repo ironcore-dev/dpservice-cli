@@ -19,12 +19,10 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -37,7 +35,7 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	cmd := &cobra.Command{
 		Use:     "interface <--id> [<--ip>] <--vni> <--device>",
 		Short:   "Create an interface",
-		Example: "dpservice-cli add interface --id=vm4 --ip=10.200.1.4 --ip=2000:200:1::4 --vni=200 --device=net_tap5",
+		Example: "dpservice-cli create interface --id=vm4 --ipv4=10.200.1.4 --ipv6=2000:200:1::4 --vni=200 --device=net_tap5",
 		Aliases: InterfaceAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,7 +58,8 @@ func CreateInterface(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 type CreateInterfaceOptions struct {
 	ID          string
 	VNI         uint32
-	IP          []netip.Addr
+	IPv4        netip.Addr
+	IPv6        netip.Addr
 	Device      string
 	PxeServer   string
 	PxeFileName string
@@ -69,14 +68,15 @@ type CreateInterfaceOptions struct {
 func (o *CreateInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.ID, "id", o.ID, "ID of the interface.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the interface to.")
-	flag.AddrSliceVar(fs, &o.IP, "ip", o.IP, "IP to assign to the interface.")
+	flag.AddrVar(fs, &o.IPv4, "ipv4", o.IPv4, "IPv4 address to assign to the interface.")
+	flag.AddrVar(fs, &o.IPv6, "ipv6", o.IPv6, "IPv6 address to assign to the interface.")
 	fs.StringVar(&o.Device, "device", o.Device, "Device to allocate.")
 	fs.StringVar(&o.PxeServer, "pxe-server", o.PxeServer, "PXE next server.")
 	fs.StringVar(&o.PxeFileName, "pxe-file-name", o.PxeFileName, "PXE boot file name.")
 }
 
 func (o *CreateInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"id", "vni", "ip", "device"} {
+	for _, name := range []string{"id", "vni", "ipv4", "device"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -98,13 +98,14 @@ func RunCreateInterface(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		Spec: api.InterfaceSpec{
 			VNI:    opts.VNI,
 			Device: opts.Device,
-			IPs:    opts.IP,
+			IPv4:   &opts.IPv4,
+			IPv6:   &opts.IPv6,
 			PXE:    &api.PXE{Server: opts.PxeServer, FileName: opts.PxeFileName},
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding interface: %w", err)
+	if err != nil && iface.Status.Code == 0 {
+		return fmt.Errorf("error creating interface: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", iface.Spec.UnderlayRoute), os.Stdout, iface)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", iface.Spec.UnderlayRoute), os.Stdout, iface)
 }

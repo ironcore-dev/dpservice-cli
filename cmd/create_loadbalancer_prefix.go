@@ -19,12 +19,10 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -40,7 +38,7 @@ func CreateLoadBalancerPrefix(
 	cmd := &cobra.Command{
 		Use:     "lbprefix <--prefix> <--interface-id>",
 		Short:   "Create a loadbalancer prefix",
-		Example: "dpservice-cli add lbprefix --prefix=10.10.10.0/24 --interface-id=vm1",
+		Example: "dpservice-cli create lbprefix --prefix=10.10.10.0/24 --interface-id=vm1",
 		Args:    cobra.ExactArgs(0),
 		Aliases: PrefixAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -100,9 +98,9 @@ func RunCreateLoadBalancerPrefix(
 			Prefix: opts.Prefix,
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding loadbalancer prefix: %w", err)
+	if err != nil && lbprefix.Status.Code == 0 {
+		return fmt.Errorf("error creating loadbalancer prefix: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", lbprefix.Spec.UnderlayRoute), os.Stdout, lbprefix)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", lbprefix.Spec.UnderlayRoute), os.Stdout, lbprefix)
 }

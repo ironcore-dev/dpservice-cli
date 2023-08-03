@@ -19,30 +19,31 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func AddVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func CreateLoadBalancerTarget(
+	dpdkClientFactory DPDKClientFactory,
+	rendererFactory RendererFactory,
+) *cobra.Command {
 	var (
-		opts AddVirtualIPOptions
+		opts CreateLoadBalancerTargetOptions
 	)
 
 	cmd := &cobra.Command{
-		Use:     "virtualip <--vip> <--interface-id>",
-		Short:   "Add a virtual IP to interface.",
-		Example: "dpservice-cli add virtualip --vip=20.20.20.20 --interface-id=vm1",
-		Aliases: VirtualIPAliases,
+		Use:     "lbtarget <target-ip> <--lb-id>",
+		Short:   "Create a loadbalancer target",
+		Example: "dpservice-cli create lbtarget --target-ip=ff80::5 --lb-id=2",
 		Args:    cobra.ExactArgs(0),
+		Aliases: LoadBalancerTargetAliases,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunAddVirtualIP(
+			return RunCreateLoadBalancerTarget(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -58,18 +59,18 @@ func AddVirtualIP(dpdkClientFactory DPDKClientFactory, rendererFactory RendererF
 	return cmd
 }
 
-type AddVirtualIPOptions struct {
-	Vip         netip.Addr
-	InterfaceID string
+type CreateLoadBalancerTargetOptions struct {
+	TargetIP       netip.Addr
+	LoadBalancerID string
 }
 
-func (o *AddVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
-	flag.AddrVar(fs, &o.Vip, "vip", o.Vip, "Virtual IP to add on interface.")
-	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID to add the virtual ip for.")
+func (o *CreateLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.TargetIP, "target-ip", o.TargetIP, "Loadbalancer Target IP.")
+	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "ID of the loadbalancer to add the target for.")
 }
 
-func (o *AddVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"vip", "interface-id"} {
+func (o *CreateLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"target-ip", "lb-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -77,11 +78,11 @@ func (o *AddVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunAddVirtualIP(
+func RunCreateLoadBalancerTarget(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
-	opts AddVirtualIPOptions,
+	opts CreateLoadBalancerTargetOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -89,17 +90,14 @@ func RunAddVirtualIP(
 	}
 	defer DpdkClose(cleanup)
 
-	virtualIP, err := client.AddVirtualIP(ctx, &api.VirtualIP{
-		VirtualIPMeta: api.VirtualIPMeta{
-			InterfaceID: opts.InterfaceID,
-		},
-		Spec: api.VirtualIPSpec{
-			IP: opts.Vip,
-		},
+	lbtarget, err := client.CreateLoadBalancerTarget(ctx, &api.LoadBalancerTarget{
+		TypeMeta:               api.TypeMeta{Kind: api.LoadBalancerTargetKind},
+		LoadBalancerTargetMeta: api.LoadBalancerTargetMeta{LoadbalancerID: opts.LoadBalancerID},
+		Spec:                   api.LoadBalancerTargetSpec{TargetIP: &opts.TargetIP},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding virtual ip: %w", err)
+	if err != nil && lbtarget.Status.Code == 0 {
+		return fmt.Errorf("error creating loadbalancer target: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", virtualIP.Spec.UnderlayRoute), os.Stdout, virtualIP)
+	return rendererFactory.RenderObject("created", os.Stdout, lbtarget)
 }

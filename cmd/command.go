@@ -34,12 +34,11 @@ func Command() *cobra.Command {
 	dpdkClientOptions.AddFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(
-		Add(dpdkClientOptions),
+		Create(dpdkClientOptions),
 		Get(dpdkClientOptions),
 		List(dpdkClientOptions),
 		Delete(dpdkClientOptions),
 		Reset(dpdkClientOptions),
-		Initialized(dpdkClientOptions, rendererOptions),
 		Init(dpdkClientOptions, rendererOptions),
 		completionCmd,
 	)

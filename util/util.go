@@ -14,6 +14,10 @@
 
 package util
 
+var (
+	BuildVersion string
+)
+
 func Must(err error) {
 	if err != nil {
 		panic(err)

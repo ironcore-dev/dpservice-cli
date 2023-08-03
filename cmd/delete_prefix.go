@@ -19,11 +19,9 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -83,8 +81,8 @@ func RunDeletePrefix(ctx context.Context, dpdkClientFactory DPDKClientFactory, r
 	}
 	defer DpdkClose(cleanup)
 
-	prefix, err := client.DeletePrefix(ctx, opts.InterfaceID, opts.Prefix)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	prefix, err := client.DeletePrefix(ctx, opts.InterfaceID, &opts.Prefix)
+	if err != nil && prefix.Status.Code == 0 {
 		return fmt.Errorf("error deleting prefix: %w", err)
 	}
 

@@ -19,30 +19,28 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func AddNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func CreateNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts AddNeighborNatOptions
+		opts CreateNeighborNatOptions
 	)
 
 	cmd := &cobra.Command{
 		Use:     "neighbornat <--nat-ip> <--vni> <--minport> <--maxport> <--underlayroute>",
-		Short:   "Add a Neighbor NAT",
-		Example: "dpservice-cli add neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1",
+		Short:   "Create a Neighbor NAT",
+		Example: "dpservice-cli create neighbornat --nat-ip=10.20.30.40 --vni=100 --minport=30000 --maxport=30100 --underlayroute=ff80::1",
 		Aliases: NeighborNatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunAddNeighborNat(
+			return RunCreateNeighborNat(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -58,7 +56,7 @@ func AddNeighborNat(dpdkClientFactory DPDKClientFactory, rendererFactory Rendere
 	return cmd
 }
 
-type AddNeighborNatOptions struct {
+type CreateNeighborNatOptions struct {
 	NatIP         netip.Addr
 	Vni           uint32
 	MinPort       uint32
@@ -66,7 +64,7 @@ type AddNeighborNatOptions struct {
 	UnderlayRoute netip.Addr
 }
 
-func (o *AddNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *CreateNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "Neighbor NAT IP.")
 	fs.Uint32Var(&o.Vni, "vni", o.Vni, "VNI of neighbor NAT.")
 	fs.Uint32Var(&o.MinPort, "minport", o.MinPort, "MinPort of neighbor NAT.")
@@ -74,7 +72,7 @@ func (o *AddNeighborNatOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.AddrVar(fs, &o.UnderlayRoute, "underlayroute", o.UnderlayRoute, "Underlay route of neighbor NAT.")
 }
 
-func (o *AddNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+func (o *CreateNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	for _, name := range []string{"nat-ip", "vni", "minport", "maxport", "underlayroute"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
@@ -83,7 +81,7 @@ func (o *AddNeighborNatOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts AddNeighborNatOptions) error {
+func RunCreateNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts CreateNeighborNatOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -92,7 +90,7 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 
 	neigbhorNat := &api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NeighborNatKind},
-		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: &opts.NatIP},
+		NeighborNatMeta: api.NeighborNatMeta{NatIP: &opts.NatIP},
 		Spec: api.NeighborNatSpec{
 			Vni:           opts.Vni,
 			MinPort:       opts.MinPort,
@@ -101,10 +99,10 @@ func RunAddNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFactory,
 		},
 	}
 
-	nnat, err := client.AddNeighborNat(ctx, neigbhorNat)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding neighbor nat: %w", err)
+	nnat, err := client.CreateNeighborNat(ctx, neigbhorNat)
+	if err != nil && nnat.Status.Code == 0 {
+		return fmt.Errorf("error creating neighbor nat: %w", err)
 	}
 
-	return rendererFactory.RenderObject(fmt.Sprintf("added, underlay route: %s", nnat.Spec.UnderlayRoute), os.Stdout, nnat)
+	return rendererFactory.RenderObject(fmt.Sprintf("created, underlay route: %s", nnat.Spec.UnderlayRoute), os.Stdout, nnat)
 }

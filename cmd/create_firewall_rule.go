@@ -19,26 +19,24 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+func CreateFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
 	var (
-		opts AddFirewallRuleOptions
+		opts CreateFirewallRuleOptions
 	)
 
 	cmd := &cobra.Command{
 		Use:     "firewallrule <--interface-id> [flags]",
-		Short:   "Add a FirewallRule to interface",
-		Example: "dpservice-cli add fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --ipver=0 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --src-port-min=1 --src-port-max=1000 --dst-port-min=500 --dst-port-max=600",
+		Short:   "Create a FirewallRule on interface",
+		Example: "dpservice-cli create fwrule --interface-id=vm1 --action=1 --direction=1 --dst=5.5.5.0/24 --priority=100 --rule-id=12 --src=1.1.1.1/32 --protocol=tcp --src-port-min=1 --src-port-max=1000 --dst-port-min=500 --dst-port-max=600",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(0),
 		// if protocol flag is set, require also additional flags
@@ -73,7 +71,7 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			return RunAddFirewallRule(
+			return RunCreateFirewallRule(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
@@ -89,13 +87,12 @@ func AddFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 	return cmd
 }
 
-type AddFirewallRuleOptions struct {
+type CreateFirewallRuleOptions struct {
 	InterfaceID       string
 	RuleID            string
 	TrafficDirection  string
 	FirewallAction    string
 	Priority          uint32
-	IpVersion         string
 	SourcePrefix      netip.Prefix
 	DestinationPrefix netip.Prefix
 	ProtocolFilter    string
@@ -107,13 +104,12 @@ type AddFirewallRuleOptions struct {
 	IcmpCode          int32
 }
 
-func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
+func (o *CreateFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID of FW Rule.")
 	fs.StringVar(&o.RuleID, "rule-id", o.RuleID, "RuleID of FW Rule.")
 	fs.StringVar(&o.TrafficDirection, "direction", o.TrafficDirection, "Traffic direction of FW Rule: Ingress = 0/Egress = 1")
 	fs.StringVar(&o.FirewallAction, "action", o.FirewallAction, "Firewall action: drop/deny/0|accept/allow/1 (Can be only \"accept/allow/1\" at the moment).")
 	fs.Uint32Var(&o.Priority, "priority", 1000, "Priority of FW Rule. (For future use. No effect at the moment).")
-	fs.StringVar(&o.IpVersion, "ipver", o.IpVersion, "IpVersion of FW Rule: IPv4 = 0/IPv6 = 1.")
 	flag.PrefixVar(fs, &o.SourcePrefix, "src", o.SourcePrefix, "Source prefix (0.0.0.0 with prefix length 0 matches all source IPs).")
 	flag.PrefixVar(fs, &o.DestinationPrefix, "dst", o.DestinationPrefix, "Destination prefix (0.0.0.0 with prefix length 0 matches all destination IPs).")
 	fs.StringVar(&o.ProtocolFilter, "protocol", o.ProtocolFilter, "Protocol used icmp/tcp/udp (Not defining a protocol filter matches all protocols).")
@@ -126,8 +122,8 @@ func (o *AddFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 
 }
 
-func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "ipver", "src", "dst"} {
+func (o *CreateFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"interface-id", "rule-id", "direction", "action", "src", "dst"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -135,7 +131,7 @@ func (o *AddFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts AddFirewallRuleOptions) error {
+func RunCreateFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory, opts CreateFirewallRuleOptions) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating dpdk client: %w", err)
@@ -154,7 +150,7 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 	var protocolFilter dpdkproto.ProtocolFilter
 	switch opts.ProtocolFilter {
 	case "icmp", "1":
-		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Icmp{Icmp: &dpdkproto.ICMPFilter{
+		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Icmp{Icmp: &dpdkproto.IcmpFilter{
 			IcmpType: opts.IcmpType,
 			IcmpCode: opts.IcmpCode}}
 	case "tcp", "6":
@@ -167,7 +163,7 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {
 			return fmt.Errorf("min port must be lower or equal to max port")
 		}
-		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Tcp{Tcp: &dpdkproto.TCPFilter{
+		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Tcp{Tcp: &dpdkproto.TcpFilter{
 			SrcPortLower: opts.SrcPortLower,
 			SrcPortUpper: opts.SrcPortUpper,
 			DstPortLower: opts.DstPortLower,
@@ -183,12 +179,13 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		if opts.SrcPortLower > opts.SrcPortUpper || opts.DstPortLower > opts.DstPortUpper {
 			return fmt.Errorf("min port must be lower or equal to max port")
 		}
-		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Udp{Udp: &dpdkproto.UDPFilter{
+		protocolFilter.Filter = &dpdkproto.ProtocolFilter_Udp{Udp: &dpdkproto.UdpFilter{
 			SrcPortLower: opts.SrcPortLower,
 			SrcPortUpper: opts.SrcPortUpper,
 			DstPortLower: opts.DstPortLower,
 			DstPortUpper: opts.DstPortUpper,
 		}}
+	// Not defining a protocol filter matches all protocols
 	case "":
 	default:
 		return fmt.Errorf("protocol can be only: icmp = 1/tcp = 6/udp = 17")
@@ -197,7 +194,7 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 		return fmt.Errorf("priority can be only: <0,65536")
 	}
 
-	fwrule, err := client.AddFirewallRule(ctx, &api.FirewallRule{
+	fwrule, err := client.CreateFirewallRule(ctx, &api.FirewallRule{
 		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleKind},
 		FirewallRuleMeta: api.FirewallRuleMeta{
 			InterfaceID: opts.InterfaceID,
@@ -207,16 +204,15 @@ func RunAddFirewallRule(ctx context.Context, dpdkClientFactory DPDKClientFactory
 			TrafficDirection:  opts.TrafficDirection,
 			FirewallAction:    opts.FirewallAction,
 			Priority:          opts.Priority,
-			IpVersion:         opts.IpVersion,
 			SourcePrefix:      &srcPfx,
 			DestinationPrefix: &dstPfx,
 			ProtocolFilter: &dpdkproto.ProtocolFilter{
 				Filter: protocolFilter.Filter},
 		},
 	})
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-		return fmt.Errorf("error adding firewall rule: %w", err)
+	if err != nil && fwrule.Status.Code == 0 {
+		return fmt.Errorf("error creating firewall rule: %w", err)
 	}
 
-	return rendererFactory.RenderObject("added", os.Stdout, fwrule)
+	return rendererFactory.RenderObject("created", os.Stdout, fwrule)
 }

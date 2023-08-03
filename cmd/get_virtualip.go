@@ -18,10 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -85,7 +83,7 @@ func RunGetVirtualIP(
 	defer DpdkClose(cleanup)
 
 	virtualIP, err := client.GetVirtualIP(ctx, opts.InterfaceID)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	if err != nil && virtualIP.Status.Code == 0 {
 		return fmt.Errorf("error getting virtual ip: %w", err)
 	}
 

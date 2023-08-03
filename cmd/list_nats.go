@@ -17,41 +17,59 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"os"
-	"strings"
 
-	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
+	"github.com/onmetal/dpservice-cli/flag"
+	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func ListNats(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+	var (
+		opts ListNatsOptions
+	)
+
 	cmd := &cobra.Command{
-		Use:     "nats",
-		Short:   "List all nats",
-		Example: "dpservice-cli list nats",
-		Aliases: InterfaceAliases,
+		Use:     "nats <--nat-ip> <--nat-type>",
+		Short:   "List local/neighbor/both nats with selected IP",
+		Example: "dpservice-cli list nats --nat-ip=10.20.30.40 --info-type=local",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+
 			return RunListNats(
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
+				opts,
 			)
 		},
 	}
+
+	opts.AddFlags(cmd.Flags())
+
+	util.Must(opts.MarkRequiredFlags(cmd))
 
 	return cmd
 }
 
 type ListNatsOptions struct {
+	NatIP   netip.Addr
+	NatType string
 }
 
 func (o *ListNatsOptions) AddFlags(fs *pflag.FlagSet) {
+	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
+	fs.StringVar(&o.NatType, "nat-type", "0", "NAT type: Any = 0/Local = 1/Neigh(bor) = 2")
 }
 
 func (o *ListNatsOptions) MarkRequiredFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"nat-ip"} {
+		if err := cmd.MarkFlagRequired(name); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -59,34 +77,18 @@ func RunListNats(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
+	opts ListNatsOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting dpdk client: %w", err)
+		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer DpdkClose(cleanup)
 
-	interfaceList, err := client.ListInterfaces(ctx)
+	nats, err := client.ListNats(ctx, &opts.NatIP, opts.NatType)
 	if err != nil {
-		return fmt.Errorf("error listing interfaces: %w", err)
-	}
-	interfaces := interfaceList.Items
-	var nats []api.Nat
-	for _, iface := range interfaces {
-		nat, err := client.GetNat(ctx, iface.InterfaceMeta.ID)
-		if strings.Contains(err.Error(), errors.StatusErrorString) {
-			continue
-		}
-		if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
-			return fmt.Errorf("error getting nat: %w", err)
-		}
-		nats = append(nats, *nat)
+		return fmt.Errorf("error listing nats: %w", err)
 	}
 
-	natList := api.NatList{
-		TypeMeta: api.TypeMeta{Kind: api.NatListKind},
-		Items:    nats,
-	}
-
-	return rendererFactory.RenderList("", os.Stdout, &natList)
+	return rendererFactory.RenderList("", os.Stdout, nats)
 }

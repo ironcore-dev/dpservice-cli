@@ -19,12 +19,10 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -90,15 +88,15 @@ func RunDeleteNeighborNat(ctx context.Context, dpdkClientFactory DPDKClientFacto
 
 	neigbhorNat := api.NeighborNat{
 		TypeMeta:        api.TypeMeta{Kind: api.NatKind},
-		NeighborNatMeta: api.NeighborNatMeta{NatVIPIP: &opts.NatIP},
+		NeighborNatMeta: api.NeighborNatMeta{NatIP: &opts.NatIP},
 		Spec: api.NeighborNatSpec{
 			Vni:     opts.Vni,
 			MinPort: opts.MinPort,
 			MaxPort: opts.MaxPort,
 		},
 	}
-	nnat, err := client.DeleteNeighborNat(ctx, neigbhorNat)
-	if err != nil && !strings.Contains(err.Error(), errors.StatusErrorString) {
+	nnat, err := client.DeleteNeighborNat(ctx, &neigbhorNat)
+	if err != nil && nnat.Status.Code == 0 {
 		return fmt.Errorf("error deleting neighbor nat: %w", err)
 	}
 
