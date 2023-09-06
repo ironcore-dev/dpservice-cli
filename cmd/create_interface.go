@@ -69,7 +69,7 @@ func (o *CreateInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.ID, "id", o.ID, "ID of the interface.")
 	fs.Uint32Var(&o.VNI, "vni", o.VNI, "VNI to add the interface to.")
 	flag.AddrVar(fs, &o.IPv4, "ipv4", o.IPv4, "IPv4 address to assign to the interface.")
-	flag.AddrVar(fs, &o.IPv6, "ipv6", o.IPv6, "IPv6 address to assign to the interface.")
+	flag.AddrVar(fs, &o.IPv6, "ipv6", netip.IPv6Unspecified(), "IPv6 address to assign to the interface.")
 	fs.StringVar(&o.Device, "device", o.Device, "Device to allocate.")
 	fs.StringVar(&o.PxeServer, "pxe-server", o.PxeServer, "PXE next server.")
 	fs.StringVar(&o.PxeFileName, "pxe-file-name", o.PxeFileName, "PXE boot file name.")
