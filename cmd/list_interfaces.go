@@ -55,11 +55,11 @@ func ListInterfaces(dpdkClientFactory DPDKClientFactory, rendererFactory Rendere
 }
 
 type ListInterfacesOptions struct {
-	SortBy []string
+	SortBy string
 }
 
 func (o *ListInterfacesOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringSliceVar(&o.SortBy, "sort-by", []string{"ID"}, "Column to sort by.")
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListInterfacesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -97,10 +97,11 @@ func RunListInterfaces(
 			}
 		}
 	}
+	// sort items in list
 	interfaces := interfaceList.Items
 	sort.SliceStable(interfaces, func(i, j int) bool {
 		mi, mj := interfaces[i], interfaces[j]
-		switch strings.ToLower(opts.SortBy[0]) {
+		switch strings.ToLower(opts.SortBy) {
 		case "vni":
 			if mi.Spec.VNI != mj.Spec.VNI {
 				return mi.Spec.VNI < mj.Spec.VNI

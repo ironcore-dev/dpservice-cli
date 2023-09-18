@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -55,10 +57,12 @@ func ListLoadBalancerPrefixes(dpdkClientFactory DPDKClientFactory, rendererFacto
 
 type ListLoadBalancerPrefixesOptions struct {
 	InterfaceID string
+	SortBy      string
 }
 
 func (o *ListLoadBalancerPrefixesOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "Interface ID of the prefix.")
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListLoadBalancerPrefixesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -86,6 +90,19 @@ func RunListLoadBalancerPrefixes(
 	if err != nil {
 		return fmt.Errorf("error listing loadbalancer prefixes: %w", err)
 	}
+
+	// sort items in list
+	prefixes := prefixList.Items
+	sort.SliceStable(prefixes, func(i, j int) bool {
+		mi, mj := prefixes[i], prefixes[j]
+		switch strings.ToLower(opts.SortBy) {
+		case "underlayroute":
+			return mi.Spec.UnderlayRoute.String() < mj.Spec.UnderlayRoute.String()
+		default:
+			return mi.Spec.Prefix.String() < mj.Spec.Prefix.String()
+		}
+	})
+	prefixList.Items = prefixes
 
 	return rendererFactory.RenderList("", os.Stdout, prefixList)
 }

@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/flag"
 	"github.com/onmetal/dpservice-cli/util"
@@ -57,11 +59,13 @@ func ListNats(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFacto
 type ListNatsOptions struct {
 	NatIP   netip.Addr
 	NatType string
+	SortBy  string
 }
 
 func (o *ListNatsOptions) AddFlags(fs *pflag.FlagSet) {
 	flag.AddrVar(fs, &o.NatIP, "nat-ip", o.NatIP, "NAT IP to get info for")
 	fs.StringVar(&o.NatType, "nat-type", "0", "NAT type: Any = 0/Local = 1/Neigh(bor) = 2")
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListNatsOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -85,10 +89,35 @@ func RunListNats(
 	}
 	defer DpdkClose(cleanup)
 
-	nats, err := client.ListNats(ctx, &opts.NatIP, opts.NatType)
+	natList, err := client.ListNats(ctx, &opts.NatIP, opts.NatType)
 	if err != nil {
 		return fmt.Errorf("error listing nats: %w", err)
 	}
 
-	return rendererFactory.RenderList("", os.Stdout, nats)
+	// sort items in list
+	nats := natList.Items
+	sort.SliceStable(nats, func(i, j int) bool {
+		mi, mj := nats[i], nats[j]
+		switch strings.ToLower(opts.SortBy) {
+		case "ip":
+			if mi.Spec.NatIP != nil && mj.Spec.NatIP != nil {
+				return mi.Spec.NatIP.String() < mj.Spec.NatIP.String()
+			}
+			return true
+		case "minport":
+			return mi.Spec.MinPort < mj.Spec.MinPort
+		case "maxport":
+			return mi.Spec.MaxPort < mj.Spec.MaxPort
+		case "underlayroute":
+			if mi.Spec.UnderlayRoute != nil && mj.Spec.UnderlayRoute != nil {
+				return mi.Spec.UnderlayRoute.String() < mj.Spec.UnderlayRoute.String()
+			}
+			return true
+		default:
+			return mi.Spec.Vni < mj.Spec.Vni
+		}
+	})
+	natList.Items = nats
+
+	return rendererFactory.RenderList("", os.Stdout, natList)
 }
