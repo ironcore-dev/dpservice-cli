@@ -21,21 +21,21 @@ completion [bash|zsh|fish|powershell]
 create interface --id=<string> --ipv4=<netip.Addr> --ipv6=<netip.Addr> --vni=<uint32> --device=<string>
 delete interface --id=<string>
 get interface --id=<string>
-list interfaces
+list interfaces --sort-by=<string>
 ```
 
 ## Create/delete/list routes (ip route equivalents):
 ```
 create route --prefix=<netip.Prefix> --next-hop-vni=<uint32> --next-hop-ip=<netip.Addr> --vni=<uint32>
 delete route --prefix=<netip.Prefix> --vni=<uint32>
-list routes --vni=<uint32>
+list routes --vni=<uint32> --sort-by=<string>
 ```
 
 ## Create/delete/list prefixes (to route other IP ranges to a given interface):
 ```
 create prefix --prefix=<netip.Prefix> --interface-id=<string>
 delete prefix --prefix=<netip.Prefix> --interface-id=<string>
-list prefixes --interface-id=<string>
+list prefixes --interface-id=<string> --sort-by=<string>
 ```
 
 ## Create/delete/list loadbalancers:
@@ -49,14 +49,14 @@ get loadbalancer --id=<string>
 ```
 create lbtarget --target-ip=<netip.Addr> --lb-id=<string>
 delete lbtarget --target-ip=<netip.Addr> --lb-id=<string>
-list lbtargets --lb-id=<string>
+list lbtargets --lb-id=<string> --sort-by=<string>
 ```
 
 ## Create/delete/list loadbalancer prefixes (call on loadbalancer targets so the public IP packets can reach them):
 ```
 create lbprefix --prefix=<netip.Prefix> --interface-id=<string>
 delete lbprefix --prefix=<netip.Prefix> --interface-id=<string>
-list lbprefixes --interface-id=<string>
+list lbprefixes --interface-id=<string> --sort-by=<string>
 ```
 
 ## Create/delete/list a virtual IP for the interface (SNAT):
@@ -71,14 +71,14 @@ get virtualip --interface-id=<string>
 create nat --interface-id=<string> --nat-ip=<netip.Addr> --minport=<uint32> --maxport=<uint32>
 delete nat --interface-id=<string>
 get nat --interface-id=<string>
-list nats --nat-ip=<netip.Addr>
+list nats --nat-ip=<netip.Addr> --sort-by=<string>
 ```
 
 ## Create/delete/list neighbors (dp-services) with the same NAT IP:
 ```
 create neighbornat --nat-ip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32> --underlayroute=<netip.Addr>
 delete neighbornat --nat-ip=<netip.Addr> --vni=<uint32> --minport=<uint32> --maxport=<uint32>
-list nats --nat-ip=<netip.Addr> --nat-type=<string>
+list nats --nat-ip=<netip.Addr> --nat-type=<string> --sort-by=<string>
 ```
 
 ## Create/delete/list firewall rules:
@@ -86,7 +86,7 @@ list nats --nat-ip=<netip.Addr> --nat-type=<string>
 create fwrule --interface-id=<string> --action=<string> --direction=<string> --dst=<netip.Prefix> --priority=<uint32> --rule-id=<string> --src=<netip.Prefix> --protocol=<string> --src-port-min=<int32> --src-port-max=<int32> --dst-port-min=<int32> --dst-port-max=<int32> --icmp-type=<int32> --icmp-code=<int32>
 delete firewallrule --rule-id=<string> --interface-id=<string>
 get fwrule --rule-id=<string> --interface-id=<string>
-list firewallrules --interface-id=<string>
+list firewallrules --interface-id=<string> --sort-by=<string>
 ```
 
 ## Get/reset vni:
