@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/addlicense v1.1.1
 	github.com/jedib0t/go-pretty/v6 v6.3.9
-	github.com/onmetal/net-dpservice-go v0.1.16
+	github.com/onmetal/net-dpservice-go v0.1.18
 	github.com/onsi/ginkgo/v2 v2.2.0
 	github.com/onsi/gomega v1.20.2
 	github.com/spf13/cobra v1.7.0
@@ -17,14 +17,12 @@ require (
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
