@@ -83,8 +83,8 @@ func RunGetFirewallRule(
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer DpdkClose(cleanup)
-	// TODO parameters in GetFwRule currently not in correct oreder, they need to be swapped when it is fixed in library
-	fwrule, err := client.GetFirewallRule(ctx, opts.RuleID, opts.InterfaceID)
+
+	fwrule, err := client.GetFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
 	if err != nil && fwrule.Status.Code == 0 {
 		return fmt.Errorf("error getting firewall rule: %w", err)
 	}
