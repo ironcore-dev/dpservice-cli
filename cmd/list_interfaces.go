@@ -18,12 +18,19 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
+	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func ListInterfaces(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFactory) *cobra.Command {
+	var (
+		opts ListInterfacesOptions
+	)
+
 	cmd := &cobra.Command{
 		Use:     "interfaces",
 		Short:   "List all interfaces",
@@ -35,17 +42,24 @@ func ListInterfaces(dpdkClientFactory DPDKClientFactory, rendererFactory Rendere
 				cmd.Context(),
 				dpdkClientFactory,
 				rendererFactory,
+				opts,
 			)
 		},
 	}
+
+	opts.AddFlags(cmd.Flags())
+
+	util.Must(opts.MarkRequiredFlags(cmd))
 
 	return cmd
 }
 
 type ListInterfacesOptions struct {
+	SortBy string
 }
 
 func (o *ListInterfacesOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListInterfacesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -56,6 +70,7 @@ func RunListInterfaces(
 	ctx context.Context,
 	dpdkClientFactory DPDKClientFactory,
 	rendererFactory RendererFactory,
+	opts ListInterfacesOptions,
 ) error {
 	client, cleanup, err := dpdkClientFactory.NewClient(ctx)
 	if err != nil {
@@ -82,6 +97,32 @@ func RunListInterfaces(
 			}
 		}
 	}
+	// sort items in list
+	interfaces := interfaceList.Items
+	sort.SliceStable(interfaces, func(i, j int) bool {
+		mi, mj := interfaces[i], interfaces[j]
+		switch strings.ToLower(opts.SortBy) {
+		case "vni":
+			if mi.Spec.VNI != mj.Spec.VNI {
+				return mi.Spec.VNI < mj.Spec.VNI
+			}
+			return mi.Spec.IPv4.String() < mj.Spec.IPv4.String()
+		case "device":
+			return mi.Spec.Device < mj.Spec.Device
+		case "ipv4":
+			if mi.Spec.IPv4.String() != mj.Spec.IPv4.String() {
+				return mi.Spec.IPv4.String() < mj.Spec.IPv4.String()
+			}
+			return mi.Spec.VNI < mj.Spec.VNI
+		case "ipv6":
+			return mi.Spec.IPv6.String() < mj.Spec.IPv6.String()
+		case "underlayroute":
+			return mi.Spec.UnderlayRoute.String() < mj.Spec.UnderlayRoute.String()
+		default:
+			return mi.ID < mj.ID
+		}
+	})
+	interfaceList.Items = interfaces
 
 	return rendererFactory.RenderList("", os.Stdout, interfaceList)
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -55,10 +56,12 @@ func ListLoadBalancerTargets(dpdkClientFactory DPDKClientFactory, rendererFactor
 
 type ListLoadBalancerTargetOptions struct {
 	LoadBalancerID string
+	SortBy         string
 }
 
 func (o *ListLoadBalancerTargetOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.LoadBalancerID, "lb-id", o.LoadBalancerID, "ID of the loadbalancer to get the targets for.")
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListLoadBalancerTargetOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -86,6 +89,14 @@ func RunListLoadBalancerTargets(
 	if err != nil && lbtargets.Status.Code == 0 {
 		return fmt.Errorf("error listing loadbalancer targets: %w", err)
 	}
+
+	// sort items in list
+	targets := lbtargets.Items
+	sort.SliceStable(targets, func(i, j int) bool {
+		mi, mj := targets[i], targets[j]
+		return mi.Spec.TargetIP.String() < mj.Spec.TargetIP.String()
+	})
+	lbtargets.Items = targets
 
 	return rendererFactory.RenderList("", os.Stdout, lbtargets)
 }

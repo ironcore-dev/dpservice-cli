@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/onmetal/dpservice-cli/util"
 	"github.com/spf13/cobra"
@@ -54,10 +56,12 @@ func ListFirewallRules(dpdkClientFactory DPDKClientFactory, rendererFactory Rend
 
 type ListFirewallRulesOptions struct {
 	InterfaceID string
+	SortBy      string
 }
 
 func (o *ListFirewallRulesOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.InterfaceID, "interface-id", o.InterfaceID, "InterfaceID from which to list firewall rules.")
+	fs.StringVar(&o.SortBy, "sort-by", "", "Column to sort by.")
 }
 
 func (o *ListFirewallRulesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
@@ -81,10 +85,32 @@ func RunListFirewallRules(
 	}
 	defer DpdkClose(cleanup)
 
-	fwrules, err := client.ListFirewallRules(ctx, opts.InterfaceID)
+	fwruleList, err := client.ListFirewallRules(ctx, opts.InterfaceID)
 	if err != nil {
 		return fmt.Errorf("error listing firewall rules: %w", err)
 	}
+	// sort items in list
+	fwrules := fwruleList.Items
+	sort.SliceStable(fwrules, func(i, j int) bool {
+		mi, mj := fwrules[i], fwrules[j]
+		switch strings.ToLower(opts.SortBy) {
+		case "direction":
+			return mi.Spec.TrafficDirection < mj.Spec.TrafficDirection
+		case "src", "source":
+			return mi.Spec.SourcePrefix.String() < mj.Spec.SourcePrefix.String()
+		case "dst", "destination":
+			return mi.Spec.DestinationPrefix.String() < mj.Spec.DestinationPrefix.String()
+		case "action":
+			return mi.Spec.FirewallAction < mj.Spec.FirewallAction
+		case "protocol":
+			return mi.Spec.ProtocolFilter.String() < mj.Spec.ProtocolFilter.String()
+		case "priority":
+			return mi.Spec.Priority < mj.Spec.Priority
+		default:
+			return mi.Spec.RuleID < mj.Spec.RuleID
+		}
+	})
+	fwruleList.Items = fwrules
 
-	return rendererFactory.RenderList("", os.Stdout, fwrules)
+	return rendererFactory.RenderList("", os.Stdout, fwruleList)
 }
