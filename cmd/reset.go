@@ -24,7 +24,7 @@ func Reset(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "name"}
 
 	cmd := &cobra.Command{
-		Use:  "reset",
+		Use:  "reset [command]",
 		Args: cobra.NoArgs,
 		RunE: SubcommandRequired,
 	}

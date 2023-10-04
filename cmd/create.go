@@ -33,7 +33,7 @@ func Create(factory DPDKClientFactory) *cobra.Command {
 	sourcesOptions := &SourcesOptions{}
 
 	cmd := &cobra.Command{
-		Use:     "create",
+		Use:     "create [command]",
 		Aliases: []string{"add"},
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
