@@ -13,7 +13,7 @@ func Command() *cobra.Command {
 	rendererOptions := &RendererOptions{}
 
 	cmd := &cobra.Command{
-		Use:           "dpservice-cli",
+		Use:           "dpservice-cli [command]",
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
