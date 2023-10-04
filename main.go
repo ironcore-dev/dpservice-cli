@@ -21,10 +21,14 @@ import (
 	"strings"
 
 	"github.com/onmetal/dpservice-cli/cmd"
+	"github.com/onmetal/dpservice-cli/util"
 	"github.com/onmetal/net-dpservice-go/errors"
 )
 
+var version = "unknown"
+
 func main() {
+	util.BuildVersion = version
 	if err := cmd.Command().Execute(); err != nil {
 		if strings.Contains(err.Error(), "Unimplemented desc") {
 			fmt.Println("Error in gRPC, client and server are probably using different proto version")
