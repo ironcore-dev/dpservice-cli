@@ -22,7 +22,7 @@ func Delete(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "name"}
 
 	cmd := &cobra.Command{
-		Use:     "delete",
+		Use:     "delete [command]",
 		Aliases: []string{"del"},
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -13,7 +13,7 @@ func List(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "table"}
 
 	cmd := &cobra.Command{
-		Use:  "list",
+		Use:  "list [command]",
 		Args: cobra.NoArgs,
 		RunE: SubcommandRequired,
 	}

@@ -13,7 +13,7 @@ func Get(factory DPDKClientFactory) *cobra.Command {
 	rendererOptions := &RendererOptions{Output: "table"}
 
 	cmd := &cobra.Command{
-		Use:  "get",
+		Use:  "get [command]",
 		Args: cobra.NoArgs,
 		RunE: SubcommandRequired,
 	}
