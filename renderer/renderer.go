@@ -210,6 +210,12 @@ func (t defaultTableConverter) ConvertToTable(v any) (*TableData, error) {
 		return t.vniTable(*obj)
 	case *api.Version:
 		return t.versionTable(*obj)
+	case *api.CaptureStart:
+		return t.captureStartTable(*obj)
+	case *api.CaptureStop:
+		return t.captureStopTable(*obj)
+	case *api.CaptureStatus:
+		return t.captureStatusTable(*obj)
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
@@ -437,6 +443,74 @@ func (t defaultTableConverter) initializedTable(initialized api.Initialized) (*T
 	headers := []any{"UUID"}
 	columns := make([][]any, 1)
 	columns[0] = []any{initialized.Spec.UUID}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) captureStartTable(captureStart api.CaptureStart) (*TableData, error) {
+	headers := []any{"SinkNodeIP", "UdpSrcPort", "UdpDstPort", "PF Interfaces", "VF Interfaces"}
+	columns := make([][]any, 1)
+
+	pfInterfaces := ""
+	vfInterfaces := ""
+
+	for _, iface := range captureStart.Spec.Interfaces {
+
+		if iface.InterfaceType == "pf" {
+			pfInterfaces += iface.InterfaceInfo + " "
+		} else {
+			vfInterfaces += iface.InterfaceInfo + " "
+		}
+	}
+
+	columns[0] = []any{captureStart.CaptureStartMeta.Config.SinkNodeIP,
+		captureStart.CaptureStartMeta.Config.UdpSrcPort, captureStart.CaptureStartMeta.Config.UdpDstPort,
+		pfInterfaces, vfInterfaces}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) captureStopTable(captureStop api.CaptureStop) (*TableData, error) {
+	headers := []any{"Stopped Interface"}
+	columns := make([][]any, 1)
+
+	columns[0] = []any{captureStop.Spec.InterfaceCount}
+
+	return &TableData{
+		Headers: headers,
+		Columns: columns,
+	}, nil
+}
+
+func (t defaultTableConverter) captureStatusTable(captureStatus api.CaptureStatus) (*TableData, error) {
+	headers := []any{"Operation Status", "SinkNodeIP", "UdpSrcPort", "UdpDstPort", "PF Interfaces", "VF Interfaces"}
+	columns := make([][]any, 1)
+
+	pfInterfaces := ""
+	vfInterfaces := ""
+
+	for _, iface := range captureStatus.Spec.Interfaces {
+
+		if iface.InterfaceType == "pf" {
+			pfInterfaces += iface.InterfaceInfo + " "
+		} else {
+			vfInterfaces += iface.InterfaceInfo + " "
+		}
+	}
+
+	if !captureStatus.Spec.OperationStatus {
+		columns[0] = []any{"NOT_ACTIVE", "", "", "", "", ""}
+	} else {
+		columns[0] = []any{"ACTIVE", captureStatus.Spec.Config.SinkNodeIP,
+			captureStatus.Spec.Config.UdpSrcPort, captureStatus.Spec.Config.UdpDstPort,
+			pfInterfaces, vfInterfaces}
+	}
 
 	return &TableData{
 		Headers: headers,
