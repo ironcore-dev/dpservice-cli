@@ -15,35 +15,33 @@
 package cmd
 
 import (
-	"github.com/onmetal/dpservice-cli/util"
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
-func Command() *cobra.Command {
-	dpdkClientOptions := &DPDKClientOptions{}
-	rendererOptions := &RendererOptions{}
+func Capture(factory DPDKClientFactory) *cobra.Command {
+	rendererOptions := &RendererOptions{Output: "table"}
 
 	cmd := &cobra.Command{
-		Use:           "dpservice-cli",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE:          SubcommandRequired,
-		Version:       util.BuildVersion,
+		Use:  "capture",
+		Args: cobra.NoArgs,
+		RunE: SubcommandRequired,
 	}
 
 	rendererOptions.AddFlags(cmd.PersistentFlags())
-	dpdkClientOptions.AddFlags(cmd.PersistentFlags())
+
+	subcommands := []*cobra.Command{
+		CaptureStart(factory, rendererOptions),
+		CaptureStop(factory, rendererOptions),
+		CaptureStatus(factory, rendererOptions),
+	}
+
+	cmd.Short = fmt.Sprintf("Gets one of %v", CommandNames(subcommands))
+	cmd.Long = fmt.Sprintf("Gets one of %v", CommandNames(subcommands))
 
 	cmd.AddCommand(
-		Create(dpdkClientOptions),
-		Get(dpdkClientOptions),
-		List(dpdkClientOptions),
-		Delete(dpdkClientOptions),
-		Reset(dpdkClientOptions),
-		Init(dpdkClientOptions, rendererOptions),
-		Capture(dpdkClientOptions),
-		completionCmd,
+		subcommands...,
 	)
 
 	return cmd
