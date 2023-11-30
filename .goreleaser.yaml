@@ -1,4 +1,4 @@
-project_name: github.com/onmetal/dpservice-cli
+project_name: github.com/ironcore-dev/dpservice-cli
 builds:
   - env:
       - CGO_ENABLED=0

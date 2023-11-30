@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2022 IronCore authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/onmetal/dpservice-cli/renderer"
-	"github.com/onmetal/dpservice-cli/sources"
-	"github.com/onmetal/net-dpservice-go/api"
-	"github.com/onmetal/net-dpservice-go/client"
-	apierrors "github.com/onmetal/net-dpservice-go/errors"
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
+	"github.com/ironcore-dev/dpservice-cli/renderer"
+	"github.com/ironcore-dev/dpservice-cli/sources"
+	"github.com/ironcore-dev/dpservice-go/api"
+	"github.com/ironcore-dev/dpservice-go/client"
+	apierrors "github.com/ironcore-dev/dpservice-go/errors"
+	dpdkproto "github.com/ironcore-dev/dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
@@ -45,8 +45,8 @@ type DPDKClientOptions struct {
 }
 
 func (o *DPDKClientOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.Address, "address", "localhost:1337", "net-dpservice address.")
-	fs.DurationVar(&o.ConnectTimeout, "connect-timeout", 4*time.Second, "Timeout to connect to the net-dpservice.")
+	fs.StringVar(&o.Address, "address", "localhost:1337", "dpservice address.")
+	fs.DurationVar(&o.ConnectTimeout, "connect-timeout", 4*time.Second, "Timeout to connect to the dpservice.")
 }
 
 func (o *DPDKClientOptions) NewClient(ctx context.Context) (client.Client, func() error, error) {
@@ -58,7 +58,7 @@ func (o *DPDKClientOptions) NewClient(ctx context.Context) (client.Client, func(
 		return nil, nil, fmt.Errorf("error connecting to %s: %w", o.Address, err)
 	}
 
-	protoClient := dpdkproto.NewDPDKonmetalClient(conn)
+	protoClient := dpdkproto.NewDPDKironcoreClient(conn)
 	c := client.NewClient(protoClient)
 
 	cleanup := conn.Close

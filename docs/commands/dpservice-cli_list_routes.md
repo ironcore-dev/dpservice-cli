@@ -23,8 +23,8 @@ dpservice-cli list routes --vni=100
 ### Options inherited from parent commands
 
 ```
-      --address string             net-dpservice address. (default "localhost:1337")
-      --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
+      --address string             dpservice address. (default "localhost:1337")
+      --connect-timeout duration   Timeout to connect to the dpservice. (default 4s)
   -o, --output string              Output format. [json|yaml|table|name] (default "table")
       --pretty                     Whether to render pretty output.
   -w, --wide                       Whether to render more info in table output.

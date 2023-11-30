@@ -25,8 +25,8 @@ dpservice-cli create nat --interface-id=vm1 --nat-ip=10.20.30.40 --minport=30000
 ### Options inherited from parent commands
 
 ```
-      --address string             net-dpservice address. (default "localhost:1337")
-      --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
+      --address string             dpservice address. (default "localhost:1337")
+      --connect-timeout duration   Timeout to connect to the dpservice. (default 4s)
   -o, --output string              Output format. [json|yaml|table|name] (default "name")
       --pretty                     Whether to render pretty output.
   -w, --wide                       Whether to render more info in table output.

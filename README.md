@@ -1,6 +1,6 @@
 # dpservice-cli
 
-Command-line tool for debugging over gRPC for [net-dpservice](https://github.com/onmetal/net-dpservice).
+Command-line tool for debugging over gRPC for [dpservice](https://github.com/ironcore-dev/dpservice).
 
 This tool connects directly to a running dp-service and communicates with it (orchestrates it).
 <br />
@@ -62,8 +62,8 @@ Available Commands:
   list        Lists one of [firewallrules interfaces prefixes lbprefixes routes]
 
 Flags:
-      --address string             net-dpservice address. (default "localhost:1337")
-      --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
+      --address string             dpservice address. (default "localhost:1337")
+      --connect-timeout duration   Timeout to connect to the dpservice. (default 4s)
   -h, --help                       help for dpservice-cli
   -o, --output string              Output format. [json|yaml|table|name]
       --pretty                     Whether to render pretty output.
