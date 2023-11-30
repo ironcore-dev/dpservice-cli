@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2022 IronCore authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/ironcore-dev/dpservice-go/api"
+	dpdkproto "github.com/ironcore-dev/dpservice-go/proto"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/onmetal/net-dpservice-go/api"
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
 )
 
 type Renderer interface {

@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2022 IronCore authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/onmetal/net-dpservice-go/api"
-	structured "github.com/onmetal/net-dpservice-go/client"
+	"github.com/ironcore-dev/dpservice-go/api"
+	structured "github.com/ironcore-dev/dpservice-go/client"
 )
 
 type ObjectKey interface {

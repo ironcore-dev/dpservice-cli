@@ -9,7 +9,7 @@ This page is intended as a general overview for all development-oriented topics.
 
 Before using dpservice-cli client, you need to have dpservice instance running.
 
-Please refer to this guide [net-dpservice](https://github.com/onmetal/net-dpservice/blob/osc/grpc_docs/docs/development/building.md) on how to build dpservice from source.
+Please refer to this guide [dpservice](https://github.com/ironcore-dev/dpservice/blob/osc/grpc_docs/docs/development/building.md) on how to build dpservice from source.
 
 You can then run python script **/test/dp_service.py** that will start the dpservice with preloaded config.
 ```bash
@@ -74,17 +74,17 @@ Basic steps when implementing new type (similar to Interface, Route, LoadBalance
 
 ## gRPC
 
-This client uses golang bindings from repo [net-dpservice-go](https://github.com/onmetal/net-dpservice-go).
+This client uses golang bindings from repo [dpservice-go](https://github.com/ironcore-dev/dpservice-go).
 
-Definition go files in [proto](https://github.com/onmetal/net-dpservice-go/tree/main/proto) folder are auto-generated from [dpdk.proto](https://github.com/onmetal/net-dpservice/blob/osc/main/proto/dpdk.proto) file in [net-dpservice](https://github.com/onmetal/net-dpservice/) repo.
+Definition go files in [proto](https://github.com/ironcore-dev/dpservice-go/tree/main/proto) folder are auto-generated from [dpdk.proto](https://github.com/ironcore-dev/dpservice/blob/osc/main/proto/dpdk.proto) file in [dpservice](https://github.com/ironcore-dev/dpservice/) repo.
 
-In case of upgrade of net-dpservice-go, it is needed to pull the latest version:
+In case of upgrade of dpservice-go, it is needed to pull the latest version:
 ```
-go get github.com/onmetal/net-dpservice-go@[<version>|latest]
+go get github.com/ironcore-dev/dpservice-go@[<version>|latest]
 ```
 In order to pull from private repository set the **GOPRIVATE** variable:
 ```
-export GOPRIVATE=github.com/onmetal/*
+export GOPRIVATE=github.com/ironcore-dev/*
 ```
 
 More info about gRPC can be found [here](https://grpc.io/docs/what-is-grpc/introduction/).

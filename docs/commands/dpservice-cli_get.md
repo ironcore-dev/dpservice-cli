@@ -22,8 +22,8 @@ dpservice-cli get [flags]
 ### Options inherited from parent commands
 
 ```
-      --address string             net-dpservice address. (default "localhost:1337")
-      --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
+      --address string             dpservice address. (default "localhost:1337")
+      --connect-timeout duration   Timeout to connect to the dpservice. (default 4s)
 ```
 
 ### SEE ALSO

@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2022 IronCore authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/onmetal/dpservice-cli/dpdk/client/dynamic"
-	"github.com/onmetal/dpservice-cli/dpdk/runtime"
-	"github.com/onmetal/dpservice-cli/sources"
-	"github.com/onmetal/net-dpservice-go/errors"
+	"github.com/ironcore-dev/dpservice-cli/dpdk/client/dynamic"
+	"github.com/ironcore-dev/dpservice-cli/dpdk/runtime"
+	"github.com/ironcore-dev/dpservice-cli/sources"
+	"github.com/ironcore-dev/dpservice-go/errors"
 	"github.com/spf13/cobra"
 )
 

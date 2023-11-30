@@ -25,8 +25,8 @@ dpservice-cli create route --prefix=10.100.3.0/24 --next-hop-vni=0 --next-hop-ip
 ### Options inherited from parent commands
 
 ```
-      --address string             net-dpservice address. (default "localhost:1337")
-      --connect-timeout duration   Timeout to connect to the net-dpservice. (default 4s)
+      --address string             dpservice address. (default "localhost:1337")
+      --connect-timeout duration   Timeout to connect to the dpservice. (default 4s)
   -o, --output string              Output format. [json|yaml|table|name] (default "name")
       --pretty                     Whether to render pretty output.
   -w, --wide                       Whether to render more info in table output.

@@ -1,4 +1,4 @@
-// Copyright 2022 OnMetal authors
+// Copyright 2022 IronCore authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/onmetal/dpservice-cli/flag"
-	"github.com/onmetal/dpservice-cli/util"
-	"github.com/onmetal/net-dpservice-go/api"
-	dpdkproto "github.com/onmetal/net-dpservice-go/proto"
+	"github.com/ironcore-dev/dpservice-cli/flag"
+	"github.com/ironcore-dev/dpservice-cli/util"
+	"github.com/ironcore-dev/dpservice-go/api"
+	dpdkproto "github.com/ironcore-dev/dpservice-go/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
