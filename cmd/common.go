@@ -271,14 +271,14 @@ func ParsePrefixArgs(args []string) ([]netip.Prefix, error) {
 }
 
 var (
-	InterfaceAliases          = []string{"interfaces", "iface", "ifaces"}
-	PrefixAliases             = []string{"prefixes", "prfx", "prfxs"}
-	RouteAliases              = []string{"routes", "rt", "rts"}
-	VirtualIPAliases          = []string{"virtualips", "vip", "vips"}
-	LoadBalancerAliases       = []string{"loadbalancers", "loadbalancer", "lbs", "lb"}
-	LoadBalancerPrefixAliases = []string{"loadbalancer-prefixes", "lbprfx", "lbprfxs"}
-	LoadBalancerTargetAliases = []string{"loadbalancer-targets", "lbtrgt", "lbtrgts", "lbtarget"}
-	NatAliases                = []string{"translation"}
+	InterfaceAliases          = []string{"interface", "interfaces", "iface", "ifaces"}
+	PrefixAliases             = []string{"prefix", "prefixes", "prfx", "prfxs"}
+	RouteAliases              = []string{"route", "routes", "rt", "rts"}
+	VirtualIPAliases          = []string{"virtualip", "virtualips", "vip", "vips"}
+	LoadBalancerAliases       = []string{"loadbalancer", "loadbalancers", "loadbalancer", "lbs", "lb"}
+	LoadBalancerPrefixAliases = []string{"loadbalancer-prefix", "loadbalancer-prefixes", "lbprefix", "lbprfx", "lbprfxs"}
+	LoadBalancerTargetAliases = []string{"loadbalancer-target", "loadbalancer-targets", "lbtrgt", "lbtrgts", "lbtarget"}
+	NatAliases                = []string{"nat", "translation"}
 	NeighborNatAliases        = []string{"nnat", "ngbnat", "neighnat"}
-	FirewallRuleAliases       = []string{"fwrule", "fw-rule", "firewallrules", "fwrules", "fw-rules"}
+	FirewallRuleAliases       = []string{"firewallrule", "fwrule", "fw-rule", "firewallrules", "fwrules", "fw-rules"}
 )
