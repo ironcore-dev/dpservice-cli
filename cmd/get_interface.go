@@ -50,11 +50,6 @@ func (o *GetInterfaceOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *GetInterfaceOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"id"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -70,22 +65,31 @@ func RunGetInterface(
 	}
 	defer DpdkClose(cleanup)
 
-	iface, err := client.GetInterface(ctx, opts.ID)
-	if err != nil && iface.Status.Code == 0 {
-		return fmt.Errorf("error getting interface: %w", err)
-	}
-
-	if rendererFactory.GetWide() {
-		nat, err := client.GetNat(ctx, iface.ID)
-		if err == nil {
-			iface.Spec.Nat = nat
+	if opts.ID == "" {
+		return RunListInterfaces(
+			ctx,
+			dpdkClientFactory,
+			rendererFactory,
+			ListInterfacesOptions{},
+		)
+	} else {
+		iface, err := client.GetInterface(ctx, opts.ID)
+		if err != nil && iface.Status.Code == 0 {
+			return fmt.Errorf("error getting interface: %w", err)
 		}
 
-		vip, err := client.GetVirtualIP(ctx, iface.ID)
-		if err == nil {
-			iface.Spec.VIP = vip
-		}
-	}
+		if rendererFactory.GetWide() {
+			nat, err := client.GetNat(ctx, iface.ID)
+			if err == nil {
+				iface.Spec.Nat = nat
+			}
 
-	return rendererFactory.RenderObject("", os.Stdout, iface)
+			vip, err := client.GetVirtualIP(ctx, iface.ID)
+			if err == nil {
+				iface.Spec.VIP = vip
+			}
+		}
+
+		return rendererFactory.RenderObject("", os.Stdout, iface)
+	}
 }
