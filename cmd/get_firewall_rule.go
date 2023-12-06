@@ -64,7 +64,7 @@ func (o *GetFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *GetFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"rule-id", "interface-id"} {
+	for _, name := range []string{"interface-id"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
 			return err
 		}
@@ -84,10 +84,19 @@ func RunGetFirewallRule(
 	}
 	defer DpdkClose(cleanup)
 
-	fwrule, err := client.GetFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
-	if err != nil && fwrule.Status.Code == 0 {
-		return fmt.Errorf("error getting firewall rule: %w", err)
-	}
+	if opts.RuleID == "" {
+		return RunListFirewallRules(
+			ctx,
+			dpdkClientFactory,
+			rendererFactory,
+			ListFirewallRulesOptions{InterfaceID: opts.InterfaceID},
+		)
+	} else {
+		fwrule, err := client.GetFirewallRule(ctx, opts.InterfaceID, opts.RuleID)
+		if err != nil && fwrule.Status.Code == 0 {
+			return fmt.Errorf("error getting firewall rule: %w", err)
+		}
 
-	return rendererFactory.RenderObject("", os.Stdout, fwrule)
+		return rendererFactory.RenderObject("", os.Stdout, fwrule)
+	}
 }
