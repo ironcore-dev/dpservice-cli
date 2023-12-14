@@ -1,12 +1,9 @@
-<img src="https://github.com/ironcore-dev/ironcore/blob/main/docs/assets/logo.svg" alt="IronCore Logo" width="200" />
-
 # dpservice-cli
 
 [![REUSE status](https://api.reuse.software/badge/github.com/ironcore-dev/dpservice-cli)](https://api.reuse.software/info/github.com/ironcore-dev/dpservice-cli)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ironcore-dev/dpservice-cli)](https://goreportcard.com/report/github.com/ironcore-dev/dpservice-cli)
 [![GitHub License](https://img.shields.io/static/v1?label=License&message=Apache-2.0&color=blue)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
-
 
 dpservice-cli is the command-line tool that interacts with [dpservice](https://github.com/ironcore-dev/dpservice) via the gRPC interfaces. This tool connects directly to a running dp-service and communicates with it (orchestrates it).
 
