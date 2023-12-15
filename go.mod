@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/addlicense v1.1.1
-	github.com/ironcore-dev/dpservice-go v0.3.0
+	github.com/ironcore-dev/dpservice-go v0.3.1
 	github.com/jedib0t/go-pretty/v6 v6.4.9
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
