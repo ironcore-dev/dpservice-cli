@@ -24,6 +24,15 @@ func GetFirewallRule(dpdkClientFactory DPDKClientFactory, rendererFactory Render
 		Example: "dpservice-cli get fwrule --rule-id=1 --interface-id=vm1",
 		Aliases: FirewallRuleAliases,
 		Args:    cobra.ExactArgs(0),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			filter, _ := cmd.Flags().GetString("rule-id")
+			if filter != "" {
+				if err := cmd.MarkFlagRequired("interface-id"); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			return RunGetFirewallRule(
@@ -53,11 +62,6 @@ func (o *GetFirewallRuleOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *GetFirewallRuleOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
