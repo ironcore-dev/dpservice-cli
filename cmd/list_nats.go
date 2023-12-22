@@ -26,6 +26,7 @@ func ListNats(dpdkClientFactory DPDKClientFactory, rendererFactory RendererFacto
 		Use:     "nats <--nat-ip> <--nat-type>",
 		Short:   "List local/neighbor/both nats with selected IP",
 		Example: "dpservice-cli list nats --nat-ip=10.20.30.40 --info-type=local",
+		Aliases: NatAliases,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
