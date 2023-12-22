@@ -20,6 +20,8 @@ import (
 	"os"
 
 	"github.com/ironcore-dev/dpservice-cli/util"
+	"github.com/ironcore-dev/dpservice-go/api"
+	"github.com/ironcore-dev/dpservice-go/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -62,11 +64,6 @@ func (o *GetVirtualIPOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *GetVirtualIPOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -81,6 +78,42 @@ func RunGetVirtualIP(
 		return fmt.Errorf("error creating dpdk client: %w", err)
 	}
 	defer DpdkClose(cleanup)
+
+	if opts.InterfaceID == "" {
+		ifaces, err := client.ListInterfaces(ctx)
+		if err != nil && ifaces.Status.Code == 0 {
+			return fmt.Errorf("error listing interfaces: %w", err)
+		}
+		virtualIPs := make([]*api.VirtualIP, 0, len(ifaces.Items))
+		for _, iface := range ifaces.Items {
+			vip, err := client.GetVirtualIP(ctx, iface.ID, errors.Ignore(errors.SNAT_NO_DATA))
+			if err != nil && vip.Status.Code == 0 {
+				return fmt.Errorf("error getting virtual ip: %w", err)
+			}
+			if vip.Status.Code == 0 {
+				virtualIPs = append(virtualIPs, vip)
+			}
+		}
+		if len(virtualIPs) == 0 {
+			noVipFound := api.VirtualIP{
+				TypeMeta: api.TypeMeta{
+					Kind: api.VirtualIPKind,
+				},
+				Status: api.Status{
+					Code:    errors.SNAT_NO_DATA,
+					Message: "SNAT_NO_DATA",
+				},
+			}
+			return rendererFactory.RenderObject("no interface has virtual ip configured", os.Stdout, &noVipFound)
+		}
+		for _, vip := range virtualIPs {
+			err = rendererFactory.RenderObject("", os.Stdout, vip)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 
 	virtualIP, err := client.GetVirtualIP(ctx, opts.InterfaceID)
 	if err != nil && virtualIP.Status.Code == 0 {

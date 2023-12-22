@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/ironcore-dev/dpservice-cli/util"
+	"github.com/ironcore-dev/dpservice-go/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -65,11 +66,6 @@ func (o *ListPrefixesOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *ListPrefixesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -85,11 +81,28 @@ func RunListPrefixes(
 	}
 	defer DpdkClose(cleanup)
 
-	prefixList, err := client.ListPrefixes(ctx, opts.InterfaceID)
-	if err != nil {
-		return fmt.Errorf("error listing prefixes: %w", err)
+	prefixList := &api.PrefixList{
+		TypeMeta: api.TypeMeta{Kind: api.PrefixListKind},
 	}
+	if opts.InterfaceID == "" {
+		ifaces, err := client.ListInterfaces(ctx)
+		if err != nil && ifaces.Status.Code == 0 {
+			return fmt.Errorf("error listing interfaces: %w", err)
+		}
 
+		for _, iface := range ifaces.Items {
+			prefix, err := client.ListPrefixes(ctx, iface.ID)
+			if err != nil && prefix.Status.Code == 0 {
+				return fmt.Errorf("error getting prefixes: %w", err)
+			}
+			prefixList.Items = append(prefixList.Items, prefix.Items...)
+		}
+	} else {
+		prefixList, err = client.ListPrefixes(ctx, opts.InterfaceID)
+		if err != nil {
+			return fmt.Errorf("error listing prefixes: %w", err)
+		}
+	}
 	// sort items in list
 	prefixes := prefixList.Items
 	sort.SliceStable(prefixes, func(i, j int) bool {

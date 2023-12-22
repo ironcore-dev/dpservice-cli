@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/ironcore-dev/dpservice-cli/util"
+	"github.com/ironcore-dev/dpservice-go/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -65,11 +66,6 @@ func (o *ListFirewallRulesOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o *ListFirewallRulesOptions) MarkRequiredFlags(cmd *cobra.Command) error {
-	for _, name := range []string{"interface-id"} {
-		if err := cmd.MarkFlagRequired(name); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -85,10 +81,29 @@ func RunListFirewallRules(
 	}
 	defer DpdkClose(cleanup)
 
-	fwruleList, err := client.ListFirewallRules(ctx, opts.InterfaceID)
-	if err != nil {
-		return fmt.Errorf("error listing firewall rules: %w", err)
+	fwruleList := &api.FirewallRuleList{
+		TypeMeta: api.TypeMeta{Kind: api.FirewallRuleListKind},
 	}
+	if opts.InterfaceID == "" {
+		ifaces, err := client.ListInterfaces(ctx)
+		if err != nil && ifaces.Status.Code == 0 {
+			return fmt.Errorf("error listing interfaces: %w", err)
+		}
+
+		for _, iface := range ifaces.Items {
+			fwrule, err := client.ListFirewallRules(ctx, iface.ID)
+			if err != nil && fwrule.Status.Code == 0 {
+				return fmt.Errorf("error getting firewall rules: %w", err)
+			}
+			fwruleList.Items = append(fwruleList.Items, fwrule.Items...)
+		}
+	} else {
+		fwruleList, err = client.ListFirewallRules(ctx, opts.InterfaceID)
+		if err != nil {
+			return fmt.Errorf("error listing firewall rules: %w", err)
+		}
+	}
+
 	// sort items in list
 	fwrules := fwruleList.Items
 	sort.SliceStable(fwrules, func(i, j int) bool {
