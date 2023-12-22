@@ -264,7 +264,7 @@ func (t defaultTableConverter) interfaceTable(ifaces []api.Interface) (*TableDat
 	for i, iface := range ifaces {
 		columns[i] = []any{iface.ID, iface.Spec.VNI, iface.Spec.Device, iface.Spec.IPv4, iface.Spec.IPv6, iface.Spec.UnderlayRoute}
 		if iface.Spec.VirtualFunction != nil {
-			columns[i] = append(columns[i], iface.Spec.VirtualFunction.String())
+			columns[i] = append(columns[i], iface.Spec.VirtualFunction.Name)
 		} else if vfNeeded {
 			columns[i] = append(columns[i], "")
 		}
